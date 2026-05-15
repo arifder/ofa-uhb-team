@@ -6,6 +6,7 @@ use App\Http\Controllers\FakultasController;
 use App\Http\Controllers\ProdiController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KasController;
 use App\Http\Controllers\NotulensiController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\ProfilController;
@@ -24,10 +25,24 @@ Route::middleware([
 
     // Route Kas
     Route::middleware(['auth', 'checkRole:super_admin,admin_kas_fst,admin_kas_fis,kepala_unit'])
-      ->group(function() {
-        // Route::resource('kas', KasController::class);
-        // Tambahkan route kas lainnya di sini nanti
-      });
+        ->prefix('kas')
+        ->name('kas.')
+        ->group(function () {
+            Route::get('laporan', [KasController::class, 'laporan'])->name('laporan');
+            Route::get('masuk', [KasController::class, 'index'])->name('masuk');
+            Route::get('keluar', [KasController::class, 'index'])->name('keluar');
+
+            Route::get('tagihan', [KasController::class, 'tagihan'])->name('tagihan');
+            Route::get('tagihan/{id}', [KasController::class, 'showTagihan'])->name('tagihan.show');
+            Route::post('tagihan/{id}/bayar', [KasController::class, 'bayarTagihan'])->name('tagihan.bayar');
+            Route::post('tagihan', [KasController::class, 'storeTagihan'])->name('tagihan.store');
+            Route::delete('tagihan/{id}', [KasController::class, 'destroyTagihan'])->name('tagihan.destroy');
+
+            Route::get('transaksi/{id}', [KasController::class, 'show'])->name('transaksi.show');
+            Route::post('transaksi', [KasController::class, 'store'])->name('transaksi.store');
+            Route::put('transaksi/{id}', [KasController::class, 'update'])->name('transaksi.update');
+            Route::delete('transaksi/{id}', [KasController::class, 'destroy'])->name('transaksi.destroy');
+        });
 
     // Route Notulensi
     Route::middleware(['auth', 'checkRole:super_admin,admin_notulensi_fst,admin_notulensi_fis,kepala_unit,dosen'])

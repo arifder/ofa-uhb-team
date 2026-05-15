@@ -32,4 +32,9 @@ class Dosen extends Model
             'notulensi_id'
         );
     }
+
+    public function tagihans()
+    {
+        return $this->hasMany(KasTagihan::class);
+    }
 }

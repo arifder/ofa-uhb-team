@@ -29,7 +29,9 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        View::share('fstId', Fakultas::where('nama_fakultas', 'like', '%Sains%')->value('id'));
-        View::share('fisId', Fakultas::where('nama_fakultas', 'like', '%Sosial%')->value('id'));
+        if (\Illuminate\Support\Facades\Schema::hasTable('fakultas')) {
+            View::share('fstId', \App\Models\Fakultas::where('nama_fakultas', 'like', '%Sains%')->value('id'));
+            View::share('fisId', \App\Models\Fakultas::where('nama_fakultas', 'like', '%Sosial%')->value('id'));
+        }
     }
 }

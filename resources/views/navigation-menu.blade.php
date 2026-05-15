@@ -20,10 +20,10 @@
                     
                     {{-- MENU KAS --}}
                     @if(in_array($user->role, ['super_admin','admin_kas_fst','admin_kas_fis','kepala_unit']))
-                        <x-nav-link href="#">Data Kas Masuk</x-nav-link>
-                        <x-nav-link href="#">Kas Keluar</x-nav-link>
-                        <x-nav-link href="#">Tagihan Dosen</x-nav-link>
-                        <x-nav-link href="#">Laporan Kas</x-nav-link>
+                        <x-nav-link href="{{ route('kas.masuk') }}" :active="request()->routeIs('kas.masuk')">Kas Masuk</x-nav-link>
+                        <x-nav-link href="{{ route('kas.keluar') }}" :active="request()->routeIs('kas.keluar')">Kas Keluar</x-nav-link>
+                        <x-nav-link href="{{ route('kas.tagihan') }}" :active="request()->routeIs('kas.tagihan')">Tagihan Dosen</x-nav-link>
+                        <x-nav-link href="{{ route('kas.laporan') }}" :active="request()->routeIs('kas.laporan')">Laporan Kas</x-nav-link>
                     @endif
 
                     {{-- MENU NOTULENSI --}}
@@ -187,12 +187,12 @@
 
             @php $user = auth()->user(); @endphp
 
-            {{-- MENU KAS --}}
+            {{-- MENU KAS (Responsive) --}}
             @if(in_array($user->role, ['super_admin','admin_kas_fst','admin_kas_fis','kepala_unit']))
-                <x-responsive-nav-link href="#">Data Kas Masuk</x-responsive-nav-link>
-                <x-responsive-nav-link href="#">Kas Keluar</x-responsive-nav-link>
-                <x-responsive-nav-link href="#">Tagihan Dosen</x-responsive-nav-link>
-                <x-responsive-nav-link href="#">Laporan Kas</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('kas.masuk') }}" :active="request()->routeIs('kas.masuk')">Kas Masuk</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('kas.keluar') }}" :active="request()->routeIs('kas.keluar')">Kas Keluar</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('kas.tagihan') }}" :active="request()->routeIs('kas.tagihan')">Tagihan Dosen</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('kas.laporan') }}" :active="request()->routeIs('kas.laporan')">Laporan Kas</x-responsive-nav-link>
             @endif
 
             {{-- MENU NOTULENSI --}}
