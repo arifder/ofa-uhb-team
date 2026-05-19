@@ -24,13 +24,13 @@ Route::middleware([
 });
 
     // Route Kas
-    Route::middleware(['auth', 'checkRole:super_admin,admin_kas_fst,admin_kas_fis,kepala_unit'])
+    Route::middleware(['auth', 'checkRole:super_admin,admin_kas_fst,admin_kas_fis,kepala_unit,dosen'])
         ->prefix('kas')
         ->name('kas.')
         ->group(function () {
             Route::get('laporan', [KasController::class, 'laporan'])->name('laporan');
-            Route::get('masuk', [KasController::class, 'index'])->name('masuk');
-            Route::get('keluar', [KasController::class, 'index'])->name('keluar');
+            Route::get('masuk', [KasController::class, 'index'])->defaults('jenis', 'masuk')->name('masuk');
+            Route::get('keluar', [KasController::class, 'index'])->defaults('jenis', 'keluar')->name('keluar');
 
             Route::get('tagihan', [KasController::class, 'tagihan'])->name('tagihan');
             Route::get('tagihan/{id}', [KasController::class, 'showTagihan'])->name('tagihan.show');

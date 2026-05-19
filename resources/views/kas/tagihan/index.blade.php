@@ -167,15 +167,18 @@
                     <button class="icon-btn" onclick="viewDetail({{ $tagihan->id }})" title="Lihat Detail">
                         <i class="ti ti-eye"></i>
                     </button>
-                    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                    @if($authUser->role !== 'kepala_unit')
                         @if($tagihan->status !== 'lunas')
                         <button class="icon-btn" onclick="openBayarModal({{ $tagihan->id }})" title="Bayar" style="color:#059669;">
                             <i class="ti ti-cash"></i>
                         </button>
                         @endif
+                        
+                        @if($authUser->role !== 'dosen')
                         <button class="icon-btn delete" onclick="deleteTagihan({{ $tagihan->id }})" title="Hapus">
                             <i class="ti ti-trash"></i>
                         </button>
+                        @endif
                     @endif
                 </td>
             </tr>
@@ -259,7 +262,7 @@
 
                 <div class="form-group">
                     <label>Jumlah Tagihan (Rp)</label>
-                    <input type="number" id="tagihan_jumlah" class="filter-control" min="1" step="1000" required placeholder="cth: 100000">
+                    <input type="number" id="tagihan_jumlah" class="filter-control" min="1" step="1" required placeholder="cth: 100000">
                 </div>
 
                 <div class="form-group">
@@ -282,7 +285,7 @@
             <span>Pembayaran Tagihan</span>
             <button class="icon-btn" onclick="closeBayarModal()"><i class="ti ti-x"></i></button>
         </div>
-        <form id="bayarForm" onsubmit="submitBayar(event)">
+        <form id="bayarForm" onsubmit="submitBayar(event)" x-data="bayarForm()">
             <div class="custom-modal-body">
                 <input type="hidden" id="bayar_tagihan_id">
 
@@ -292,7 +295,20 @@
 
                 <div class="form-group">
                     <label>Jumlah Bayar (Rp)</label>
-                    <input type="number" id="bayar_jumlah" class="filter-control" min="1" step="1000" required placeholder="cth: 50000">
+                    <input type="number" id="bayar_jumlah" class="filter-control" min="1" step="1" required placeholder="cth: 50000" x-model="jumlah" @input="hitung()">
+                    
+                    {{-- Preview pembagian --}}
+                    <div x-show="jumlah > 0" class="mt-3 p-3 rounded-lg text-sm" style="background:#eff6ff; margin-top:10px; border-radius:8px; padding:12px; display:none;" :style="jumlah > 0 ? 'display:block' : 'display:none'">
+                        <p style="font-weight:600; color:#1d4ed8; margin-bottom:6px;">Pembagian Otomatis:</p>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="color:#4b5563;">Tabungan (33,33%)</span>
+                            <span style="font-family:monospace; font-weight:600; color:#059669;">Rp <span x-text="formatRp(tabungan)"></span></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="color:#4b5563;">Uang Sosial (66,67%)</span>
+                            <span style="font-family:monospace; font-weight:600; color:#2563eb;">Rp <span x-text="formatRp(sosial)"></span></span>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Tanggal Bayar</label>
@@ -301,6 +317,21 @@
                 <div class="form-group">
                     <label>Keterangan <span style="color:#94a3b8;">(opsional)</span></label>
                     <input type="text" id="bayar_keterangan" class="filter-control" placeholder="cth: Pembayaran partial">
+                </div>
+                
+                <div class="form-group" style="margin-top:16px;">
+                    <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:6px">
+                        Bukti Pembayaran <span style="color:#6b7280; font-weight:400">(opsional)</span>
+                    </label>
+                    <div id="dropzone" style="border:2px dashed #d1d5db; border-radius:8px; padding:20px; text-align:center; cursor:pointer; background:#f9fafb" onclick="document.getElementById('bayar_bukti_foto').click()">
+                        <i class="ti ti-photo-up" style="font-size:28px;color:#9ca3af"></i>
+                        <p style="font-size:12px; color:#6b7280; margin-top:6px">
+                            Klik atau drag foto ke sini<br>
+                            <span style="font-size:11px">JPG, PNG, WEBP — Maks 2MB</span>
+                        </p>
+                    </div>
+                    <input type="file" id="bayar_bukti_foto" accept="image/png, image/jpeg, image/jpg, image/webp" style="display:none" onchange="previewFoto(this)">
+                    <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
                 </div>
             </div>
             <div class="custom-modal-footer">
@@ -362,6 +393,40 @@
 
     function closeDetail() {
         document.getElementById('detailModal').classList.remove('active');
+    }
+
+    /* ── Foto Preview ──────────────────────────────── */
+    function previewFoto(input) {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = '';
+        
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.size > 2 * 1024 * 1024) {
+                showToast(file.name + ' melebihi 2MB!', 'error');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'position:relative;width:80px;height:80px';
+                div.innerHTML = `
+                    <img src="${e.target.result}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
+                    <span onclick="hapusFoto()" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
+                    <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">${file.name}</p>`;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function hapusFoto() {
+        const input = document.getElementById('bayar_bukti_foto');
+        if (input) input.value = '';
+        const container = document.getElementById('previewContainer');
+        if (container) container.innerHTML = '';
     }
 
     function filterDosen() {
@@ -467,11 +532,16 @@
                 Sudah Dibayar: <strong>Rp ${parseInt(data.dibayar_amount).toLocaleString('id-ID')}</strong><br>
                 Sisa: <strong style="color:#dc2626;">Rp ${parseInt(sisa).toLocaleString('id-ID')}</strong>
             `;
+            document.getElementById('bayarForm').reset();
             document.getElementById('bayar_jumlah').value = Math.ceil(sisa);
             document.getElementById('bayar_jumlah').max = Math.ceil(sisa);
-            document.getElementById('bayarForm').reset();
             document.getElementById('bayar_tanggal').value = new Date().toISOString().split('T')[0];
             document.getElementById('bayarModal').classList.add('active');
+
+            // Trigger Alpine x-model
+            setTimeout(() => {
+                document.getElementById('bayar_jumlah').dispatchEvent(new Event('input'));
+            }, 100);
         } catch {
             showToast('Gagal memuat data.', 'error');
         }
@@ -485,6 +555,11 @@
         formData.append('jumlah_bayar', document.getElementById('bayar_jumlah').value);
         formData.append('tanggal_bayar', document.getElementById('bayar_tanggal').value);
         formData.append('keterangan', document.getElementById('bayar_keterangan').value);
+
+        const fotoInput = document.getElementById('bayar_bukti_foto');
+        if (fotoInput && fotoInput.files[0]) {
+            formData.append('bukti_foto', fotoInput.files[0]);
+        }
 
         try {
             const res = await fetch(`/kas/tagihan/${id}/bayar`, {
@@ -560,6 +635,21 @@
             }
         } catch {
             showToast('Koneksi gagal.', 'error');
+        }
+    }
+
+    function bayarForm() {
+        return {
+            jumlah: 0,
+            tabungan: 0,
+            sosial: 0,
+            hitung() {
+                this.tabungan = Math.round(this.jumlah * 0.3333);
+                this.sosial   = this.jumlah - this.tabungan;
+            },
+            formatRp(val) {
+                return Number(val).toLocaleString('id-ID');
+            }
         }
     }
 </script>

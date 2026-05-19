@@ -9,12 +9,18 @@ use App\Models\Fakultas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class KasController extends Controller
 {
+    use AuthorizesRequests;
+
     // ── INDEX KAS (Masuk / Keluar) ─────────────────────────
 
     public function index(Request $request, string $jenis = 'masuk')
     {
+        $this->authorize('viewAny', KasTransaction::class);
+
         $user  = auth()->user();
         $query = KasTransaction::with(['fakultas', 'user'])
             ->where('jenis', $jenis);
@@ -51,36 +57,86 @@ class KasController extends Controller
             ? Fakultas::all()
             : Fakultas::where('id', $user->fakultas_id)->get();
 
-        $title = $jenis === 'masuk' ? 'Kas Masuk' : 'Kas Keluar';
+        $dosensList = collect();
+        if ($jenis === 'masuk') {
+            if ($user->role === 'super_admin') {
+                $dosensList = \App\Models\Dosen::with('prodi')->orderBy('nama_lengkap')->get();
+            } else {
+                $dosensList = \App\Models\Dosen::with('prodi')
+                    ->whereHas('prodi', fn($q) => $q->where('fakultas_id', $user->fakultas_id))
+                    ->orderBy('nama_lengkap')->get();
+            }
+        }
 
-        return view('kas.index', compact('kasList', 'fakultasList', 'jenis', 'title'));
+        $title = $jenis === 'masuk' ? 'Masuk' : 'Keluar';
+
+        return view('kas.index', compact('kasList', 'fakultasList', 'dosensList', 'jenis', 'title'));
     }
 
     // ── STORE KAS ─────────────────────────────────────────
 
-    public function store(Request $request, string $jenis)
+    public function store(Request $request)
     {
+        $this->authorize('create', KasTransaction::class);
+
         $user = auth()->user();
+        $jenis = $request->jenis;
 
         $validated = $request->validate([
             'jumlah'      => 'required|numeric|min:1',
             'tanggal'      => 'required|date',
+            'kategori'     => 'nullable|string',
             'keterangan'   => 'required|string|max:255',
             'fakultas_id'  => 'nullable|exists:fakultas,id',
+            'dosen_id'     => 'nullable|exists:dosens,id',
+            'bukti_foto'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $fakultasId = ($user->role === 'super_admin' && $request->filled('fakultas_id'))
             ? $request->fakultas_id
             : $user->fakultas_id;
 
+        $tabungan = 0;
+        $sosial = 0;
+        if ($jenis === 'masuk' && $request->filled('dosen_id')) {
+            $tabungan = round($validated['jumlah'] * 0.3333);
+            $sosial = $validated['jumlah'] - $tabungan;
+        }
+
+        $buktiFotoPath = null;
+        if ($request->hasFile('bukti_foto')) {
+            $buktiFotoPath = $request->file('bukti_foto')->store('kas_bukti', 'public');
+        }
+
         $kas = KasTransaction::create([
             'jenis'        => $jenis,
+            'kategori'     => $jenis === 'keluar' ? ($validated['kategori'] ?? null) : null,
             'jumlah'       => $validated['jumlah'],
+            'tabungan'     => $tabungan,
+            'uang_sosial'  => $sosial,
             'tanggal'       => $validated['tanggal'],
             'keterangan'    => $validated['keterangan'],
+            'bukti_foto'    => $buktiFotoPath,
             'fakultas_id'   => $fakultasId,
+            'dosen_id'      => $validated['dosen_id'] ?? null,
             'user_id'       => $user->id,
         ]);
+
+        // ── Notifikasi ───────────────────────────────────────
+        $jumlahFmt = number_format($validated['jumlah'], 0, ',', '.');
+        if ($jenis === 'masuk') {
+            \App\Helpers\NotifikasiHelper::notifKasMasuk(
+                $validated['keterangan'],
+                $jumlahFmt,
+                route('kas.masuk')
+            );
+        } else {
+            \App\Helpers\NotifikasiHelper::notifKasKeluar(
+                $validated['keterangan'],
+                $jumlahFmt,
+                route('kas.keluar')
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -94,20 +150,27 @@ class KasController extends Controller
     public function show(string $id)
     {
         $kas = KasTransaction::with(['fakultas', 'user'])->findOrFail($id);
+        $this->authorize('view', $kas);
         return response()->json($kas);
     }
 
     // ── UPDATE KAS ─────────────────────────────────────────
 
-    public function update(Request $request, string $id, string $jenis)
+    public function update(Request $request, string $id)
     {
+        $this->authorize('update', KasTransaction::findOrFail($id));
+
         $user = auth()->user();
+        $jenis = $request->jenis;
 
         $validated = $request->validate([
             'jumlah'      => 'required|numeric|min:1',
             'tanggal'      => 'required|date',
+            'kategori'     => 'nullable|string',
             'keterangan'   => 'required|string|max:255',
             'fakultas_id'  => 'nullable|exists:fakultas,id',
+            'dosen_id'     => 'nullable|exists:dosens,id',
+            'bukti_foto'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $kas = KasTransaction::findOrFail($id);
@@ -115,11 +178,31 @@ class KasController extends Controller
             ? $request->fakultas_id
             : $kas->fakultas_id;
 
+        $tabungan = 0;
+        $sosial = 0;
+        if ($jenis === 'masuk' && $request->filled('dosen_id')) {
+            $tabungan = round($validated['jumlah'] * 0.3333);
+            $sosial = $validated['jumlah'] - $tabungan;
+        }
+
+        $buktiFotoPath = $kas->bukti_foto;
+        if ($request->hasFile('bukti_foto')) {
+            if ($kas->bukti_foto) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($kas->bukti_foto);
+            }
+            $buktiFotoPath = $request->file('bukti_foto')->store('kas_bukti', 'public');
+        }
+
         $kas->update([
+            'kategori'     => $jenis === 'keluar' ? ($validated['kategori'] ?? null) : null,
             'jumlah'       => $validated['jumlah'],
+            'tabungan'     => $tabungan,
+            'uang_sosial'  => $sosial,
             'tanggal'       => $validated['tanggal'],
             'keterangan'    => $validated['keterangan'],
+            'bukti_foto'    => $buktiFotoPath,
             'fakultas_id'   => $fakultasId,
+            'dosen_id'      => $validated['dosen_id'] ?? null,
         ]);
 
         return response()->json([
@@ -132,7 +215,9 @@ class KasController extends Controller
 
     public function destroy(string $id)
     {
-        KasTransaction::findOrFail($id)->delete();
+        $kas = KasTransaction::findOrFail($id);
+        $this->authorize('delete', $kas);
+        $kas->delete();
 
         return response()->json([
             'success' => true,
@@ -146,12 +231,19 @@ class KasController extends Controller
 
     public function tagihan(Request $request)
     {
+        $this->authorize('viewAny', KasTagihan::class);
+
         $user  = auth()->user();
         $query = KasTagihan::with(['dosen', 'dosen.prodi', 'fakultas']);
 
         // Role-based filter
         if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
             $query->where('fakultas_id', $user->fakultas_id);
+        } elseif ($user->role === 'dosen') {
+            $dosen = \App\Models\Dosen::where('user_id', $user->id)->first();
+            if ($dosen) {
+                $query->where('dosen_id', $dosen->id);
+            }
         }
 
         // Search
@@ -194,6 +286,8 @@ class KasController extends Controller
 
     public function storeTagihan(Request $request)
     {
+        $this->authorize('create', KasTagihan::class);
+
         $user = auth()->user();
 
         $validated = $request->validate([
@@ -230,6 +324,23 @@ class KasController extends Controller
             'user_id'            => $user->id,
         ]);
 
+        if ($dosen && $dosen->user_id) {
+            $namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            $bln = $namaBulan[$tagihan->bulan - 1];
+            $jumlahFmt = number_format($tagihan->jumlah, 0, ',', '.');
+
+            // Notif ke dosen ybs, admin kas, super_admin, kepala_unit
+            \App\Helpers\NotifikasiHelper::notifTagihanDibuat(
+                $dosen->user_id,
+                $dosen->nama_lengkap,
+                $bln,
+                $tagihan->tahun,
+                $jumlahFmt,
+                route('dashboard'),  // url untuk dosen (arahkan ke dashboard)
+                route('kas.tagihan') // url untuk admin
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Tagihan berhasil dibuat.',
@@ -242,6 +353,7 @@ class KasController extends Controller
     public function showTagihan(string $id)
     {
         $tagihan = KasTagihan::with(['dosen', 'dosen.prodi', 'fakultas', 'user'])->findOrFail($id);
+        $this->authorize('view', $tagihan);
         return response()->json($tagihan);
     }
 
@@ -251,11 +363,13 @@ class KasController extends Controller
     {
         $user = auth()->user();
         $tagihan = KasTagihan::with('dosen')->findOrFail($id);
+        $this->authorize('pay', $tagihan);
 
         $validated = $request->validate([
             'jumlah_bayar' => 'required|numeric|min:1',
             'tanggal_bayar' => 'required|date',
             'keterangan'    => 'nullable|string|max:255',
+            'bukti_foto'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $jumlahBayar = (float) $validated['jumlah_bayar'];
@@ -268,7 +382,14 @@ class KasController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($tagihan, $jumlahBayar, $validated, $user) {
+        $buktiPath = null;
+        if ($request->hasFile('bukti_foto')) {
+            $file = $request->file('bukti_foto');
+            $filename = time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+            $buktiPath = $file->storeAs('kas_bukti', $filename, 'public');
+        }
+
+        DB::transaction(function () use ($tagihan, $jumlahBayar, $validated, $user, $buktiPath) {
             // Update tagihan
             $tagihan->dibayar_amount = (float) $tagihan->dibayar_amount + $jumlahBayar;
             $tagihan->dibayar_tanggal = $validated['tanggal_bayar'];
@@ -284,16 +405,40 @@ class KasController extends Controller
                 ?? "Pembayaran tagihan kas {$tagihan->bulan}/{$tagihan->tahun}";
             $keterangan .= " — {$tagihan->dosen->nama_lengkap}";
 
+            $tabungan = round($jumlahBayar * 0.3333);
+            $sosial = $jumlahBayar - $tabungan;
+
             KasTransaction::create([
-                'jenis'       => 'masuk',
-                'jumlah'      => $jumlahBayar,
+                'jenis'        => 'masuk',
+                'jumlah'       => $jumlahBayar,
+                'tabungan'     => $tabungan,
+                'uang_sosial'  => $sosial,
                 'tanggal'      => $validated['tanggal_bayar'],
                 'keterangan'   => $keterangan,
                 'fakultas_id'  => $tagihan->fakultas_id,
+                'dosen_id'     => $tagihan->dosen_id,
                 'user_id'      => $user->id,
                 'referensi_id' => $tagihan->id,
                 'referensi_type' => KasTagihan::class,
+                'bukti_foto'   => $buktiPath,
             ]);
+
+            if ($tagihan->dosen && $tagihan->dosen->user_id) {
+                $namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                $bln = $namaBulan[$tagihan->bulan - 1];
+                $jumlahFmt = number_format($jumlahBayar, 0, ',', '.');
+
+                // Notif ke dosen ybs + admin kas, super_admin, kepala_unit
+                \App\Helpers\NotifikasiHelper::notifPembayaranTagihan(
+                    $tagihan->dosen->user_id,
+                    $tagihan->dosen->nama_lengkap,
+                    $bln,
+                    $tagihan->tahun,
+                    $jumlahFmt,
+                    route('dashboard'),      // url dosen → ke dashboard
+                    route('kas.tagihan')     // url admin → ke tagihan
+                );
+            }
         });
 
         return response()->json([
@@ -306,7 +451,9 @@ class KasController extends Controller
 
     public function destroyTagihan(string $id)
     {
-        KasTagihan::findOrFail($id)->delete();
+        $tagihan = KasTagihan::findOrFail($id);
+        $this->authorize('delete', $tagihan);
+        $tagihan->delete();
 
         return response()->json([
             'success' => true,
@@ -379,7 +526,7 @@ class KasController extends Controller
 
         $fakultasList = ($user->role === 'super_admin' || $user->role === 'kepala_unit')
             ? Fakultas::all()
-            : Faisal::where('id', $user->fakultas_id)->get();
+            : Fakultas::where('id', $user->fakultas_id)->get();
 
         return view('kas.laporan.index', compact(
             'totalMasuk', 'totalKeluar', 'saldo',

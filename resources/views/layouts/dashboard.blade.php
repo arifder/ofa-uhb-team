@@ -473,13 +473,13 @@
 
       @php $sidebarUser = auth()->user(); @endphp
 
-      {{-- MENU KAS: sembunyikan untuk admin_notulensi --}}
+      {{-- MENU KAS: sembunyikan untuk admin_notulensi dan dosen --}}
       @if(!in_array($sidebarUser->role, ['admin_notulensi_fst', 'admin_notulensi_fis', 'dosen']))
       <div class="nav-section">Manajemen Kas</div>
-      <a href="#" class="nav-item"><i class="ti ti-cash" aria-hidden="true"></i>Data Kas Masuk</a>
-      <a href="#" class="nav-item"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
-      <a href="#" class="nav-item"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
-      <a href="#" class="nav-item"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
+      <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}"><i class="ti ti-cash" aria-hidden="true"></i>Data Kas Masuk</a>
+      <a href="{{ route('kas.keluar') }}" class="nav-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
+      <a href="{{ route('kas.tagihan') }}" class="nav-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
+      <a href="{{ route('kas.laporan') }}" class="nav-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
       @endif
 
       {{-- MENU NOTULENSI: sembunyikan untuk admin_kas --}}

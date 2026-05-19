@@ -11,12 +11,18 @@ use App\Models\DokumentasiNotulensi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Helpers\NotifikasiHelper;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class NotulensiController extends Controller
 {
+    use AuthorizesRequests;
+
     // ── INDEX ───────────────────────────────────────────
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Notulensi::class);
+
         $user  = auth()->user();
         $query = Notulensi::with(['fakultas', 'user', 'pesertaRapat', 'dosens']);
 
@@ -65,6 +71,8 @@ class NotulensiController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Notulensi::class);
+
         $user = auth()->user();
 
         $validated = $request->validate([
@@ -120,15 +128,13 @@ class NotulensiController extends Controller
         // ── Notifikasi ───────────────────────────────────────
         $notifUrl = route('notulensi.index');
 
-        NotifikasiHelper::notifNotulensi(
-            'Notulensi Baru',
-            'Notulensi "' . $notulensi->judul . '" telah ditambahkan.',
-            $notifUrl
-        );
+        // Notif ke admin notulensi, super_admin, kepala_unit
+        NotifikasiHelper::notifNotulensiDibuat($notulensi->judul, $notifUrl);
 
+        // Notif ke dosen peserta rapat
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
-            'Anda Terdaftar sebagai Peserta Rapat',
+            '📌 Anda Terdaftar sebagai Peserta Rapat',
             'Anda terdaftar dalam rapat "' . $notulensi->judul . '" pada ' . $notulensi->tanggal->format('d/m/Y') . '.',
             $notifUrl
         );
@@ -153,6 +159,8 @@ class NotulensiController extends Controller
             'dokumentasiNotulensi',
         ])->findOrFail($id);
 
+        $this->authorize('view', $notulensi);
+
         return response()->json($notulensi);
     }
 
@@ -160,6 +168,8 @@ class NotulensiController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('update', Notulensi::findOrFail($id));
+
         $user = auth()->user();
 
         $request->validate([
@@ -210,15 +220,13 @@ class NotulensiController extends Controller
         // ── Notifikasi ───────────────────────────────────────
         $notifUrl = route('notulensi.index');
 
-        NotifikasiHelper::notifNotulensi(
-            'Notulensi Diperbarui',
-            'Notulensi "' . $notulensi->judul . '" telah diperbarui.',
-            $notifUrl
-        );
+        // Notif ke admin notulensi, super_admin, kepala_unit
+        NotifikasiHelper::notifNotulensiDiedit($notulensi->judul, $notifUrl);
 
+        // Notif ke dosen peserta (yang terdaftar setelah update)
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
-            'Data Rapat Diperbarui',
+            '✏️ Data Rapat Diperbarui',
             'Data rapat "' . $notulensi->judul . '" yang Anda ikuti telah diperbarui.',
             $notifUrl
         );
@@ -233,7 +241,26 @@ class NotulensiController extends Controller
 
     public function destroy($id)
     {
-        Notulensi::findOrFail($id)->delete();
+        $notulensi = Notulensi::with('dosens')->findOrFail($id);
+        $this->authorize('delete', $notulensi);
+
+        $judulNotulensi = $notulensi->judul;
+        $dosenIds = $notulensi->dosens->pluck('id')->toArray();
+
+        $notulensi->delete();
+
+        // Notif ke admin notulensi, super_admin, kepala_unit
+        NotifikasiHelper::notifNotulensiDihapus($judulNotulensi, route('notulensi.index'));
+
+        // Notif ke dosen peserta yang terdampak
+        if (!empty($dosenIds)) {
+            NotifikasiHelper::notifDosenPeserta(
+                $dosenIds,
+                '🗑️ Rapat Dihapus',
+                "Rapat \"$judulNotulensi\" yang Anda ikuti telah dihapus dari sistem.",
+                null
+            );
+        }
 
         return response()->json([
             'success' => true,

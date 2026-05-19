@@ -10,10 +10,15 @@ class KasTransaction extends Model
 {
     protected $fillable = [
         'jenis',
+        'kategori',
         'jumlah',
+        'tabungan',
+        'uang_sosial',
         'tanggal',
         'keterangan',
+        'bukti_foto',
         'fakultas_id',
+        'dosen_id',
         'user_id',
         'referensi_id',
         'referensi_type',
@@ -21,12 +26,19 @@ class KasTransaction extends Model
 
     protected $casts = [
         'jumlah' => 'decimal:2',
+        'tabungan' => 'decimal:2',
+        'uang_sosial' => 'decimal:2',
         'tanggal' => 'date',
     ];
 
     public function fakultas(): BelongsTo
     {
         return $this->belongsTo(Fakultas::class);
+    }
+
+    public function dosen(): BelongsTo
+    {
+        return $this->belongsTo(Dosen::class);
     }
 
     public function user(): BelongsTo
