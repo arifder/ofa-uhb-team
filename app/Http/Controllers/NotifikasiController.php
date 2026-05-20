@@ -4,19 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Notifikasi;
+use Carbon\Carbon;
 
 class NotifikasiController extends Controller
 {
     /**
      * Halaman daftar notifikasi user yang sedang login.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $notifikasi = Notifikasi::where('user_id', auth()->id())
-            ->latest()
-            ->paginate(20);
+        $filter = $request->get('filter', 'semua');
 
-        return view('notifikasi.index', compact('notifikasi'));
+        $query = Notifikasi::where('user_id', auth()->id());
+
+        match ($filter) {
+            'hari_ini'  => $query->whereDate('created_at', Carbon::today()),
+            'kemarin'   => $query->whereDate('created_at', Carbon::yesterday()),
+            '7_hari'    => $query->where('created_at', '>=', Carbon::now()->subDays(7)->startOfDay()),
+            '30_hari'   => $query->where('created_at', '>=', Carbon::now()->subDays(30)->startOfDay()),
+            default     => null,
+        };
+
+        $notifikasi = $query->latest()->paginate(20)->appends(['filter' => $filter]);
+
+        return view('notifikasi.index', compact('notifikasi', 'filter'));
     }
 
     /**

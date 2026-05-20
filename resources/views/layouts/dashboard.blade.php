@@ -461,15 +461,7 @@
       <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" style="text-decoration:none;">
           <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard
       </a>
-      <a href="{{ route('notifikasi.index') }}" class="nav-item {{ request()->routeIs('notifikasi.*') ? 'active' : '' }}">
-          <i class="ti ti-bell" aria-hidden="true"></i>Notifikasi
-          @php $unreadCount = \App\Models\Notifikasi::where('user_id', auth()->id())->where('dibaca', false)->count(); @endphp
-          <span id="sidebar-notif-badge"
-                class="badge"
-                style="background:#fee2e2;color:#dc2626;{{ $unreadCount > 0 ? '' : 'display:none;' }}">
-            {{ $unreadCount }}
-          </span>
-      </a>
+
 
       @php $sidebarUser = auth()->user(); @endphp
 
@@ -535,7 +527,7 @@
           <div style="font-size:11px;color:#6b7280">{{ now()->translatedFormat('l, d F Y') }}</div>
         </div>
         <div class="topbar-actions">
-          <span id="rbadge" class="role-badge" style="background:{{ auth()->user()->role_badge_color['bg'] }};color:{{ auth()->user()->role_badge_color['text'] }}">{{ auth()->user()->role_label }}</span>
+
 
           {{-- Notifikasi Dropdown --}}
           <div style="position:relative" x-data="{ open: false }">

@@ -96,19 +96,13 @@
 {{-- ============================================================ --}}
 @if($user->role === 'super_admin')
 
-  <div class="role-tabs">
-    <div class="rtab active">Super Admin</div>
-    <div class="rtab">Admin Kas</div>
-    <div class="rtab">Admin Notulensi</div>
-    <div class="rtab">Kepala Unit</div>
-    <div class="rtab">Dosen</div>
-  </div>
+
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-label"><i class="ti ti-users" style="font-size:13px"></i> Total Dosen</div>
-      <div class="stat-val">{{ $totalDosen }}</div>
-      <div class="stat-sub" style="color:#9ca3af">Terdaftar di sistem</div>
+      <div class="stat-label"><i class="ti ti-building" style="font-size:13px"></i> Total Prodi</div>
+      <div class="stat-val">{{ $totalProdi }}</div>
+      <div class="stat-sub" style="color:#9ca3af">Program studi aktif</div>
     </div>
     <div class="stat-card">
       <div class="stat-label"><i class="ti ti-users-group" style="font-size:13px"></i> Total User</div>
@@ -146,35 +140,14 @@
     </div>
   </div>
 
-  <p class="section-title"><i class="ti ti-activity"></i> User Terbaru</p>
-  <div class="activity-list">
-    <div class="activity-header">Log Registrasi <span class="view-all">Lihat semua</span></div>
-    @forelse($recentUsers as $ru)
-    <div class="activity-item">
-      <div class="act-dot act-blue"></div>
-      <div class="act-text">
-        <b>{{ $ru->name }}</b> —
-        <span style="color:#64748b">{{ $ru->role_label }}</span>
-        {{ $ru->fakultas ? '· '.$ru->fakultas->nama_fakultas : '' }}
-      </div>
-      <div class="act-time">{{ $ru->created_at->diffForHumans() }}</div>
-    </div>
-    @empty
-    <div class="activity-item">
-      <div class="act-text" style="color:#9ca3af">Belum ada user terdaftar.</div>
-    </div>
-    @endforelse
-  </div>
+
 
 {{-- ============================================================ --}}
 {{-- ADMIN KAS (FST / FIS)                                        --}}
 {{-- ============================================================ --}}
 @elseif(in_array($user->role, ['admin_kas_fst', 'admin_kas_fis']))
 
-  <div class="banner banner-blue">
-    <i class="ti ti-cash"></i>
-    <span><b>{{ $user->role_label }}</b> — {{ $namaFakultas }}</span>
-  </div>
+
 
   <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
     <div style="background-color: #dcfce7; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px;">
@@ -219,10 +192,7 @@
 {{-- ============================================================ --}}
 @elseif(in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis']))
 
-  <div class="banner banner-teal">
-    <i class="ti ti-clipboard-list"></i>
-    <span><b>{{ $user->role_label }}</b> — {{ $namaFakultas }}</span>
-  </div>
+
 
   <div class="stats-grid">
     <div class="stat-card">
@@ -259,10 +229,7 @@
 {{-- ============================================================ --}}
 @elseif($user->role === 'kepala_unit')
 
-  <div class="banner banner-green">
-    <i class="ti ti-eye"></i>
-    <span><b>Mode Hanya Lihat</b> — Anda tidak dapat menambah, mengubah, atau menghapus data.</span>
-  </div>
+
 
   <div class="stats-grid">
     <div class="stat-card">
@@ -308,18 +275,7 @@
 {{-- ============================================================ --}}
 @elseif($user->role === 'dosen')
 
-  <div class="banner banner-blue">
-    <i class="ti ti-user"></i>
-    <span>
-      <b>{{ $dosenProfile->nama_lengkap ?? $user->name }}</b>
-      @if($dosenProfile && $dosenProfile->prodi)
-        — {{ $dosenProfile->prodi->nama_prodi }}
-        @if($dosenProfile->prodi->fakultas)
-          , {{ $dosenProfile->prodi->fakultas->nama_fakultas }}
-        @endif
-      @endif
-    </span>
-  </div>
+
 
   <div class="stats-grid">
     <div class="stat-card">
