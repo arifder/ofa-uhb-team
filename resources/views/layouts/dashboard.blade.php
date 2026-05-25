@@ -147,6 +147,86 @@
       font-weight: 500
     }
 
+    .nav-dropdown {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin: 0 8px;
+    }
+
+    .nav-dropdown-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #4b5563;
+      transition: background 0.1s;
+      width: 100%;
+      border: none;
+      background: none;
+      text-align: left;
+    }
+
+    .nav-dropdown-btn:hover {
+      background: #f1f5f9
+    }
+
+    .nav-dropdown-btn.active {
+      background: #EFF6FF;
+      color: #1D4ED8
+    }
+
+    .nav-dropdown-btn i {
+      font-size: 16px;
+      flex-shrink: 0
+    }
+
+    .nav-dropdown-btn .chevron {
+      margin-left: auto;
+      font-size: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-dropdown-btn[aria-expanded="true"] .chevron {
+      transform: rotate(180deg);
+    }
+
+    .nav-dropdown-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-left: 28px;
+      overflow: hidden;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .nav-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #6b7280;
+      transition: all 0.1s;
+      text-decoration: none;
+    }
+
+    .nav-dropdown-item:hover {
+      background: #f1f5f9;
+      color: #111827;
+    }
+
+    .nav-dropdown-item.active {
+      color: #1D4ED8;
+      font-weight: 500;
+      background: #EFF6FF;
+    }
+
     .sidebar-footer {
       margin-top: auto;
       padding: 12px;
@@ -461,40 +541,50 @@
       <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" style="text-decoration:none;">
           <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard
       </a>
-      <a href="{{ route('notifikasi.index') }}" class="nav-item {{ request()->routeIs('notifikasi.*') ? 'active' : '' }}">
-          <i class="ti ti-bell" aria-hidden="true"></i>Notifikasi
-          @php $unreadCount = \App\Models\Notifikasi::where('user_id', auth()->id())->where('dibaca', false)->count(); @endphp
-          <span id="sidebar-notif-badge"
-                class="badge"
-                style="background:#fee2e2;color:#dc2626;{{ $unreadCount > 0 ? '' : 'display:none;' }}">
-            {{ $unreadCount }}
-          </span>
-      </a>
+
 
       @php $sidebarUser = auth()->user(); @endphp
 
       {{-- MENU KAS: sembunyikan untuk admin_notulensi dan dosen --}}
       @if(!in_array($sidebarUser->role, ['admin_notulensi_fst', 'admin_notulensi_fis', 'dosen']))
       <div class="nav-section">Manajemen Kas</div>
-      <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}"><i class="ti ti-cash" aria-hidden="true"></i>Data Kas Masuk</a>
-      <a href="{{ route('kas.keluar') }}" class="nav-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
-      <a href="{{ route('kas.tagihan') }}" class="nav-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
-      <a href="{{ route('kas.laporan') }}" class="nav-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
+      @php
+          $kasActive = request()->routeIs('kas.*');
+      @endphp
+      <div class="nav-dropdown" x-data="{ open: {{ $kasActive ? 'true' : 'false' }} }">
+          <button type="button" class="nav-dropdown-btn {{ $kasActive ? 'active' : '' }}" @click="open = !open" :aria-expanded="open">
+              <i class="ti ti-cash" aria-hidden="true"></i>Manajemen Kas
+              <i class="ti ti-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+          <div class="nav-dropdown-menu" x-show="open" x-collapse x-cloak>
+              <a href="{{ route('kas.masuk') }}" class="nav-dropdown-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}">Data Kas Masuk</a>
+              <a href="{{ route('kas.keluar') }}" class="nav-dropdown-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}">Data Kas Keluar</a>
+              <a href="{{ route('kas.tagihan') }}" class="nav-dropdown-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}">Tagihan Dosen</a>
+              <a href="{{ route('kas.laporan') }}" class="nav-dropdown-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}">Laporan Kas</a>
+          </div>
+      </div>
       @endif
 
       {{-- MENU NOTULENSI: sembunyikan untuk admin_kas --}}
       @if(!in_array($sidebarUser->role, ['admin_kas_fst', 'admin_kas_fis', 'dosen']))
-      <div class="nav-section">Notulensi Rapat</div>
-      <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
-        <i class="ti ti-notes" aria-hidden="true"></i>Data Notulensi
-        <span class="badge">{{ \App\Models\Notulensi::count() }}</span>
-      </a>
-      <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
-        <i class="ti ti-users" aria-hidden="true"></i>Peserta Rapat
-      </a>
-      <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
-        <i class="ti ti-file-export" aria-hidden="true"></i>Export BAP
-      </a>
+      <div class="nav-section">Manajemen Notulensi</div>
+      @php
+          $notulensiActive = request()->routeIs('notulensi.*');
+      @endphp
+      <div class="nav-dropdown" x-data="{ open: {{ $notulensiActive ? 'true' : 'false' }} }">
+          <button type="button" class="nav-dropdown-btn {{ $notulensiActive ? 'active' : '' }}" @click="open = !open" :aria-expanded="open">
+              <i class="ti ti-notes" aria-hidden="true"></i>Notulensi Rapat
+              <i class="ti ti-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+          <div class="nav-dropdown-menu" x-show="open" x-collapse x-cloak>
+              <a href="{{ route('notulensi.index') }}" class="nav-dropdown-item {{ request()->routeIs('notulensi.index') && !request()->has('action') ? 'active' : '' }}">
+                  Data Notulensi
+                  <span class="badge" style="margin-left: auto; background: #EFF6FF; color: #1D4ED8; font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 600;">{{ \App\Models\Notulensi::count() }}</span>
+              </a>
+              <a href="{{ route('notulensi.index', ['action' => 'export_bap']) }}" class="nav-dropdown-item {{ request()->get('action') == 'export_bap' ? 'active' : '' }}">Export BAP</a>
+              <a href="{{ route('notulensi.index', ['action' => 'export_pdf']) }}" class="nav-dropdown-item {{ request()->get('action') == 'export_pdf' ? 'active' : '' }}">Export Notulensi (PDF)</a>
+          </div>
+      </div>
       @endif
 
       {{-- MENU MASTER DATA: hanya super_admin --}}
@@ -535,7 +625,7 @@
           <div style="font-size:11px;color:#6b7280">{{ now()->translatedFormat('l, d F Y') }}</div>
         </div>
         <div class="topbar-actions">
-          <span id="rbadge" class="role-badge" style="background:{{ auth()->user()->role_badge_color['bg'] }};color:{{ auth()->user()->role_badge_color['text'] }}">{{ auth()->user()->role_label }}</span>
+
 
           {{-- Notifikasi Dropdown --}}
           <div style="position:relative" x-data="{ open: false }">

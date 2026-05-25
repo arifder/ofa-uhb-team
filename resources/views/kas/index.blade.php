@@ -59,6 +59,33 @@
     .custom-toast { min-width: 260px; background: #fff; border-left: 4px solid #10b981; box-shadow: 0 4px 12px rgba(0,0,0,.1); padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; animation: slideIn .3s ease forwards; }
     .custom-toast.error { border-left-color: #ef4444; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ── Searchable Select ──────────────────────── */
+    .search-select { position: relative; }
+    .search-select-input {
+        width: 100%; border: 1px solid #e2e8f0; padding: 8px 32px 8px 12px; border-radius: 8px;
+        font-size: 13px; outline: none; background: #fff; cursor: pointer;
+        text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+    }
+    .search-select-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+    .search-select-input::placeholder { color: #94a3b8; }
+    .search-select-chevron {
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;
+        color: #94a3b8; font-size: 14px;
+    }
+    .search-select-dropdown {
+        position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 220px; overflow-y: auto;
+    }
+    .search-select-option {
+        padding: 9px 14px; cursor: pointer; font-size: 13px; color: #1e293b;
+        display: flex; align-items: center; gap: 8px; transition: background .1s;
+    }
+    .search-select-option:hover, .search-select-option.highlighted { background: #f1f5f9; }
+    .search-select-option.selected { background: #EFF6FF; color: #1D4ED8; font-weight: 500; }
+    .search-select-option small { color: #94a3b8; font-weight: 400; }
+    .search-select-empty { padding: 16px; text-align: center; color: #94a3b8; font-size: 12px; }
 </style>
 @endpush
 
@@ -236,28 +263,57 @@
                 @if($authUser->role === 'super_admin')
                 <div class="form-group">
                     <label>Fakultas</label>
-                    <select id="kas_fakultas_id" class="filter-control">
-                        <option value="">Pilih Fakultas</option>
-                        @foreach($fakultasList as $fak)
-                            <option value="{{ $fak->id }}">{{ $fak->nama_fakultas }}</option>
-                        @endforeach
-                    </select>
+                    <div class="search-select" x-data="searchSelect({
+                        items: @js($fakultasList->map(fn($f) => ['id' => $f->id, 'label' => $f->nama_fakultas, 'sub' => ''])),
+                        inputId: 'kas_fakultas_id',
+                        placeholder: 'Cari fakultas...'
+                    })" @click.outside="close()">
+                        <input type="hidden" id="kas_fakultas_id" :value="selectedId">
+                        <input type="text" class="search-select-input" :placeholder="placeholder"
+                            x-model="query" @focus="open()" @input="open()"
+                            :value="selectedLabel || query">
+                        <i class="ti ti-chevron-down search-select-chevron"></i>
+                        <div class="search-select-dropdown" x-show="isOpen" x-transition x-cloak>
+                            <template x-for="item in filtered" :key="item.id">
+                                <div class="search-select-option"
+                                    :class="{ selected: selectedId == item.id }"
+                                    @click="select(item)">
+                                    <span x-text="item.label"></span>
+                                </div>
+                            </template>
+                            <div class="search-select-option" @click="select({id:'',label:''})" style="color:#94a3b8;">— Semua Fakultas —</div>
+                            <div class="search-select-empty" x-show="filtered.length === 0">Tidak ditemukan</div>
+                        </div>
+                    </div>
                 </div>
                 @endif
 
                 @if($jenis === 'masuk')
                 <div class="form-group">
                     <label>Nama Dosen (Opsional)</label>
-                    <select id="kas_dosen_id" class="filter-control">
-                        <option value="" selected>-- Pilih Dosen --</option>
-                        @forelse($dosensList as $dosen)
-                            <option value="{{ $dosen->id }}">
-                                {{ $dosen->nama_lengkap }} — {{ $dosen->prodi->nama_prodi ?? '-' }}
-                            </option>
-                        @empty
-                            <option value="" disabled>Tidak ada dosen di fakultas ini</option>
-                        @endforelse
-                    </select>
+                    <div class="search-select" x-data="searchSelect({
+                        items: @js($dosensList->map(fn($d) => ['id' => $d->id, 'label' => $d->nama_lengkap, 'sub' => $d->prodi->nama_prodi ?? '-'])),
+                        inputId: 'kas_dosen_id',
+                        placeholder: 'Cari nama dosen...'
+                    })" @click.outside="close()">
+                        <input type="hidden" id="kas_dosen_id" :value="selectedId">
+                        <input type="text" class="search-select-input" :placeholder="placeholder"
+                            x-model="query" @focus="open()" @input="open()"
+                            :value="selectedLabel || query">
+                        <i class="ti ti-chevron-down search-select-chevron"></i>
+                        <div class="search-select-dropdown" x-show="isOpen" x-transition x-cloak>
+                            <template x-for="item in filtered" :key="item.id">
+                                <div class="search-select-option"
+                                    :class="{ selected: selectedId == item.id }"
+                                    @click="select(item)">
+                                    <span x-text="item.label"></span>
+                                    <small x-text="item.sub"></small>
+                                </div>
+                            </template>
+                            <div class="search-select-option" @click="select({id:'',label:''})" style="color:#94a3b8;">— Tanpa Dosen —</div>
+                            <div class="search-select-empty" x-show="filtered.length === 0">Tidak ditemukan</div>
+                        </div>
+                    </div>
                 </div>
                 @elseif($jenis === 'keluar')
                 <div class="form-group">

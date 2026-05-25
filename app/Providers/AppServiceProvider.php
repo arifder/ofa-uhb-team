@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use App\Models\Fakultas;
 use Illuminate\Pagination\Paginator;
+use Carbon\Carbon;
 
 // Models
 use App\Models\Notulensi;
@@ -33,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ── Locale Indonesia ─────────────────────────────────
+        Carbon::setLocale('id');
+        app()->setLocale('id');
+
         // ── Policy registrations ─────────────────────────────
         Gate::policy(Notulensi::class,      NotulensiPolicy::class);
         Gate::policy(KasTransaction::class, KasTransactionPolicy::class);

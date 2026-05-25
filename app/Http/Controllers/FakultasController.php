@@ -9,8 +9,9 @@ class FakultasController extends Controller
 {
     public function index()
     {
-        $fakultas = Fakultas::with('prodis')->withCount('dosens')->get();
-        return view('master.fakultas.index', compact('fakultas'));
+        $fakultas = Fakultas::with('prodis')->get();
+        $totalProdi = \App\Models\Prodi::count();
+        return view('master.fakultas.index', compact('fakultas', 'totalProdi'));
     }
 
     public function store(Request $request)

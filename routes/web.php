@@ -29,6 +29,7 @@ Route::middleware([
         ->name('kas.')
         ->group(function () {
             Route::get('laporan', [KasController::class, 'laporan'])->name('laporan');
+            Route::get('laporan/export-pdf', [KasController::class, 'exportPdf'])->name('laporan.exportPdf');
             Route::get('masuk', [KasController::class, 'index'])->defaults('jenis', 'masuk')->name('masuk');
             Route::get('keluar', [KasController::class, 'index'])->defaults('jenis', 'keluar')->name('keluar');
 
@@ -52,6 +53,8 @@ Route::middleware([
                 ->name('notulensi.byDosen');
             Route::get('notulensi/{id}/export-bap', [NotulensiController::class, 'exportBap'])
                 ->name('notulensi.exportBap');
+            Route::get('notulensi/{id}/export-pdf', [NotulensiController::class, 'exportPdf'])
+                ->name('notulensi.exportPdf');
             Route::resource('notulensi', NotulensiController::class)
                 ->except(['create', 'edit']);
         });
@@ -61,6 +64,8 @@ Route::middleware([
         ->prefix('master')
         ->name('master.')
         ->group(function () {
+            Route::get('users/arsip', [UserController::class, 'arsipIndex'])->name('users.arsip');
+            Route::post('users/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
             Route::resource('users', UserController::class)
                 ->except(['show', 'create', 'edit']);
                 
