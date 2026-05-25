@@ -558,7 +558,7 @@
           </button>
           <div class="nav-dropdown-menu" x-show="open" x-collapse x-cloak>
               <a href="{{ route('kas.masuk') }}" class="nav-dropdown-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}">Data Kas Masuk</a>
-              <a href="{{ route('kas.keluar') }}" class="nav-dropdown-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}">Kas Keluar</a>
+              <a href="{{ route('kas.keluar') }}" class="nav-dropdown-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}">Data Kas Keluar</a>
               <a href="{{ route('kas.tagihan') }}" class="nav-dropdown-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}">Tagihan Dosen</a>
               <a href="{{ route('kas.laporan') }}" class="nav-dropdown-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}">Laporan Kas</a>
           </div>
@@ -590,24 +590,10 @@
       {{-- MENU MASTER DATA: hanya super_admin --}}
       @if($sidebarUser->role === 'super_admin')
       <div class="nav-section">Master Data</div>
-      
-      @php
-          $masterUserActive = request()->routeIs('master.users.*');
-      @endphp
-      <div class="nav-dropdown" x-data="{ open: {{ $masterUserActive ? 'true' : 'false' }} }">
-          <button type="button" class="nav-dropdown-btn {{ $masterUserActive ? 'active' : '' }}" @click="open = !open" :aria-expanded="open">
-              <i class="ti ti-user-cog" aria-hidden="true"></i>Manajemen User
-              <i class="ti ti-chevron-down chevron" aria-hidden="true"></i>
-          </button>
-          <div class="nav-dropdown-menu" x-show="open" x-collapse x-cloak>
-              <a href="{{ route('master.users.index') }}" class="nav-dropdown-item {{ request()->routeIs('master.users.index') ? 'active' : '' }}">
-                  Daftar User
-                  <span class="badge" style="margin-left: auto; background: #EFF6FF; color: #1D4ED8; font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 600;">{{ \App\Models\User::where('status', 'aktif')->count() }}</span>
-              </a>
-              <a href="{{ route('master.users.arsip') }}" class="nav-dropdown-item {{ request()->routeIs('master.users.arsip') ? 'active' : '' }}">Arsip User</a>
-          </div>
-      </div>
-      
+      <a href="{{ route('master.users.index') }}" class="nav-item {{ request()->routeIs('master.users.*') ? 'active' : '' }}">
+        <i class="ti ti-user-cog" aria-hidden="true"></i>Manajemen User
+        <span class="badge">{{ \App\Models\User::count() }}</span>
+      </a>
       <a href="{{ route('master.fakultas.index') }}" class="nav-item {{ request()->routeIs('master.fakultas.*') ? 'active' : '' }}">
         <i class="ti ti-school" aria-hidden="true"></i>Fakultas & Prodi
       </a>
