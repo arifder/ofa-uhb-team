@@ -162,6 +162,9 @@
                     <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
                         <i class="ti ti-printer"></i>
                     </button>
+                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                        <i class="ti ti-file-type-pdf"></i>
+                    </a>
                     <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
                         <i class="ti ti-pencil"></i>
                     </button>
@@ -177,6 +180,9 @@
                     <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
                         <i class="ti ti-printer"></i>
                     </button>
+                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                        <i class="ti ti-file-type-pdf"></i>
+                    </a>
                 </td>
                 @endif
             </tr>
@@ -459,9 +465,15 @@
         });
         const data = await res.json();
 
-        const pesertaChips = (data.dosens || []).map(d =>
-            `<span class="peserta-chip"><i class="ti ti-user" style="font-size:11px;"></i>${d.nama_lengkap}</span>`
-        ).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
+        const pesertaChips = (data.dosens || []).map(d => {
+            const prodi = d.prodi ? d.prodi.nama_prodi : '-';
+            const fakultas = (d.prodi && d.prodi.fakultas) ? d.prodi.fakultas.nama_fakultas : '-';
+            return `<span class="peserta-chip" title="${prodi} - ${fakultas}">
+                <i class="ti ti-user" style="font-size:11px;"></i> 
+                ${d.nama_lengkap} 
+                <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(${prodi})</span>
+            </span>`;
+        }).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
 
         document.getElementById('detailTitle').textContent = data.judul;
         document.getElementById('detailBody').innerHTML = `

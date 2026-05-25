@@ -35,9 +35,15 @@
         .fakultas-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
         .fakultas-meta { font-size: 13px; color: #64748b; }
         .section-title { font-size: 14px; font-weight: 600; padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; color: #334155; }
-        .master-badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; display: inline-block; }
-        .badge-aktif { background: #dcfce7; color: #166534; }
-        .badge-nonaktif { background: #fee2e2; color: #991b1b; }
+
+        /* Stat Cards */
+        .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .stat-icon.blue { background: #EFF6FF; color: #2563EB; }
+        .stat-icon.teal { background: #F0FDFA; color: #0D9488; }
+        .stat-label { font-size: 12px; color: #64748b; margin-bottom: 2px; }
+        .stat-value { font-size: 22px; font-weight: 700; color: #1e293b; }
     </style>
 @endpush
 
@@ -51,97 +57,75 @@
     
     <div id="toast-container"></div>
 
-            @foreach($fakultas as $fak)
-            <div class="master-card">
-                <!-- BAGIAN ATAS KARTU -->
-                <div class="card-header-main">
-                    <div>
-                        <div class="fakultas-title">{{ $fak->nama_fakultas }}</div>
-                        <div class="fakultas-meta">{{ count($fak->prodis) }} prodi &middot; {{ $fak->dosens_count }} dosen</div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="btn-outline" onclick='editFakultas(@json($fak))'><i class="ti ti-pencil"></i> Edit</button>
-                        <button class="btn-outline" style="color:#ef4444" onclick="deleteFakultas({{ $fak->id }})"><i class="ti ti-trash"></i> Hapus</button>
-                    </div>
-                </div>
-
-                <!-- BAGIAN TENGAH: TABEL PRODI -->
-                <div class="section-title">
-                    <span>Program Studi</span>
-                    <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openProdiModal({{ $fak->id }})">
-                        <i class="ti ti-plus"></i> Tambah Prodi
-                    </button>
-                </div>
-                @if(count($fak->prodis) > 0)
-                <table class="master-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px">No</th>
-                            <th>Nama Prodi</th>
-                            <th>Jumlah Dosen</th>
-                            <th style="width: 100px">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($fak->prodis as $idx => $prodi)
-                        <tr>
-                            <td>{{ $idx + 1 }}</td>
-                            <td>{{ $prodi->nama_prodi }}</td>
-                            <td>{{ count($prodi->dosens) }} Dosen</td>
-                            <td>
-                                <button class="icon-btn" onclick='editProdi(@json($prodi))'><i class="ti ti-pencil"></i></button>
-                                <button class="icon-btn delete" onclick="deleteProdi({{ $prodi->id }})"><i class="ti ti-trash"></i></button>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                @else
-                <div class="p-4 text-center text-sm text-gray-500">Belum ada prodi.</div>
-                @endif
-
-                <!-- BAGIAN BAWAH: TABEL DOSEN -->
-                <div class="section-title border-t mt-4">
-                    <span>Dosen di Fakultas ini</span>
-                </div>
-                @php
-                    // Ambil koleksi dosen untuk fakultas ini
-                    // Karena struktur sudah dimuat dengan dosens di model
-                    $dosensFakultas = $fak->dosens;
-                @endphp
-                @if(count($dosensFakultas) > 0)
-                <table class="master-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px">No</th>
-                            <th>Nama Dosen</th>
-                            <th>NIDN</th>
-                            <th>Prodi</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($dosensFakultas as $idx => $dsn)
-                        <tr>
-                            <td>{{ $idx + 1 }}</td>
-                            <td>{{ $dsn->nama_lengkap }}</td>
-                            <td>{{ $dsn->nidn }}</td>
-                            <td>{{ $dsn->prodi ? $dsn->prodi->nama_prodi : '-' }}</td>
-                            <td>
-                                @if($dsn->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
-                                @else <span class="master-badge badge-nonaktif">Nonaktif</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                @else
-                <div class="p-4 text-center text-sm text-gray-500">Belum ada dosen terdaftar di fakultas ini.</div>
-                @endif
+    {{-- Stat Cards --}}
+    <div class="stat-row">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="ti ti-building"></i></div>
+            <div>
+                <div class="stat-label">Total Fakultas</div>
+                <div class="stat-value">{{ $fakultas->count() }}</div>
             </div>
-            @endforeach
-<!-- Modals -->
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="ti ti-school"></i></div>
+            <div>
+                <div class="stat-label">Total Program Studi</div>
+                <div class="stat-value">{{ $totalProdi }}</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Fakultas Cards --}}
+    @foreach($fakultas as $fak)
+    <div class="master-card">
+        {{-- Header --}}
+        <div class="card-header-main">
+            <div>
+                <div class="fakultas-title">{{ $fak->nama_fakultas }}</div>
+                <div class="fakultas-meta">{{ count($fak->prodis) }} Program Studi</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-outline" onclick='editFakultas(@json($fak))'><i class="ti ti-pencil"></i> Edit</button>
+                <button class="btn-outline" style="color:#ef4444" onclick="deleteFakultas({{ $fak->id }})"><i class="ti ti-trash"></i> Hapus</button>
+            </div>
+        </div>
+
+        {{-- Prodi Table --}}
+        <div class="section-title">
+            <span>Program Studi</span>
+            <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openProdiModal({{ $fak->id }})">
+                <i class="ti ti-plus"></i> Tambah Prodi
+            </button>
+        </div>
+        @if(count($fak->prodis) > 0)
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px">No</th>
+                    <th>Nama Prodi</th>
+                    <th style="width: 100px">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($fak->prodis as $idx => $prodi)
+                <tr>
+                    <td>{{ $idx + 1 }}</td>
+                    <td>{{ $prodi->nama_prodi }}</td>
+                    <td>
+                        <button class="icon-btn" onclick='editProdi(@json($prodi))'><i class="ti ti-pencil"></i></button>
+                        <button class="icon-btn delete" onclick="deleteProdi({{ $prodi->id }})"><i class="ti ti-trash"></i></button>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @else
+        <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">Belum ada program studi.</div>
+        @endif
+    </div>
+    @endforeach
+
+{{-- Modal Fakultas --}}
 <div class="custom-modal" id="fakultasModal">
     <div class="custom-modal-content">
         <div class="custom-modal-header">
@@ -164,6 +148,7 @@
     </div>
 </div>
 
+{{-- Modal Prodi --}}
 <div class="custom-modal" id="prodiModal">
     <div class="custom-modal-content">
         <div class="custom-modal-header">

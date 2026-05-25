@@ -130,6 +130,23 @@
                 </table>
             </div>
         @endif
+        
+        <!-- DOKUMENTASI -->
+        @if($notulensi->dokumentasiNotulensi && $notulensi->dokumentasiNotulensi->count() > 0)
+            <div style="page-break-before: always; margin-top:20px; font-size:12px;">
+                <p style="font-weight:bold; margin-bottom:16px;">DOKUMENTASI KEGIATAN</p>
+                <div style="text-align: center;">
+                    @foreach($notulensi->dokumentasiNotulensi as $dok)
+                        @php
+                            $path = public_path('storage/dokumentasi-notulensi/' . $dok->nama_file);
+                        @endphp
+                        @if(file_exists($path))
+                            <img src="{{ $path }}" style="max-width: 80%; max-height: 300px; margin-bottom: 20px; border: 1px solid #000;" />
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 
     <!-- FOOTER -->

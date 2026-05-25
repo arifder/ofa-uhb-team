@@ -8,6 +8,7 @@ use App\Models\Dosen;
 use App\Models\Fakultas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -532,5 +533,50 @@ class KasController extends Controller
             'totalMasuk', 'totalKeluar', 'saldo',
             'reakByBulan', 'tahun', 'fakId', 'fakultasList'
         ));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $user = auth()->user();
+
+        $query = KasTransaction::with(['fakultas', 'user', 'dosen']);
+
+        // Role-based filter
+        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+            $query->where('fakultas_id', $user->fakultas_id);
+        } elseif ($request->filled('fakultas_id')) {
+            $query->where('fakultas_id', $request->fakultas_id);
+        }
+
+        // Apply filters
+        if ($request->filled('tanggal_awal')) {
+            $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+        }
+        if ($request->filled('tanggal_akhir')) {
+            $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+        }
+        if ($request->filled('bulan')) {
+            $query->whereMonth('tanggal', $request->bulan);
+        }
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun);
+        }
+        if ($request->filled('jenis')) {
+            $query->where('jenis', $request->jenis);
+        }
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+
+        $kasList = $query->orderBy('tanggal', 'asc')->get();
+
+        $totalMasuk = $kasList->where('jenis', 'masuk')->sum('jumlah');
+        $totalKeluar = $kasList->where('jenis', 'keluar')->sum('jumlah');
+        $saldo = $totalMasuk - $totalKeluar;
+
+        $pdf = Pdf::loadView('kas.laporan.laporan-pdf', compact('kasList', 'totalMasuk', 'totalKeluar', 'saldo', 'request'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan-Kas-' . date('Y-m-d') . '.pdf');
     }
 }

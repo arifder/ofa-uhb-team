@@ -278,6 +278,7 @@ class NotulensiController extends Controller
             'dosens',
             'dosens.prodi',
             'dosens.prodi.fakultas',
+            'dokumentasiNotulensi',
         ])->findOrFail($id);
 
         $showTtd     = (bool) $request->get('show_ttd', false);
@@ -309,5 +310,26 @@ class NotulensiController extends Controller
             ->get();
 
         return response()->json($notulensis);
+    }
+
+    // ── EXPORT PDF ──────────────────────────────────────
+
+    public function exportPdf($id, Request $request)
+    {
+        $notulensi = Notulensi::with([
+            'fakultas',
+            'user',
+            'dosens',
+            'dosens.prodi',
+            'dosens.prodi.fakultas',
+            'dokumentasiNotulensi',
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('notulensi.pdf', compact('notulensi'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'Notulensi-' . str_replace([' ', '/'], '-', $notulensi->judul) . '.pdf';
+
+        return $pdf->download($filename);
     }
 }
