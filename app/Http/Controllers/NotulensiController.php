@@ -281,13 +281,17 @@ class NotulensiController extends Controller
             'dokumentasiNotulensi',
         ])->findOrFail($id);
 
-        $showTtd     = (bool) $request->get('show_ttd', false);
-        $namaDekan   = null;
-        $namaKaprodi = null;
+        $showTtd = (bool) $request->get('show_ttd', false);
+        $namaDekan = $request->query('nama_dekan');
+        $namaKaprodi = $request->query('nama_kaprodi');
 
         if ($showTtd) {
-            $namaDekan   = $notulensi->fakultas->nama_dekan ?? null;
-            $namaKaprodi = $notulensi->dosens->first()?->prodi?->nama_kaprodi ?? null;
+            if (empty($namaDekan)) {
+                $namaDekan = $notulensi->fakultas->nama_dekan ?? null;
+            }
+            if (empty($namaKaprodi)) {
+                $namaKaprodi = $notulensi->dosens->first()?->prodi?->nama_kaprodi ?? null;
+            }
         }
 
         $pdf = Pdf::loadView('notulensi.bap', compact(

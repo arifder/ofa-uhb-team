@@ -100,11 +100,6 @@
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-label"><i class="ti ti-building" style="font-size:13px"></i> Total Prodi</div>
-      <div class="stat-val">{{ $totalProdi }}</div>
-      <div class="stat-sub" style="color:#9ca3af">Program studi aktif</div>
-    </div>
-    <div class="stat-card">
       <div class="stat-label"><i class="ti ti-users-group" style="font-size:13px"></i> Total User</div>
       <div class="stat-val">{{ $totalUsers }}</div>
       <div class="stat-sub" style="color:#9ca3af">Semua role</div>
@@ -113,6 +108,11 @@
       <div class="stat-label"><i class="ti ti-school" style="font-size:13px"></i> Total Fakultas</div>
       <div class="stat-val">{{ $totalFakultas }}</div>
       <div class="stat-sub" style="color:#9ca3af">Aktif</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><i class="ti ti-building" style="font-size:13px"></i> Total Prodi</div>
+      <div class="stat-val">{{ $totalProdi }}</div>
+      <div class="stat-sub" style="color:#9ca3af">Program studi aktif</div>
     </div>
   </div>
 

@@ -70,7 +70,7 @@
     .search-select-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
     .search-select-input::placeholder { color: #94a3b8; }
     .search-select-chevron {
-        position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; pointer-events: auto;
         color: #94a3b8; font-size: 14px;
     }
     .search-select-dropdown {
@@ -270,9 +270,8 @@
                     })" @click.outside="close()">
                         <input type="hidden" id="kas_fakultas_id" :value="selectedId">
                         <input type="text" class="search-select-input" :placeholder="placeholder"
-                            x-model="query" @focus="open()" @input="open()"
-                            :value="selectedLabel || query">
-                        <i class="ti ti-chevron-down search-select-chevron"></i>
+                            :value="displayValue" @focus="open()" @input="query = $event.target.value; open()">
+                        <i class="ti ti-chevron-down search-select-chevron" @click.stop="toggle()"></i>
                         <div class="search-select-dropdown" x-show="isOpen" x-transition x-cloak>
                             <template x-for="item in filtered" :key="item.id">
                                 <div class="search-select-option"
@@ -292,15 +291,19 @@
                 <div class="form-group">
                     <label>Nama Dosen (Opsional)</label>
                     <div class="search-select" x-data="searchSelect({
-                        items: @js($dosensList->map(fn($d) => ['id' => $d->id, 'label' => $d->nama_lengkap, 'sub' => $d->prodi->nama_prodi ?? '-'])),
+                        items: @js($dosensList->map(fn($d) => [
+                            'id' => $d->id, 
+                            'label' => $d->nama_lengkap, 
+                            'sub' => ($d->prodi->nama_prodi ?? '-') . ' (' . ($d->prodi->fakultas->nama_fakultas ?? '-') . ')',
+                            'fakultas_id' => $d->prodi->fakultas_id ?? null
+                        ])),
                         inputId: 'kas_dosen_id',
                         placeholder: 'Cari nama dosen...'
                     })" @click.outside="close()">
                         <input type="hidden" id="kas_dosen_id" :value="selectedId">
                         <input type="text" class="search-select-input" :placeholder="placeholder"
-                            x-model="query" @focus="open()" @input="open()"
-                            :value="selectedLabel || query">
-                        <i class="ti ti-chevron-down search-select-chevron"></i>
+                            :value="displayValue" @focus="open()" @input="query = $event.target.value; open()">
+                        <i class="ti ti-chevron-down search-select-chevron" @click.stop="toggle()"></i>
                         <div class="search-select-dropdown" x-show="isOpen" x-transition x-cloak>
                             <template x-for="item in filtered" :key="item.id">
                                 <div class="search-select-option"
@@ -412,6 +415,138 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const jenis = "{{ $jenis }}";
 
+    function searchSelect(config) {
+        return {
+            items: config.items || [],
+            inputId: config.inputId || '',
+            placeholder: config.placeholder || 'Cari...',
+            query: '',
+            isOpen: false,
+            selectedId: '',
+            selectedLabel: '',
+            // Properti reaktif untuk menyimpan fakultas yang dipilih (khusus dosen)
+            activeFakultasId: '',
+
+            init() {
+                // Watch selectedId to keep selectedLabel synced
+                this.$watch('selectedId', (val) => {
+                    const match = this.items.find(i => i.id == val);
+                    this.selectedLabel = match ? match.label : '';
+                });
+
+                // Check initial value from DOM
+                const hiddenEl = document.getElementById(this.inputId);
+                if (hiddenEl) {
+                    if (hiddenEl.value) {
+                        this.selectedId = hiddenEl.value;
+                    }
+                    // Listen to external programmatical resets (e.g. editKas or openModal)
+                    hiddenEl.addEventListener('change-value', (e) => {
+                        this.selectedId = e.detail;
+                    });
+                }
+
+                // Jika ini adalah select Dosen, listen ke perubahan Fakultas
+                if (this.inputId === 'kas_dosen_id') {
+                    const fakInput = document.getElementById('kas_fakultas_id');
+                    if (fakInput) {
+                        // Set nilai awal
+                        this.activeFakultasId = fakInput.value || '';
+
+                        // Update activeFakultasId tiap kali fakultas berubah (reaktif!)
+                        fakInput.addEventListener('change', () => {
+                            this.activeFakultasId = fakInput.value || '';
+
+                            // Auto-reset dosen jika tidak cocok dengan fakultas baru
+                            const currentDosen = this.items.find(i => i.id == this.selectedId);
+                            if (currentDosen && fakInput.value && currentDosen.fakultas_id != fakInput.value) {
+                                this.selectedId = '';
+                                this.selectedLabel = '';
+                                const dosenHidden = document.getElementById(this.inputId);
+                                if (dosenHidden) {
+                                    dosenHidden.value = '';
+                                    dosenHidden.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
+                            }
+                        });
+
+                        // Listen juga ke 'change-value' event dari Alpine (saat editKas)
+                        fakInput.addEventListener('change-value', (e) => {
+                            this.activeFakultasId = e.detail || '';
+                        });
+                    }
+                }
+            },
+
+            get filtered() {
+                let filteredItems = this.items;
+
+                // Filter berdasarkan activeFakultasId (properti reaktif Alpine.js)
+                if (this.inputId === 'kas_dosen_id' && this.activeFakultasId) {
+                    filteredItems = this.items.filter(item => item.fakultas_id == this.activeFakultasId);
+                }
+
+                if (!this.query) return filteredItems;
+                const q = this.query.toLowerCase();
+                return filteredItems.filter(item =>
+                    item.label.toLowerCase().includes(q) ||
+                    (item.sub && item.sub.toLowerCase().includes(q))
+                );
+            },
+
+            open() {
+                this.isOpen = true;
+                this.query = '';
+            },
+
+            close() {
+                this.isOpen = false;
+                this.query = '';
+            },
+
+            toggle() {
+                if (this.isOpen) {
+                    this.close();
+                } else {
+                    this.open();
+                }
+            },
+
+            select(item) {
+                this.selectedId = item.id;
+                this.selectedLabel = item.label;
+                this.close();
+
+                // Sync ke hidden input
+                const hiddenEl = document.getElementById(this.inputId);
+                if (hiddenEl) {
+                    hiddenEl.value = item.id;
+                    hiddenEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                // Jika dosen dipilih, auto-set Fakultas sesuai dosen tersebut
+                if (this.inputId === 'kas_dosen_id' && item.fakultas_id) {
+                    const fakInput = document.getElementById('kas_fakultas_id');
+                    if (fakInput && fakInput.value != item.fakultas_id) {
+                        fakInput.value = item.fakultas_id;
+                        // Update activeFakultasId di komponen Fakultas via custom event
+                        fakInput.dispatchEvent(new CustomEvent('change-value', { detail: item.fakultas_id }));
+                        fakInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    // Update juga activeFakultasId lokal agar tetap sinkron
+                    this.activeFakultasId = String(item.fakultas_id);
+                }
+            },
+
+            get displayValue() {
+                if (this.isOpen) {
+                    return this.query;
+                }
+                return this.selectedLabel || '';
+            }
+        }
+    }
+
     function showToast(msg, type = 'success') {
         const t = document.createElement('div');
         t.className = `custom-toast ${type === 'error' ? 'error' : ''}`;
@@ -427,6 +562,19 @@
         document.getElementById('kas_tanggal').value = new Date().toISOString().split('T')[0];
         const preview = document.getElementById('previewContainer');
         if (preview) preview.innerHTML = '';
+        
+        // Reset searchable select hidden inputs
+        const fakSel = document.getElementById('kas_fakultas_id');
+        if (fakSel) {
+            fakSel.value = '';
+            fakSel.dispatchEvent(new CustomEvent('change-value', { detail: '' }));
+        }
+        const dosenSel = document.getElementById('kas_dosen_id');
+        if (dosenSel) {
+            dosenSel.value = '';
+            dosenSel.dispatchEvent(new CustomEvent('change-value', { detail: '' }));
+        }
+
         document.getElementById('kasModal').classList.add('active');
     }
 
@@ -548,10 +696,16 @@
             document.getElementById('kas_keterangan').value = data.keterangan;
 
             const fakSel = document.getElementById('kas_fakultas_id');
-            if (fakSel) fakSel.value = data.fakultas_id || '';
+            if (fakSel) {
+                fakSel.value = data.fakultas_id || '';
+                fakSel.dispatchEvent(new CustomEvent('change-value', { detail: data.fakultas_id || '' }));
+            }
 
             const dosenSel = document.getElementById('kas_dosen_id');
-            if (dosenSel) dosenSel.value = data.dosen_id || '';
+            if (dosenSel) {
+                dosenSel.value = data.dosen_id || '';
+                dosenSel.dispatchEvent(new CustomEvent('change-value', { detail: data.dosen_id || '' }));
+            }
 
             const katSel = document.getElementById('kas_kategori');
             if (katSel) katSel.value = data.kategori || '';

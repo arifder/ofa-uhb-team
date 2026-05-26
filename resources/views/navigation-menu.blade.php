@@ -30,7 +30,7 @@
                     @if(in_array($user->role, ['super_admin','admin_notulensi_fst','admin_notulensi_fis','kepala_unit']))
                         <x-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Data Notulensi</x-nav-link>
                         <x-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Peserta Rapat</x-nav-link>
-                        <x-nav-link href="#">Export BAP</x-nav-link>
+                        
                     @endif
 
                     {{-- MENU MASTER DATA --}}
@@ -199,7 +199,6 @@
             @if(in_array($user->role, ['super_admin','admin_notulensi_fst','admin_notulensi_fis','kepala_unit']))
                 <x-responsive-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Data Notulensi</x-responsive-nav-link>
                 <x-responsive-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Peserta Rapat</x-responsive-nav-link>
-                <x-responsive-nav-link href="#">Export BAP</x-responsive-nav-link>
             @endif
 
             {{-- MENU MASTER DATA --}}

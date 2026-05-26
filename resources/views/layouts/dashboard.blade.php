@@ -581,8 +581,6 @@
                   Data Notulensi
                   <span class="badge" style="margin-left: auto; background: #EFF6FF; color: #1D4ED8; font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 600;">{{ \App\Models\Notulensi::count() }}</span>
               </a>
-              <a href="{{ route('notulensi.index', ['action' => 'export_bap']) }}" class="nav-dropdown-item {{ request()->get('action') == 'export_bap' ? 'active' : '' }}">Export BAP</a>
-              <a href="{{ route('notulensi.index', ['action' => 'export_pdf']) }}" class="nav-dropdown-item {{ request()->get('action') == 'export_pdf' ? 'active' : '' }}">Export Notulensi (PDF)</a>
           </div>
       </div>
       @endif
@@ -590,9 +588,13 @@
       {{-- MENU MASTER DATA: hanya super_admin --}}
       @if($sidebarUser->role === 'super_admin')
       <div class="nav-section">Master Data</div>
-      <a href="{{ route('master.users.index') }}" class="nav-item {{ request()->routeIs('master.users.*') ? 'active' : '' }}">
+      <a href="{{ route('master.users.index') }}" class="nav-item {{ request()->routeIs('master.users.index') ? 'active' : '' }}">
         <i class="ti ti-user-cog" aria-hidden="true"></i>Manajemen User
-        <span class="badge">{{ \App\Models\User::count() }}</span>
+        <span class="badge">{{ \App\Models\User::where('status', 'aktif')->count() }}</span>
+      </a>
+      <a href="{{ route('master.users.arsip') }}" class="nav-item {{ request()->routeIs('master.users.arsip') ? 'active' : '' }}">
+        <i class="ti ti-archive" aria-hidden="true"></i>Arsip User
+        <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ \App\Models\User::where('status', 'arsip')->count() }}</span>
       </a>
       <a href="{{ route('master.fakultas.index') }}" class="nav-item {{ request()->routeIs('master.fakultas.*') ? 'active' : '' }}">
         <i class="ti ti-school" aria-hidden="true"></i>Fakultas & Prodi

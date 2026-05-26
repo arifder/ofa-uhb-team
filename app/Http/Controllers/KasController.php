@@ -61,9 +61,9 @@ class KasController extends Controller
         $dosensList = collect();
         if ($jenis === 'masuk') {
             if ($user->role === 'super_admin') {
-                $dosensList = \App\Models\Dosen::with('prodi')->orderBy('nama_lengkap')->get();
+                $dosensList = \App\Models\Dosen::with(['prodi', 'prodi.fakultas'])->orderBy('nama_lengkap')->get();
             } else {
-                $dosensList = \App\Models\Dosen::with('prodi')
+                $dosensList = \App\Models\Dosen::with(['prodi', 'prodi.fakultas'])
                     ->whereHas('prodi', fn($q) => $q->where('fakultas_id', $user->fakultas_id))
                     ->orderBy('nama_lengkap')->get();
             }

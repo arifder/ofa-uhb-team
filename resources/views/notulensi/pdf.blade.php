@@ -90,21 +90,5 @@
         </tbody>
     </table>
 
-    @if($notulensi->dokumentasiNotulensi && $notulensi->dokumentasiNotulensi->count() > 0)
-    <div style="page-break-before: always; margin-top:20px;">
-        <div class="section-title">Dokumentasi Kegiatan</div>
-        <div style="text-align: center; margin-top:20px;">
-            @foreach($notulensi->dokumentasiNotulensi as $dok)
-                @php
-                    $path = public_path('storage/dokumentasi-notulensi/' . $dok->nama_file);
-                @endphp
-                @if(file_exists($path))
-                    <img src="{{ $path }}" style="max-width: 90%; max-height: 400px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 4px;" />
-                @endif
-            @endforeach
-        </div>
-    </div>
-    @endif
-
 </body>
 </html>

@@ -57,6 +57,7 @@ class DosenController extends Controller
                 'password' => Hash::make($request->nidn),
                 'role' => 'dosen',
                 'fakultas_id' => $prodi->fakultas_id,
+                'prodi_id' => $request->prodi_id,
                 'status' => $request->status,
             ]);
 
@@ -97,6 +98,7 @@ class DosenController extends Controller
                 $dosen->user->update([
                     'name' => $request->nama_lengkap,
                     'fakultas_id' => $prodi->fakultas_id,
+                    'prodi_id' => $request->prodi_id,
                     'status' => $request->status,
                 ]);
             }
