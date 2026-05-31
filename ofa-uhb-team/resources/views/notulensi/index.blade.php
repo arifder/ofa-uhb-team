@@ -1,0 +1,667 @@
+@extends('layouts.dashboard')
+@section('title', 'Notulensi Rapat')
+
+@push('styles')
+<style>
+    /* ── Base Card & Table ─────────────────────────── */
+    .master-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .master-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .master-table th, .master-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    .master-table th { background: #f8fafc; font-weight: 600; color: #475569; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; }
+    .master-table tbody tr:hover { background: #f8fafc; }
+    .master-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Badges ────────────────────────────────────── */
+    .fak-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .fak-fst  { background: #dbeafe; color: #1d4ed8; }
+    .fak-fis  { background: #fef3c7; color: #92400e; }
+    .fak-other{ background: #e2e8f0; color: #475569; }
+
+    /* ── Buttons ───────────────────────────────────── */
+    .btn-primary { background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-outline { background: #fff; color: #475569; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .btn-outline:hover { background: #f1f5f9; }
+    .icon-btn { background: none; border: none; cursor: pointer; color: #64748b; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; }
+    .icon-btn:hover { background: #f1f5f9; color: #2563eb; }
+    .icon-btn.delete:hover { color: #ef4444; }
+
+    /* ── Filter ────────────────────────────────────── */
+    .filter-control { border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; width: 100%; }
+    .filter-control:focus { border-color: #2563eb; }
+
+    /* ── Modal ─────────────────────────────────────── */
+    .custom-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.5); align-items: center; justify-content: center; z-index: 50; }
+    .custom-modal.active { display: flex; }
+    .custom-modal-content { background: #fff; width: 560px; max-height: 90vh; overflow-y: auto; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,.15); font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-modal-header { padding: 18px 22px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fff; z-index: 1; }
+    .custom-modal-body { padding: 22px; font-size: 13px; }
+    .custom-modal-footer { padding: 16px 22px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; border-radius: 0 0 14px 14px; position: sticky; bottom: 0; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px; color: #475569; }
+
+    /* ── Detail Modal ──────────────────────────────── */
+    .detail-modal-content { background: #fff; width: 600px; max-height: 90vh; overflow-y: auto; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,.15); }
+    .detail-section { padding: 16px 22px; border-bottom: 1px solid #f1f5f9; }
+    .detail-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .detail-value { font-size: 13px; color: #1e293b; white-space: pre-line; }
+    .peserta-chip { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #475569; margin: 3px; }
+
+    /* ── Peserta Checkbox List ──────────────────────── */
+    .peserta-list { max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; }
+    .peserta-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
+    .peserta-item:hover { background: #f8fafc; }
+    .peserta-item input[type=checkbox] { width: 15px; height: 15px; accent-color: #2563eb; cursor: pointer; }
+
+    /* ── Pagination ────────────────────────────────── */
+    .pag-wrap { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; }
+    .pag-btn { padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #475569; background: #fff; text-decoration: none; }
+    .pag-btn:hover { background: #f1f5f9; }
+    .pag-btn.disabled { opacity: .45; pointer-events: none; }
+
+    /* ── Toast ─────────────────────────────────────── */
+    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .custom-toast { min-width: 260px; background: #fff; border-left: 4px solid #10b981; box-shadow: 0 4px 12px rgba(0,0,0,.1); padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; animation: slideIn .3s ease forwards; }
+    .custom-toast.error { border-left-color: #ef4444; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+@endpush
+
+@section('content')
+
+@php $authUser = auth()->user(); @endphp
+
+{{-- Page Header --}}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h2 style="font-size:18px; font-weight:600; color:#1e293b;">
+        Notulensi Rapat
+        <span style="font-size:13px; font-weight:400; color:#64748b; margin-left:8px;">Total: {{ $notulensiList->total() }}</span>
+    </h2>
+    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+    <button class="btn-primary" onclick="openModal()">
+        <i class="ti ti-plus"></i> Tambah Notulensi
+    </button>
+    @endif
+</div>
+
+<div id="toast-container"></div>
+
+{{-- Filter Bar --}}
+<form method="GET" action="{{ route('notulensi.index') }}" class="master-card p-4 mb-4" style="padding:16px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input type="text" name="search" class="filter-control" placeholder="Cari judul notulensi..." value="{{ request('search') }}" style="flex:1; min-width:200px;">
+        @if(in_array($authUser->role, ['super_admin', 'kepala_unit']))
+        <select name="fakultas_id" class="filter-control" style="width:200px;" onchange="this.form.submit()">
+            <option value="">Semua Fakultas</option>
+            @foreach($fakultasList as $fak)
+                <option value="{{ $fak->id }}" {{ request('fakultas_id') == $fak->id ? 'selected' : '' }}>
+                    {{ $fak->nama_fakultas }}
+                </option>
+            @endforeach
+        </select>
+        @endif
+        <button type="submit" class="btn-outline">Filter</button>
+        <a href="{{ route('notulensi.index') }}" class="btn-outline">Reset</a>
+    </div>
+</form>
+
+{{-- Table --}}
+<div class="master-card">
+    <table class="master-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Judul</th>
+                <th>Tanggal</th>
+                <th>Tempat</th>
+                <th>Fakultas</th>
+                <th>Peserta</th>
+                <th>Dibuat Oleh</th>
+                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                <th>Aksi</th>
+                @endif
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($notulensiList as $index => $not)
+            <tr>
+                <td>{{ $notulensiList->firstItem() + $index }}</td>
+                <td>
+                    <a href="#" onclick="viewDetail({{ $not->id }})" style="color:#2563eb; font-weight:500; text-decoration:none;">
+                        {{ $not->judul }}
+                    </a>
+                </td>
+                <td>{{ \Carbon\Carbon::parse($not->tanggal)->translatedFormat('d M Y') }}</td>
+                <td>{{ $not->tempat }}</td>
+                <td>
+                    @php
+                        $fakNama = $not->fakultas->nama_fakultas ?? '-';
+                        $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
+                                  : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
+                    @endphp
+                    <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
+                </td>
+                <td>
+                    <span style="font-size:12px; color:#64748b;">
+                        {{ $not->dosens->count() }} dosen
+                    </span>
+                </td>
+                <td style="color:#64748b; font-size:12px;">{{ $not->user->name ?? '-' }}</td>
+                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                <td>
+                    <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
+                        <i class="ti ti-eye"></i>
+                    </button>
+                    <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
+                        <i class="ti ti-printer"></i>
+                    </button>
+                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                        <i class="ti ti-file-type-pdf"></i>
+                    </a>
+                    <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
+                        <i class="ti ti-pencil"></i>
+                    </button>
+                    <button class="icon-btn delete" onclick="deleteNotulensi({{ $not->id }})" title="Hapus">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                </td>
+                @else
+                <td>
+                    <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
+                        <i class="ti ti-eye"></i>
+                    </button>
+                    <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
+                        <i class="ti ti-printer"></i>
+                    </button>
+                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                        <i class="ti ti-file-type-pdf"></i>
+                    </a>
+                </td>
+                @endif
+            </tr>
+            @empty
+            <tr>
+                <td colspan="8" style="text-align:center; padding:40px; color:#9ca3af;">
+                    <i class="ti ti-clipboard-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                    Belum ada data notulensi.
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    {{-- Pagination --}}
+    <div class="pag-wrap">
+        <div>
+            Menampilkan <b>{{ $notulensiList->firstItem() ?? 0 }}</b>–<b>{{ $notulensiList->lastItem() ?? 0 }}</b>
+            dari <b>{{ $notulensiList->total() }}</b> notulensi
+        </div>
+        <div style="display:flex; gap:6px;">
+            @if($notulensiList->onFirstPage())
+                <span class="pag-btn disabled">← Previous</span>
+            @else
+                <a href="{{ $notulensiList->previousPageUrl() }}" class="pag-btn">← Previous</a>
+            @endif
+            @if($notulensiList->hasMorePages())
+                <a href="{{ $notulensiList->nextPageUrl() }}" class="pag-btn">Next →</a>
+            @else
+                <span class="pag-btn disabled">Next →</span>
+            @endif
+        </div>
+    </div>
+</div>
+
+{{-- ======================================================= --}}
+{{-- FORM MODAL (Tambah / Edit)                               --}}
+{{-- ======================================================= --}}
+<div class="custom-modal" id="notulensiModal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <span id="modalTitle">Tambah Notulensi</span>
+            <button class="icon-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+        </div>
+        <form id="notulensiForm" onsubmit="saveNotulensi(event)">
+            <div class="custom-modal-body">
+                <input type="hidden" id="not_id">
+
+                {{-- Fakultas (super_admin only) --}}
+                @if($authUser->role === 'super_admin')
+                <div class="form-group">
+                    <label>Fakultas</label>
+                    <select id="not_fakultas_id" class="filter-control" required>
+                        <option value="">Pilih Fakultas</option>
+                        @foreach($fakultasList as $fak)
+                            <option value="{{ $fak->id }}">{{ $fak->nama_fakultas }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                <div class="form-group">
+                    <label>Judul Rapat</label>
+                    <input type="text" id="not_judul" class="filter-control" required placeholder="Cth: Rapat Rutin Mei 2026">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div class="form-group">
+                        <label>Tanggal</label>
+                        <input type="date" id="not_tanggal" class="filter-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tempat</label>
+                        <input type="text" id="not_tempat" class="filter-control" required placeholder="Cth: Ruang Rapat A">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Agenda Rapat</label>
+                    <textarea id="not_agenda" class="filter-control" rows="3" required placeholder="1. Evaluasi kinerja&#10;2. Persiapan ujian" style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tindak Lanjut <span style="color:#94a3b8;">(opsional)</span></label>
+                    <textarea id="not_tindak_lanjut" class="filter-control" rows="2" placeholder="Catatan tindak lanjut..." style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Peserta Rapat <span style="color:#ef4444;">*</span></label>
+                    <input type="text" id="searchPeserta" class="filter-control" placeholder="Cari dosen..." onkeyup="filterPeserta()" style="margin-bottom:8px;">
+                    <div class="peserta-list" id="pesertaList">
+                        @foreach($dosenList as $dosen)
+                        <label class="peserta-item" data-nama="{{ strtolower($dosen->nama_lengkap) }}">
+                            <input type="checkbox" class="peserta-check" value="{{ $dosen->id }}">
+                            <span>
+                                <b>{{ $dosen->nama_lengkap }}</b>
+                                <span style="color:#94a3b8; font-size:11px;"> — {{ $dosen->prodi->nama_prodi ?? '-' }}</span>
+                            </span>
+                        </label>
+                        @endforeach
+                    </div>
+                    <div id="pesertaError" style="color:#ef4444; font-size:11px; margin-top:4px; display:none;">Pilih minimal 1 peserta.</div>
+                </div>
+
+                <!-- DOKUMENTASI -->
+                <div style="margin-top:16px">
+                    <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:6px">
+                        Dokumentasi Foto <span style="color:#6b7280; font-weight:400">(opsional, bisa lebih dari 1)</span>
+                    </label>
+
+                    <!-- Drop zone / input file -->
+                    <div id="dropzone" style="border:2px dashed #d1d5db; border-radius:8px; padding:20px; text-align:center; cursor:pointer; background:#f9fafb" onclick="document.getElementById('inputDokumentasi').click()">
+                        <i class="ti ti-photo-up" style="font-size:28px;color:#9ca3af"></i>
+                        <p style="font-size:12px; color:#6b7280; margin-top:6px">
+                            Klik atau drag foto ke sini<br>
+                            <span style="font-size:11px">JPG, PNG — Maks 5MB per file</span>
+                        </p>
+                    </div>
+
+                    <input type="file" id="inputDokumentasi" name="dokumentasi[]" multiple accept="image/jpg,image/jpeg,image/png" style="display:none" onchange="previewFoto(this)"/>
+
+                    <!-- Preview foto yang dipilih -->
+                    <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
+                </div>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal()">Batal</button>
+                <button type="submit" class="btn-primary">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ======================================================= --}}
+{{-- DETAIL MODAL                                             --}}
+{{-- ======================================================= --}}
+<div class="custom-modal" id="detailModal">
+    <div class="detail-modal-content">
+        <div class="custom-modal-header">
+            <span id="detailTitle">Detail Notulensi</span>
+            <button class="icon-btn" onclick="closeDetail()"><i class="ti ti-x"></i></button>
+        </div>
+        <div id="detailBody" style="padding:0;">
+            {{-- Filled by JS --}}
+        </div>
+        <div class="custom-modal-footer">
+            <button type="button" class="btn-outline" onclick="closeDetail()">Tutup</button>
+        </div>
+    </div>
+</div>
+
+{{-- ======================================================= --}}
+{{-- EXPORT MODAL                                             --}}
+{{-- ======================================================= --}}
+<div class="custom-modal" id="exportModal">
+    <div class="custom-modal-content" style="width:400px;">
+        <div class="custom-modal-header">
+            <span>Export BAP</span>
+            <button class="icon-btn" onclick="closeExportModal()"><i class="ti ti-x"></i></button>
+        </div>
+        <form id="exportForm" onsubmit="submitExport(event)">
+            <div class="custom-modal-body">
+                <input type="hidden" id="export_not_id">
+                <p style="margin-bottom:16px; color:#475569;">Pilih opsi untuk dokumen BAP yang akan dicetak:</p>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="export_show_ttd" checked style="width:16px; height:16px; accent-color:#2563eb;" onchange="toggleExportNames(this)">
+                    <span style="font-weight:500; color:#1e293b;">Sertakan Tanda Tangan Dekan & Kaprodi</span>
+                </label>
+                <div id="exportNames" style="margin-top:8px; display:none; gap:10px;">
+                    <label style="flex:1;">
+                        Nama Dekan
+                        <input type="text" id="export_nama_dekan" class="filter-control" placeholder="Nama Dekan" style="width:100%; margin-top:4px;" />
+                    </label>
+                    <label style="flex:1; margin-left:10px;">
+                        Nama Kaprodi
+                        <input type="text" id="export_nama_kaprodi" class="filter-control" placeholder="Nama Kaprodi" style="width:100%; margin-top:4px;" />
+                    </label>
+                </div>
+            </div>>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn-outline" onclick="closeExportModal()">Batal</button>
+                <button type="submit" class="btn-primary"><i class="ti ti-download"></i> Export BAP</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@endsection
+
+@push('scripts')
+<script>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    /* ── Toast ─────────────────────────────────────── */
+    function showToast(msg, type = 'success') {
+        const t = document.createElement('div');
+        t.className = `custom-toast ${type === 'error' ? 'error' : ''}`;
+        t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
+        document.getElementById('toast-container').appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+    }
+
+    /* ── Modal Open/Close ──────────────────────────── */
+    function openModal() {
+        document.getElementById('notulensiForm').reset();
+        document.getElementById('not_id').value = '';
+        document.getElementById('modalTitle').textContent = 'Tambah Notulensi';
+        document.querySelectorAll('.peserta-check').forEach(c => c.checked = false);
+        document.getElementById('pesertaError').style.display = 'none';
+        document.getElementById('inputDokumentasi').value = '';
+        document.getElementById('previewContainer').innerHTML = '';
+        document.getElementById('notulensiModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('notulensiModal').classList.remove('active');
+    }
+
+    function closeDetail() {
+        document.getElementById('detailModal').classList.remove('active');
+    }
+
+    /* ── Export Modal ──────────────────────────────── */
+    function openExportModal(id) {
+    document.getElementById('export_not_id').value = id;
+    const showTtdCheckbox = document.getElementById('export_show_ttd');
+    showTtdCheckbox.checked = true;
+    toggleExportNames(showTtdCheckbox);
+    document.getElementById('exportModal').classList.add('active');
+}
+
+    function toggleExportNames(el) {
+        const nameDiv = document.getElementById('exportNames');
+        if (el.checked) {
+            nameDiv.style.display = 'flex';
+        } else {
+            nameDiv.style.display = 'none';
+            document.getElementById('export_nama_dekan').value = '';
+            document.getElementById('export_nama_kaprodi').value = '';
+        }
+    }
+function closeExportModal() {
+    document.getElementById('exportModal').classList.remove('active');
+}
+
+    function submitExport(e) {
+        e.preventDefault();
+        const id = document.getElementById('export_not_id').value;
+        const showTtd = document.getElementById('export_show_ttd').checked ? 1 : 0;
+        const namaDekan = document.getElementById('export_nama_dekan').value;
+        const namaKaprodi = document.getElementById('export_nama_kaprodi').value;
+        
+        closeExportModal();
+        let url = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
+        if (showTtd) {
+            const params = new URLSearchParams();
+            if (namaDekan) params.append('nama_dekan', encodeURIComponent(namaDekan));
+            if (namaKaprodi) params.append('nama_kaprodi', encodeURIComponent(namaKaprodi));
+            const query = params.toString();
+            if (query) url += '&' + query;
+        }
+        window.location.href = url;
+    }
+
+    /* ── Peserta Search ────────────────────────────── */
+    function filterPeserta() {
+        const q = document.getElementById('searchPeserta').value.toLowerCase();
+        document.querySelectorAll('#pesertaList .peserta-item').forEach(item => {
+            item.style.display = item.dataset.nama.includes(q) ? '' : 'none';
+        });
+    }
+
+    /* ── Foto Preview ──────────────────────────────── */
+    function previewFoto(input) {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = '';
+        
+        Array.from(input.files).forEach((file, i) => {
+            if (file.size > 5 * 1024 * 1024) {
+                alert(file.name + ' melebihi 5MB!');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'position:relative;width:80px;height:80px';
+                div.innerHTML = `
+                    <img src="${e.target.result}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
+                    <span onclick="hapusFoto(${i})" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
+                    <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">${file.name}</p>`;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function hapusFoto(index) {
+        const input = document.getElementById('inputDokumentasi');
+        const dt = new DataTransfer();
+        
+        for (let i = 0; i < input.files.length; i++) {
+            if (i !== index) {
+                dt.items.add(input.files[i]);
+            }
+        }
+        
+        input.files = dt.files;
+        previewFoto(input);
+    }
+
+    /* ── View Detail ───────────────────────────────── */
+    async function viewDetail(id) {
+        const res = await fetch(`/notulensi/${id}`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+        });
+        const data = await res.json();
+
+        const pesertaChips = (data.dosens || []).map(d => {
+            const prodi = d.prodi ? d.prodi.nama_prodi : '-';
+            const fakultas = (d.prodi && d.prodi.fakultas) ? d.prodi.fakultas.nama_fakultas : '-';
+            return `<span class="peserta-chip" title="${prodi} - ${fakultas}">
+                <i class="ti ti-user" style="font-size:11px;"></i> 
+                ${d.nama_lengkap} 
+                <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(${prodi})</span>
+            </span>`;
+        }).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
+
+        document.getElementById('detailTitle').textContent = data.judul;
+        document.getElementById('detailBody').innerHTML = `
+            <div class="detail-section">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <div class="detail-label">Tanggal</div>
+                        <div class="detail-value">${new Date(data.tanggal).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'})}</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Tempat</div>
+                        <div class="detail-value">${data.tempat}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-section">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <div class="detail-label">Fakultas</div>
+                        <div class="detail-value">${data.fakultas?.nama_fakultas ?? '-'}</div>
+                    </div>
+                    <div>
+                        <div class="detail-label">Dibuat Oleh</div>
+                        <div class="detail-value">${data.user?.name ?? '-'}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">Agenda Rapat</div>
+                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
+            </div>
+            ${data.tindak_lanjut ? `
+            <div class="detail-section">
+                <div class="detail-label">Tindak Lanjut</div>
+                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.tindak_lanjut}</div>
+            </div>` : ''}
+            <div class="detail-section">
+                <div class="detail-label">Peserta Rapat (${(data.dosens||[]).length} dosen)</div>
+                <div style="margin-top:8px;">${pesertaChips}</div>
+            </div>
+            ${data.dokumentasi_notulensi && data.dokumentasi_notulensi.length > 0 ? `
+            <div class="detail-section" style="border-bottom:none;">
+                <div class="detail-label" style="margin-bottom:8px">Dokumentasi Foto</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px">
+                    ${data.dokumentasi_notulensi.map(dok => `
+                        <a href="/storage/dokumentasi-notulensi/${dok.nama_file}" target="_blank">
+                            <img src="/storage/dokumentasi-notulensi/${dok.nama_file}" style="width:100px;height:100px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0; cursor:pointer"/>
+                        </a>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+        `;
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    /* ── Edit ──────────────────────────────────────── */
+    async function editNotulensi(id) {
+        const res = await fetch(`/notulensi/${id}`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+        });
+        const data = await res.json();
+
+        document.getElementById('modalTitle').textContent = 'Edit Notulensi';
+        document.getElementById('not_id').value = data.id;
+        document.getElementById('not_judul').value = data.judul;
+        document.getElementById('not_tanggal').value = data.tanggal;
+        document.getElementById('not_tempat').value = data.tempat;
+        document.getElementById('not_agenda').value = data.agenda;
+        document.getElementById('not_tindak_lanjut').value = data.tindak_lanjut ?? '';
+
+        // Set fakultas if super_admin field exists
+        const fakSel = document.getElementById('not_fakultas_id');
+        if (fakSel) fakSel.value = data.fakultas_id;
+
+        // Tick peserta checkboxes
+        const pesertaIds = (data.dosens || []).map(d => String(d.id));
+        document.querySelectorAll('.peserta-check').forEach(c => {
+            c.checked = pesertaIds.includes(c.value);
+        });
+
+        document.getElementById('pesertaError').style.display = 'none';
+        document.getElementById('notulensiModal').classList.add('active');
+    }
+
+    /* ── Save (Store/Update) ───────────────────────── */
+    async function saveNotulensi(e) {
+        e.preventDefault();
+
+        const checked = [...document.querySelectorAll('.peserta-check:checked')].map(c => c.value);
+        if (checked.length === 0) {
+            document.getElementById('pesertaError').style.display = 'block';
+            return;
+        }
+        document.getElementById('pesertaError').style.display = 'none';
+
+        const id  = document.getElementById('not_id').value;
+        const url = id ? `/notulensi/${id}` : `/notulensi`;
+        const fakSel = document.getElementById('not_fakultas_id');
+
+        const formData = new FormData();
+        formData.append('judul', document.getElementById('not_judul').value);
+        formData.append('tanggal', document.getElementById('not_tanggal').value);
+        formData.append('tempat', document.getElementById('not_tempat').value);
+        formData.append('agenda', document.getElementById('not_agenda').value);
+        formData.append('tindak_lanjut', document.getElementById('not_tindak_lanjut').value);
+        
+        checked.forEach(id => formData.append('peserta[]', id));
+        
+        if (fakSel) formData.append('fakultas_id', fakSel.value);
+        if (id) formData.append('_method', 'PUT');
+
+        const fotoInput = document.getElementById('inputDokumentasi');
+        Array.from(fotoInput.files).forEach(file => {
+            formData.append('dokumentasi[]', file);
+        });
+
+        try {
+            const res = await fetch(url, {
+                method:  'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body:    formData,
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                closeModal();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                const errors = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Terjadi kesalahan.');
+                showToast(errors, 'error');
+            }
+        } catch {
+            showToast('Koneksi gagal.', 'error');
+        }
+    }
+
+    /* ── Delete ────────────────────────────────────── */
+    async function deleteNotulensi(id) {
+        if (!confirm('Yakin ingin menghapus notulensi ini? Peserta rapat juga akan terhapus.')) return;
+        try {
+            const res = await fetch(`/notulensi/${id}`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body:    JSON.stringify({ _method: 'DELETE' }),
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Gagal menghapus.', 'error');
+            }
+        } catch {
+            showToast('Koneksi gagal.', 'error');
+        }
+    }
+</script>
+@endpush
