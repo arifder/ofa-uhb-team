@@ -13,6 +13,7 @@ class KasTransaction extends Model
         'jumlah',
         'tanggal',
         'keterangan',
+        'resume_rapat',
         'fakultas_id',
         'user_id',
         'referensi_id',

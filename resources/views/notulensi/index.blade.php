@@ -253,8 +253,8 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Agenda Rapat</label>
-                    <textarea id="not_agenda" class="filter-control" rows="3" required placeholder="1. Evaluasi kinerja&#10;2. Persiapan ujian" style="resize:vertical;"></textarea>
+                    <label>Resume Rapat</label>
+                    <textarea id="not_agenda" class="filter-control" rows="8" placeholder="Tuliskan resume/agenda rapat di sini..."></textarea>
                 </div>
                 <div class="form-group">
                     <label>Tindak Lanjut <span style="color:#94a3b8;">(opsional)</span></label>
@@ -283,6 +283,9 @@
                         Dokumentasi Foto <span style="color:#6b7280; font-weight:400">(opsional, bisa lebih dari 1)</span>
                     </label>
 
+                    <!-- Foto existing saat edit -->
+                    <div id="existingPhotosContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px"></div>
+
                     <!-- Drop zone / input file -->
                     <div id="dropzone" style="border:2px dashed #d1d5db; border-radius:8px; padding:20px; text-align:center; cursor:pointer; background:#f9fafb" onclick="document.getElementById('inputDokumentasi').click()">
                         <i class="ti ti-photo-up" style="font-size:28px;color:#9ca3af"></i>
@@ -292,9 +295,9 @@
                         </p>
                     </div>
 
-                    <input type="file" id="inputDokumentasi" name="dokumentasi[]" multiple accept="image/jpg,image/jpeg,image/png" style="display:none" onchange="previewFoto(this)"/>
+                    <input type="file" id="inputDokumentasi" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png" style="display:none" onchange="tambahFoto(this)"/>
 
-                    <!-- Preview foto yang dipilih -->
+                    <!-- Preview foto baru yang dipilih -->
                     <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
                 </div>
             </div>
@@ -365,6 +368,10 @@
         setTimeout(() => t.remove(), 3500);
     }
 
+    /* ── State foto baru (accumulative) ────────────── */
+    let newFotoFiles = [];
+    let deletedFotoIds = [];
+
     /* ── Modal Open/Close ──────────────────────────── */
     function openModal() {
         document.getElementById('notulensiForm').reset();
@@ -374,6 +381,12 @@
         document.getElementById('pesertaError').style.display = 'none';
         document.getElementById('inputDokumentasi').value = '';
         document.getElementById('previewContainer').innerHTML = '';
+        document.getElementById('existingPhotosContainer').innerHTML = '';
+        if (tinymce.get('not_agenda')) {
+            tinymce.get('not_agenda').setContent('');
+        }
+        newFotoFiles = [];
+        deletedFotoIds = [];
         document.getElementById('notulensiModal').classList.add('active');
     }
 
@@ -413,43 +426,77 @@
         });
     }
 
-    /* ── Foto Preview ──────────────────────────────── */
-    function previewFoto(input) {
-        const container = document.getElementById('previewContainer');
-        container.innerHTML = '';
-        
-        Array.from(input.files).forEach((file, i) => {
-            if (file.size > 5 * 1024 * 1024) {
-                alert(file.name + ' melebihi 5MB!');
+    /* ── Foto Preview (accumulative) ──────────────── */
+    function tambahFoto(input) {
+        Array.from(input.files).forEach(file => {
+            if (!file.type.match(/image\/(jpeg|png)/)) {
+                showToast(file.name + ' bukan file gambar yang valid!', 'error');
                 return;
             }
-            
+            if (file.size > 5 * 1024 * 1024) {
+                showToast(file.name + ' melebihi 5MB!', 'error');
+                return;
+            }
+            newFotoFiles.push(file);
+        });
+        // Reset input agar bisa memilih file yang sama lagi
+        input.value = '';
+        renderNewFotoPreview();
+    }
+
+    function renderNewFotoPreview() {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = '';
+        newFotoFiles.forEach((file, i) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const div = document.createElement('div');
-                div.style.cssText = 'position:relative;width:80px;height:80px';
+                div.style.cssText = 'position:relative;width:80px;';
                 div.innerHTML = `
-                    <img src="${e.target.result}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
-                    <span onclick="hapusFoto(${i})" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
-                    <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">${file.name}</p>`;
+                    <img src="${e.target.result}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"/>
+                    <span onclick="hapusFotoBaru(${i})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1">×</span>
+                    <p style="font-size:9px;color:#6b7280;text-align:center;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${file.name}</p>`;
                 container.appendChild(div);
             };
             reader.readAsDataURL(file);
         });
     }
 
-    function hapusFoto(index) {
-        const input = document.getElementById('inputDokumentasi');
-        const dt = new DataTransfer();
-        
-        for (let i = 0; i < input.files.length; i++) {
-            if (i !== index) {
-                dt.items.add(input.files[i]);
-            }
-        }
-        
-        input.files = dt.files;
-        previewFoto(input);
+    function hapusFotoBaru(index) {
+        newFotoFiles.splice(index, 1);
+        renderNewFotoPreview();
+    }
+
+    function renderExistingPhotos(photos) {
+        const container = document.getElementById('existingPhotosContainer');
+        container.innerHTML = '';
+        if (!photos || photos.length === 0) return;
+
+        const label = document.createElement('p');
+        label.style.cssText = 'font-size:11px;color:#64748b;width:100%;margin-bottom:4px;font-weight:500;';
+        label.textContent = 'Foto tersimpan:';
+        container.appendChild(label);
+
+        photos.forEach(dok => {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:relative;width:80px;';
+            div.dataset.dokId = dok.id;
+            div.innerHTML = `
+                <img src="/storage/dokumentasi-notulensi/${dok.nama_file}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"/>
+                <span onclick="hapusFotoExisting(this, ${dok.id})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1" title="Hapus foto ini">×</span>
+                <p style="font-size:9px;color:#6b7280;text-align:center;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${dok.nama_file}</p>`;
+            container.appendChild(div);
+        });
+    }
+
+    function hapusFotoExisting(btn, dokId) {
+        deletedFotoIds.push(dokId);
+        const div = btn.closest('div[data-dok-id]');
+        if (div) div.remove();
+        // Sembunyikan label jika tidak ada foto tersimpan lagi
+        const container = document.getElementById('existingPhotosContainer');
+        const remaining = container.querySelectorAll('div[data-dok-id]');
+        if (remaining.length === 0) container.innerHTML = '';
     }
 
     /* ── View Detail ───────────────────────────────── */
@@ -490,8 +537,8 @@
                 </div>
             </div>
             <div class="detail-section">
-                <div class="detail-label">Agenda Rapat</div>
-                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
+                <div class="detail-label">Resume Rapat</div>
+                <div class="detail-value tinymce-content" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
             </div>
             ${data.tindak_lanjut ? `
             <div class="detail-section">
@@ -525,12 +572,22 @@
         });
         const data = await res.json();
 
+        // Reset state foto
+        newFotoFiles = [];
+        deletedFotoIds = [];
+        document.getElementById('previewContainer').innerHTML = '';
+        document.getElementById('inputDokumentasi').value = '';
+
         document.getElementById('modalTitle').textContent = 'Edit Notulensi';
         document.getElementById('not_id').value = data.id;
         document.getElementById('not_judul').value = data.judul;
         document.getElementById('not_tanggal').value = data.tanggal;
         document.getElementById('not_tempat').value = data.tempat;
-        document.getElementById('not_agenda').value = data.agenda;
+        if (tinymce.get('not_agenda')) {
+            tinymce.get('not_agenda').setContent(data.agenda || '');
+        } else {
+            document.getElementById('not_agenda').value = data.agenda || '';
+        }
         document.getElementById('not_tindak_lanjut').value = data.tindak_lanjut ?? '';
 
         // Set fakultas if super_admin field exists
@@ -542,6 +599,9 @@
         document.querySelectorAll('.peserta-check').forEach(c => {
             c.checked = pesertaIds.includes(c.value);
         });
+
+        // Tampilkan foto existing
+        renderExistingPhotos(data.dokumentasi_notulensi || []);
 
         document.getElementById('pesertaError').style.display = 'none';
         document.getElementById('notulensiModal').classList.add('active');
@@ -566,17 +626,30 @@
         formData.append('judul', document.getElementById('not_judul').value);
         formData.append('tanggal', document.getElementById('not_tanggal').value);
         formData.append('tempat', document.getElementById('not_tempat').value);
-        formData.append('agenda', document.getElementById('not_agenda').value);
+        
+        let agendaContent = '';
+        if (tinymce.get('not_agenda')) {
+            agendaContent = tinymce.get('not_agenda').getContent();
+        } else {
+            agendaContent = document.getElementById('not_agenda').value;
+        }
+        formData.append('agenda', agendaContent);
+        
         formData.append('tindak_lanjut', document.getElementById('not_tindak_lanjut').value);
         
-        checked.forEach(id => formData.append('peserta[]', id));
+        checked.forEach(pesertaId => formData.append('peserta[]', pesertaId));
         
         if (fakSel) formData.append('fakultas_id', fakSel.value);
         if (id) formData.append('_method', 'PUT');
 
-        const fotoInput = document.getElementById('inputDokumentasi');
-        Array.from(fotoInput.files).forEach(file => {
+        // Append foto-foto baru dari array accumulative
+        newFotoFiles.forEach(file => {
             formData.append('dokumentasi[]', file);
+        });
+
+        // Kirim ID foto existing yang ingin dihapus
+        deletedFotoIds.forEach(dokId => {
+            formData.append('deleted_dokumentasi[]', dokId);
         });
 
         try {
@@ -619,5 +692,21 @@
             showToast('Koneksi gagal.', 'error');
         }
     }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+<script>
+    tinymce.init({
+        selector: '#not_agenda',
+        menubar: 'file edit view insert format tools table',
+        promotion: false,
+        toolbar_mode: 'wrap',
+        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+        toolbar: 'undo redo | blocks | ' +
+                 'bold italic backcolor | alignleft aligncenter ' +
+                 'alignright alignjustify | bullist numlist outdent indent | ' +
+                 'removeformat | help',
+        content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 13px; }'
+    });
 </script>
 @endpush

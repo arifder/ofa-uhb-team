@@ -59,8 +59,8 @@ class NotifikasiHelper
     ): void {
         self::kirimKeRole([
             'super_admin',
-            'admin_notulensi_fst',
-            'admin_notulensi_fis',
+            'admin_fst',
+            'admin_fis',
             'kepala_unit',
         ], $judul, $pesan, 'notulensi', $url);
     }

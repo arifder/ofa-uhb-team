@@ -20,7 +20,7 @@ class KasController extends Controller
             ->where('jenis', $jenis);
 
         // Role-based filter
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $query->where('fakultas_id', $user->fakultas_id);
         }
 
@@ -58,14 +58,17 @@ class KasController extends Controller
 
     // ── STORE KAS ─────────────────────────────────────────
 
-    public function store(Request $request, string $jenis)
+    public function store(Request $request)
     {
         $user = auth()->user();
+        $jenis = $request->input('jenis', 'masuk');
 
         $validated = $request->validate([
-            'jumlah'      => 'required|numeric|min:1',
+            'jenis'        => 'required|in:masuk,keluar',
+            'jumlah'       => 'required|numeric|min:1',
             'tanggal'      => 'required|date',
             'keterangan'   => 'required|string|max:255',
+            'resume_rapat' => 'nullable|string',
             'fakultas_id'  => 'nullable|exists:fakultas,id',
         ]);
 
@@ -74,12 +77,13 @@ class KasController extends Controller
             : $user->fakultas_id;
 
         $kas = KasTransaction::create([
-            'jenis'        => $jenis,
+            'jenis'        => $validated['jenis'],
             'jumlah'       => $validated['jumlah'],
-            'tanggal'       => $validated['tanggal'],
-            'keterangan'    => $validated['keterangan'],
-            'fakultas_id'   => $fakultasId,
-            'user_id'       => $user->id,
+            'tanggal'      => $validated['tanggal'],
+            'keterangan'   => $validated['keterangan'],
+            'resume_rapat' => $validated['resume_rapat'] ?? null,
+            'fakultas_id'  => $fakultasId,
+            'user_id'      => $user->id,
         ]);
 
         return response()->json([
@@ -99,14 +103,15 @@ class KasController extends Controller
 
     // ── UPDATE KAS ─────────────────────────────────────────
 
-    public function update(Request $request, string $id, string $jenis)
+    public function update(Request $request, string $id)
     {
         $user = auth()->user();
 
         $validated = $request->validate([
-            'jumlah'      => 'required|numeric|min:1',
+            'jumlah'       => 'required|numeric|min:1',
             'tanggal'      => 'required|date',
             'keterangan'   => 'required|string|max:255',
+            'resume_rapat' => 'nullable|string',
             'fakultas_id'  => 'nullable|exists:fakultas,id',
         ]);
 
@@ -117,9 +122,10 @@ class KasController extends Controller
 
         $kas->update([
             'jumlah'       => $validated['jumlah'],
-            'tanggal'       => $validated['tanggal'],
-            'keterangan'    => $validated['keterangan'],
-            'fakultas_id'   => $fakultasId,
+            'tanggal'      => $validated['tanggal'],
+            'keterangan'   => $validated['keterangan'],
+            'resume_rapat' => $validated['resume_rapat'] ?? null,
+            'fakultas_id'  => $fakultasId,
         ]);
 
         return response()->json([
@@ -150,7 +156,7 @@ class KasController extends Controller
         $query = KasTagihan::with(['dosen', 'dosen.prodi', 'fakultas']);
 
         // Role-based filter
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $query->where('fakultas_id', $user->fakultas_id);
         }
 
@@ -327,7 +333,7 @@ class KasController extends Controller
 
         // Total keseluruhan
         $baseQuery = KasTransaction::query();
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $baseQuery->where('fakultas_id', $user->fakultas_id);
         } elseif ($fakId) {
             $baseQuery->where('fakultas_id', $fakId);
@@ -347,7 +353,7 @@ class KasController extends Controller
             ")
             ->whereYear('tanggal', $tahun);
 
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $reak->where('fakultas_id', $user->fakultas_id);
         } elseif ($fakId) {
             $reak->where('fakultas_id', $fakId);

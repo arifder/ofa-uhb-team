@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Notulensi;
 use App\Models\PesertaRapat;
 use App\Models\Dosen;
@@ -21,7 +22,7 @@ class NotulensiController extends Controller
         $query = Notulensi::with(['fakultas', 'user', 'pesertaRapat', 'dosens']);
 
         // Role-based filter
-        if (in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $query->fakultas($user->fakultas_id);
         } elseif ($user->role === 'dosen') {
             $dosen = Dosen::where('user_id', $user->id)->first();
@@ -48,7 +49,7 @@ class NotulensiController extends Controller
         $notulensiList = $query->latest()->paginate(10)->withQueryString();
 
         // Dosen list for peserta dropdown
-        if (in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $dosenList = Dosen::whereHas('prodi', function ($q) use ($user) {
                 $q->where('fakultas_id', $user->fakultas_id);
             })->with('prodi')->orderBy('nama_lengkap')->get();
@@ -193,6 +194,18 @@ class NotulensiController extends Controller
         PesertaRapat::where('notulensi_id', $id)->delete();
         foreach ($request->peserta as $dosenId) {
             PesertaRapat::create(['notulensi_id' => $id, 'dosen_id' => $dosenId]);
+        }
+
+        if ($request->has('deleted_dokumentasi') && is_array($request->deleted_dokumentasi)) {
+            foreach ($request->deleted_dokumentasi as $dokId) {
+                $dok = DokumentasiNotulensi::where('id', $dokId)
+                            ->where('notulensi_id', $id)
+                            ->first();
+                if ($dok) {
+                    Storage::disk('public')->delete($dok->path_file);
+                    $dok->delete();
+                }
+            }
         }
 
         if ($request->hasFile('dokumentasi')) {

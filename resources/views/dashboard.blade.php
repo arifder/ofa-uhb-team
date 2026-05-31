@@ -99,30 +99,30 @@
   </div>
 
 {{-- ============================================================ --}}
-{{-- ADMIN KAS (FST / FIS)                                        --}}
+{{-- ADMIN FAKULTAS (FST / FIS)                                   --}}
 {{-- ============================================================ --}}
-@elseif(in_array($user->role, ['admin_kas_fst', 'admin_kas_fis']))
+@elseif(in_array($user->role, ['admin_fst', 'admin_fis']))
 
   <div class="banner banner-blue">
-    <i class="ti ti-cash"></i>
+    <i class="ti ti-shield-check"></i>
     <span><b>{{ $user->role_label }}</b> — {{ $namaFakultas }}</span>
   </div>
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-label">Total Dosen</div>
-      <div class="stat-val">{{ $totalDosenFakultas }}</div>
-      <div class="stat-sub">di {{ $namaFakultas }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Kas Terkumpul</div>
-      <div class="stat-val">Rp 0</div>
-      <div class="stat-sub" style="color:#9ca3af">akan diisi setelah modul kas</div>
+      <div class="stat-label">Saldo Kas Terkini</div>
+      <div class="stat-val">Rp {{ number_format($saldo_kas ?? 0, 0, ',', '.') }}</div>
+      <div class="stat-sub">Masuk: Rp {{ number_format($total_kas_masuk ?? 0, 0, ',', '.') }} | Keluar: Rp {{ number_format($total_kas_keluar ?? 0, 0, ',', '.') }}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Tagihan Belum Lunas</div>
-      <div class="stat-val">0</div>
-      <div class="stat-sub">bulan ini</div>
+      <div class="stat-val">{{ $tagihan_pending ?? 0 }}</div>
+      <div class="stat-sub">dosen bulan ini</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Notulensi Rapat</div>
+      <div class="stat-val">{{ $total_notulensi ?? 0 }}</div>
+      <div class="stat-sub">seluruh rapat fakultas</div>
     </div>
   </div>
 
@@ -132,46 +132,12 @@
       <div class="mod-icon mod-blue"><i class="ti ti-cash-register"></i></div>
       <div class="mod-title">Manajemen Kas</div>
       <div class="mod-desc">Kelola kas masuk, kas keluar, dan tagihan dosen {{ $namaFakultas }}.</div>
-      <div class="mod-footer"><a href="#" style="color:#1d4ed8">Buka →</a></div>
+      <div class="mod-footer"><a href="{{ route('kas.masuk') }}" style="color:#1d4ed8">Buka →</a></div>
     </div>
-  </div>
-
-{{-- ============================================================ --}}
-{{-- ADMIN NOTULENSI (FST / FIS)                                  --}}
-{{-- ============================================================ --}}
-@elseif(in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis']))
-
-  <div class="banner banner-teal">
-    <i class="ti ti-clipboard-list"></i>
-    <span><b>{{ $user->role_label }}</b> — {{ $namaFakultas }}</span>
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-label">Notulensi Bulan Ini</div>
-      <div class="stat-val">{{ $totalNotulensibulan }}</div>
-      <div class="stat-sub">{{ now()->translatedFormat('F Y') }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Rapat Tahun Ini</div>
-      <div class="stat-val">{{ $totalRapatTahun }}</div>
-      <div class="stat-sub" style="color:#9ca3af">akan diisi setelah modul notulensi</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Notulensi Terakhir</div>
-      <div class="stat-val" style="font-size:14px">
-        {{ $notulensiTerakhir ? $notulensiTerakhir->tanggal_rapat : '-' }}
-      </div>
-      <div class="stat-sub">{{ $notulensiTerakhir ? $notulensiTerakhir->judul : 'Belum ada data' }}</div>
-    </div>
-  </div>
-
-  <p class="section-title"><i class="ti ti-layout-grid"></i> Modul Aktif</p>
-  <div class="modules-grid">
     <div class="mod-card">
       <div class="mod-icon mod-teal"><i class="ti ti-clipboard-list"></i></div>
       <div class="mod-title">Notulensi Rapat</div>
-      <div class="mod-desc">Kelola notulensi rapat {{ $namaFakultas }}.</div>
+      <div class="mod-desc">Kelola notulensi rapat, peserta, dan BAP untuk {{ $namaFakultas }}.</div>
       <div class="mod-footer"><a href="{{ route('notulensi.index') }}" style="color:#0f766e">Buka →</a></div>
     </div>
   </div>

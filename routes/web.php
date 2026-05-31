@@ -24,7 +24,7 @@ Route::middleware([
 });
 
     // Route Kas
-    Route::middleware(['auth', 'checkRole:super_admin,admin_kas_fst,admin_kas_fis,kepala_unit'])
+    Route::middleware(['auth', 'checkRole:super_admin,admin_fst,admin_fis,kepala_unit'])
         ->prefix('kas')
         ->name('kas.')
         ->group(function () {
@@ -45,7 +45,7 @@ Route::middleware([
         });
 
     // Route Notulensi
-    Route::middleware(['auth', 'checkRole:super_admin,admin_notulensi_fst,admin_notulensi_fis,kepala_unit,dosen'])
+    Route::middleware(['auth', 'checkRole:super_admin,admin_fst,admin_fis,kepala_unit,dosen'])
         ->group(function () {
             // Specific routes BEFORE resource to avoid {notulensi} conflicts
             Route::get('notulensi/dosen/{id}', [NotulensiController::class, 'getByDosen'])
