@@ -44,6 +44,18 @@
         .fakultas-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
         .fakultas-meta { font-size: 13px; color: #64748b; }
         .section-title { font-size: 14px; font-weight: 600; padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; color: #334155; }
+manajemen-kas-oza
+
+
+        /* Stat Cards */
+        .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .stat-icon.blue { background: #EFF6FF; color: #2563EB; }
+        .stat-icon.teal { background: #F0FDFA; color: #0D9488; }
+        .stat-label { font-size: 12px; color: #64748b; margin-bottom: 2px; }
+        .stat-value { font-size: 22px; font-weight: 700; color: #1e293b; }
+main
     </style>
 @endpush
 
@@ -57,6 +69,7 @@
 
     <div id="toast-container"></div>
 
+manajemen-kas-oza
     {{-- RINGKASAN --}}
     @php
         $totalFakultas = count($fakultas);
@@ -79,10 +92,27 @@
             <div>
                 <div class="summary-label">Jumlah Program Studi</div>
                 <div class="summary-value">{{ $totalProdi }}</div>
+
+    {{-- Stat Cards --}}
+    <div class="stat-row">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="ti ti-building"></i></div>
+            <div>
+                <div class="stat-label">Total Fakultas</div>
+                <div class="stat-value">{{ $fakultas->count() }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="ti ti-school"></i></div>
+            <div>
+                <div class="stat-label">Total Program Studi</div>
+                <div class="stat-value">{{ $totalProdi }}</div>
+main
             </div>
         </div>
     </div>
 
+manajemen-kas-oza
     {{-- DAFTAR FAKULTAS --}}
     @foreach($fakultas as $fak)
     <div class="master-card">
@@ -93,12 +123,27 @@
                 <div class="fakultas-meta">{{ count($fak->prodis) }} program studi</div>
             </div>
             <div class="flex gap-2">
+    {{-- Fakultas Cards --}}
+    @foreach($fakultas as $fak)
+    <div class="master-card">
+        {{-- Header --}}
+        <div class="card-header-main">
+            <div>
+                <div class="fakultas-title">{{ $fak->nama_fakultas }}</div>
+                <div class="fakultas-meta">{{ count($fak->prodis) }} Program Studi</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+main
                 <button class="btn-outline" onclick='editFakultas(@json($fak))'><i class="ti ti-pencil"></i> Edit</button>
                 <button class="btn-outline" style="color:#ef4444" onclick="deleteFakultas({{ $fak->id }})"><i class="ti ti-trash"></i> Hapus</button>
             </div>
         </div>
 
+manajemen-kas-oza
         {{-- TABEL PRODI --}}
+
+        {{-- Prodi Table --}}
+main
         <div class="section-title">
             <span>Program Studi</span>
             <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openProdiModal({{ $fak->id }})">
@@ -128,12 +173,20 @@
             </tbody>
         </table>
         @else
+manajemen-kas-oza
         <div class="p-4 text-center text-sm text-gray-500">Belum ada program studi.</div>
+
+        <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">Belum ada program studi.</div>
+main
         @endif
     </div>
     @endforeach
 
+manajemen-kas-oza
 {{-- Modals --}}
+
+{{-- Modal Fakultas --}}
+main
 <div class="custom-modal" id="fakultasModal">
     <div class="custom-modal-content">
         <div class="custom-modal-header">
@@ -157,6 +210,7 @@
     </div>
 </div>
 
+{{-- Modal Prodi --}}
 <div class="custom-modal" id="prodiModal">
     <div class="custom-modal-content">
         <div class="custom-modal-header">

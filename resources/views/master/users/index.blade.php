@@ -46,7 +46,7 @@
         <h2 style="font-size: 18px; font-weight: 600; color: #1e293b;">
             Daftar User <span style="font-size: 13px; font-weight: 400; color: #64748b; margin-left: 8px;">Total: {{ $users->total() }}</span>
         </h2>
-        <button class="btn-primary" onclick="openModal()">
+        <button class="btn-primary" onclick="window.dispatchEvent(new CustomEvent('open-user-modal'))">
             <i class="ti ti-plus"></i> Tambah User
         </button>
     </div>
@@ -80,6 +80,7 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Fakultas</th>
+                            <th>Prodi</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
@@ -103,14 +104,16 @@
                                 </span>
                             </td>
                             <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
+                            <td>{{ $user->prodi ? $user->prodi->nama_prodi : '-' }}</td>
                             <td>
                                 @if($user->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
-                                @else <span class="master-badge badge-nonaktif">Nonaktif</span>
+                                @else <span class="master-badge badge-nonaktif">Arsip</span>
                                 @endif
                             </td>
                             <td>
-                                <button class="icon-btn" onclick='editUser(@json($user))'><i class="ti ti-pencil"></i></button>
-                                <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})"><i class="ti ti-trash"></i></button>
+                                <button class="icon-btn" onclick='window.dispatchEvent(new CustomEvent("open-user-modal", { detail: @js($user) }))' title="Edit User"><i class="ti ti-pencil"></i></button>
+                                <button class="icon-btn" style="color:#d97706" onclick="toggleStatus({{ $user->id }})" title="Arsipkan User"><i class="ti ti-archive"></i></button>
+                                <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})" title="Hapus Permanen"><i class="ti ti-trash"></i></button>
                             </td>
                         </tr>
                         @endforeach
@@ -202,46 +205,175 @@
 
     <!-- Modal Alpine.js -->
     <div class="custom-modal" id="userModal" x-data="{ 
-        role: 'dosen', 
+        isOpen: false,
         userId: '',
+        name: '',
+        username: '',
+        email: '',
+        password: '',
+        role: 'dosen',
+        status: 'aktif',
+        fakultasId: '',
+        prodiId: '',
+        prodis: [],
+
         get showFakultas() {
-            return this.role.includes('fst') || this.role.includes('fis');
+            return this.role === 'admin_kas_fst' || 
+                   this.role === 'admin_notulensi_fst' || 
+                   this.role === 'admin_kas_fis' || 
+                   this.role === 'admin_notulensi_fis' || 
+                   this.role === 'dosen';
+        },
+        get showProdi() {
+            return this.role === 'dosen';
+        },
+        async fetchProdi() {
+            if (!this.fakultasId) {
+                this.prodis = [];
+                this.prodiId = '';
+                return;
+            }
+            try {
+                const res = await fetch(`/master/prodi/by-fakultas/${this.fakultasId}`);
+                this.prodis = await res.json();
+                if (this.prodiId && !this.prodis.some(p => p.id == this.prodiId)) {
+                    this.prodiId = '';
+                }
+            } catch(e) {
+                console.error(e);
+            }
         },
         get autoFakultas() {
             if (this.role.includes('fst')) return '{{ $fstId }}';
             if (this.role.includes('fis')) return '{{ $fisId }}';
             return '';
+        },
+        init() {
+            this.$watch('role', (newRole) => {
+                if (newRole.includes('fst') || newRole.includes('fis')) {
+                    this.fakultasId = this.autoFakultas;
+                    this.fetchProdi();
+                } else if (newRole !== 'dosen') {
+                    this.fakultasId = '';
+                    this.prodiId = '';
+                    this.prodis = [];
+                }
+            });
+
+            this.$watch('fakultasId', () => {
+                this.fetchProdi();
+            });
+
+            window.addEventListener('open-user-modal', (e) => {
+                const user = e.detail;
+                if (user) {
+                    this.userId = user.id;
+                    this.name = user.name;
+                    this.username = user.username;
+                    this.email = user.email;
+                    this.password = '';
+                    this.role = user.role;
+                    this.status = user.status;
+                    this.fakultasId = user.fakultas_id || '';
+                    this.prodiId = user.prodi_id || '';
+                    this.fetchProdi().then(() => {
+                        this.prodiId = user.prodi_id || '';
+                    });
+                    document.getElementById('modalTitle').textContent = 'Edit User';
+                } else {
+                    this.userId = '';
+                    this.name = '';
+                    this.username = '';
+                    this.email = '';
+                    this.password = '';
+                    this.role = 'dosen';
+                    this.status = 'aktif';
+                    this.fakultasId = '';
+                    this.prodiId = '';
+                    this.prodis = [];
+                    document.getElementById('modalTitle').textContent = 'Tambah User';
+                }
+                this.isOpen = true;
+            });
+        },
+        closeModal() {
+            this.isOpen = false;
+        },
+        async saveUser(e) {
+            e.preventDefault();
+            const url = this.userId ? `/master/users/${this.userId}` : `/master/users`;
+            const body = {
+                name: this.name,
+                username: this.username,
+                email: this.email,
+                password: this.password,
+                role: this.role,
+                status: this.status,
+            };
+
+            if (this.userId) {
+                body._method = 'PUT';
+            }
+
+            if (this.showFakultas) {
+                body.fakultas_id = this.fakultasId;
+            }
+            if (this.showProdi) {
+                body.prodi_id = this.prodiId;
+            }
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message, 'success');
+                    this.closeModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message || 'Terjadi kesalahan validasi', 'error');
+                }
+            } catch (err) {
+                showToast('Koneksi gagal', 'error');
+            }
         }
-    }">
+    }" :class="{ active: isOpen }">
         <div class="custom-modal-content">
             <div class="custom-modal-header">
                 <span id="modalTitle">Tambah User</span>
-                <button class="icon-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+                <button type="button" class="icon-btn" @click="closeModal()"><i class="ti ti-x"></i></button>
             </div>
-            <form id="userForm" onsubmit="saveUser(event)">
+            <form id="userForm" @submit="saveUser($event)">
                 <div class="custom-modal-body">
-                    <input type="hidden" id="user_id">
                     <div class="form-group">
                         <label>Nama Lengkap</label>
-                        <input type="text" id="name" class="filter-control" required>
+                        <input type="text" class="filter-control" required x-model="name">
                     </div>
                     <div class="form-group">
                         <label>Username</label>
-                        <input type="text" id="username" class="filter-control" required>
+                        <input type="text" class="filter-control" required x-model="username">
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" id="email" class="filter-control" :required="role !== 'dosen'" placeholder="Kosongkan untuk dosen (otomatis: namadosen@ofa.com)">
+                        <input type="email" class="filter-control" :required="role !== 'dosen'" placeholder="Kosongkan untuk dosen (otomatis: namadosen@ofa.com)" x-model="email">
                         <div x-show="role === 'dosen'" class="text-xs text-blue-500 mt-1" style="font-size: 11px; color: #3b82f6; margin-top: 4px;">Jika role Dosen dan email dikosongkan, email otomatis: namadosen@ofa.com</div>
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="password" class="filter-control" :required="role !== 'dosen' && !userId" placeholder="Kosongkan jika tidak diubah">
+                        <input type="password" class="filter-control" :required="role !== 'dosen' && !userId" placeholder="Kosongkan jika tidak diubah" x-model="password">
                         <div x-show="role === 'dosen'" class="text-xs text-blue-500 mt-1" style="font-size: 11px; color: #3b82f6; margin-top: 4px;">Jika role Dosen dan password dikosongkan, password otomatis: namadosen123</div>
                     </div>
                     <div class="form-group">
                         <label>Role</label>
-                        <select id="roleSelect" class="filter-control" required x-model="role" @change="if(showFakultas) $nextTick(() => { document.getElementById('fakultas_id').value = autoFakultas })">
+                        <select class="filter-control" required x-model="role">
                             <option value="super_admin">Super Admin</option>
                             <option value="admin_kas_fst">Admin Kas FST</option>
                             <option value="admin_notulensi_fst">Admin Notulensi FST</option>
@@ -253,23 +385,32 @@
                     </div>
                     <div class="form-group" x-show="showFakultas" x-cloak>
                         <label>Fakultas</label>
-                        <select id="fakultas_id" class="filter-control" :value="autoFakultas">
+                        <select class="filter-control" x-model="fakultasId">
                             <option value="">Pilih Fakultas</option>
                             @foreach($fakultasList as $fak)
                                 <option value="{{ $fak->id }}">{{ $fak->nama_fakultas }}</option>
                             @endforeach
                         </select>
                     </div>
+                    <div class="form-group" x-show="showProdi" x-cloak>
+                        <label>Program Studi</label>
+                        <select class="filter-control" x-model="prodiId">
+                            <option value="">Pilih Program Studi</option>
+                            <template x-for="p in prodis" :key="p.id">
+                                <option :value="p.id" x-text="p.nama_prodi" :selected="p.id == prodiId"></option>
+                            </template>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>Status</label>
-                        <select id="status" class="filter-control" required>
+                        <select class="filter-control" required x-model="status">
                             <option value="aktif">Aktif</option>
-                            <option value="nonaktif">Nonaktif</option>
+                            <option value="arsip">Arsip (Nonaktif)</option>
                         </select>
                     </div>
                 </div>
                 <div class="custom-modal-footer">
-                    <button type="button" class="btn-outline" onclick="closeModal()">Batal</button>
+                    <button type="button" class="btn-outline" @click="closeModal()">Batal</button>
                     <button type="submit" class="btn-primary">Simpan</button>
                 </div>
             </form>
@@ -290,101 +431,8 @@
             setTimeout(() => t.remove(), 3000);
         }
 
-        function openModal() {
-            document.getElementById('userForm').reset();
-            const userIdInput = document.getElementById('user_id');
-            userIdInput.value = '';
-            
-            // Sync with Alpine
-            const modal = document.getElementById('userModal');
-            if (modal.__x) {
-                modal.__x.$data.userId = '';
-                modal.__x.$data.role = 'dosen';
-            }
-
-            document.getElementById('modalTitle').textContent = 'Tambah User';
-            
-            document.getElementById('roleSelect').dispatchEvent(new Event('change'));
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('userModal').classList.remove('active');
-        }
-
-        function editUser(user) {
-            document.getElementById('modalTitle').textContent = 'Edit User';
-            document.getElementById('user_id').value = user.id;
-            
-            // Sync with Alpine
-            const modal = document.getElementById('userModal');
-            if (modal.__x) {
-                modal.__x.$data.userId = user.id;
-                modal.__x.$data.role = user.role;
-            }
-
-            document.getElementById('name').value = user.name;
-            document.getElementById('username').value = user.username;
-            document.getElementById('email').value = user.email;
-            
-            const roleSelect = document.getElementById('roleSelect');
-            roleSelect.value = user.role;
-            roleSelect.dispatchEvent(new Event('input')); // trigger alpine
-            
-            document.getElementById('fakultas_id').value = user.fakultas_id || '';
-            document.getElementById('status').value = user.status;
-            
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        async function saveUser(e) {
-            e.preventDefault();
-            const id = document.getElementById('user_id').value;
-            const url = id ? `/master/users/${id}` : `/master/users`;
-            const roleVal = document.getElementById('roleSelect').value;
-            
-            const body = {
-                name: document.getElementById('name').value,
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                role: roleVal,
-                status: document.getElementById('status').value,
-            };
-
-            if (id) {
-                body._method = 'PUT';
-            }
-
-            if (roleVal.includes('fst') || roleVal.includes('fis')) {
-                body.fakultas_id = document.getElementById('fakultas_id').value;
-            }
-
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(body)
-                });
-
-                const data = await res.json();
-                if (res.ok && data.success) {
-                    showToast(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showToast(data.message || 'Terjadi kesalahan validasi', 'error');
-                }
-            } catch (err) {
-                showToast('Koneksi gagal', 'error');
-            }
-        }
-
         async function deleteUser(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
+            if (!confirm('Apakah Anda yakin ingin menghapus user ini secara permanen?')) return;
             try {
                 const res = await fetch(`/master/users/${id}`, {
                     method: 'POST',
@@ -394,6 +442,30 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ _method: 'DELETE' })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message || 'Terjadi kesalahan', 'error');
+                }
+            } catch (err) {
+                showToast('Koneksi gagal', 'error');
+            }
+        }
+
+        async function toggleStatus(id) {
+            if (!confirm('Apakah Anda yakin ingin mengarsipkan user ini? User yang diarsipkan tidak bisa login.')) return;
+            try {
+                const res = await fetch(`/master/users/${id}/toggle-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
                 });
 
                 const data = await res.json();

@@ -34,6 +34,7 @@ class User extends Authenticatable
         'username',
         'role',
         'fakultas_id',
+        'prodi_id',
         'status',
     ];
 
@@ -113,9 +114,22 @@ class User extends Authenticatable
         };
     }
 
+    public function hasRole(string|array $roles): bool
+    {
+        if (is_string($roles)) {
+            return $this->role === $roles;
+        }
+        return in_array($this->role, $roles);
+    }
+
     public function fakultas()
     {
         return $this->belongsTo(Fakultas::class);
+    }
+
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class);
     }
 
     public function dosen()

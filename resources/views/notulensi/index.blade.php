@@ -162,6 +162,9 @@
                     <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
                         <i class="ti ti-printer"></i>
                     </button>
+                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                        <i class="ti ti-file-type-pdf"></i>
+                    </a>
                     <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
                         <i class="ti ti-pencil"></i>
                     </button>
@@ -177,6 +180,9 @@
                     <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
                         <i class="ti ti-printer"></i>
                     </button>
+                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                        <i class="ti ti-file-type-pdf"></i>
+                    </a>
                 </td>
                 @endif
             </tr>
@@ -341,10 +347,20 @@
                 <input type="hidden" id="export_not_id">
                 <p style="margin-bottom:16px; color:#475569;">Pilih opsi untuk dokumen BAP yang akan dicetak:</p>
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                    <input type="checkbox" id="export_show_ttd" checked style="width:16px; height:16px; accent-color:#2563eb;">
+                    <input type="checkbox" id="export_show_ttd" checked style="width:16px; height:16px; accent-color:#2563eb;" onchange="toggleExportNames(this)">
                     <span style="font-weight:500; color:#1e293b;">Sertakan Tanda Tangan Dekan & Kaprodi</span>
                 </label>
-            </div>
+                <div id="exportNames" style="margin-top:8px; display:none; gap:10px;">
+                    <label style="flex:1;">
+                        Nama Dekan
+                        <input type="text" id="export_nama_dekan" class="filter-control" placeholder="Nama Dekan" style="width:100%; margin-top:4px;" />
+                    </label>
+                    <label style="flex:1; margin-left:10px;">
+                        Nama Kaprodi
+                        <input type="text" id="export_nama_kaprodi" class="filter-control" placeholder="Nama Kaprodi" style="width:100%; margin-top:4px;" />
+                    </label>
+                </div>
+            </div>>
             <div class="custom-modal-footer">
                 <button type="button" class="btn-outline" onclick="closeExportModal()">Batal</button>
                 <button type="submit" class="btn-primary"><i class="ti ti-download"></i> Export BAP</button>
@@ -400,22 +416,44 @@
 
     /* ── Export Modal ──────────────────────────────── */
     function openExportModal(id) {
-        document.getElementById('export_not_id').value = id;
-        document.getElementById('export_show_ttd').checked = true;
-        document.getElementById('exportModal').classList.add('active');
-    }
+    document.getElementById('export_not_id').value = id;
+    const showTtdCheckbox = document.getElementById('export_show_ttd');
+    showTtdCheckbox.checked = true;
+    toggleExportNames(showTtdCheckbox);
+    document.getElementById('exportModal').classList.add('active');
+}
 
-    function closeExportModal() {
-        document.getElementById('exportModal').classList.remove('active');
+    function toggleExportNames(el) {
+        const nameDiv = document.getElementById('exportNames');
+        if (el.checked) {
+            nameDiv.style.display = 'flex';
+        } else {
+            nameDiv.style.display = 'none';
+            document.getElementById('export_nama_dekan').value = '';
+            document.getElementById('export_nama_kaprodi').value = '';
+        }
     }
+function closeExportModal() {
+    document.getElementById('exportModal').classList.remove('active');
+}
 
     function submitExport(e) {
         e.preventDefault();
         const id = document.getElementById('export_not_id').value;
         const showTtd = document.getElementById('export_show_ttd').checked ? 1 : 0;
+        const namaDekan = document.getElementById('export_nama_dekan').value;
+        const namaKaprodi = document.getElementById('export_nama_kaprodi').value;
         
         closeExportModal();
-        window.location.href = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
+        let url = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
+        if (showTtd) {
+            const params = new URLSearchParams();
+            if (namaDekan) params.append('nama_dekan', encodeURIComponent(namaDekan));
+            if (namaKaprodi) params.append('nama_kaprodi', encodeURIComponent(namaKaprodi));
+            const query = params.toString();
+            if (query) url += '&' + query;
+        }
+        window.location.href = url;
     }
 
     /* ── Peserta Search ────────────────────────────── */
@@ -506,9 +544,15 @@
         });
         const data = await res.json();
 
-        const pesertaChips = (data.dosens || []).map(d =>
-            `<span class="peserta-chip"><i class="ti ti-user" style="font-size:11px;"></i>${d.nama_lengkap}</span>`
-        ).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
+        const pesertaChips = (data.dosens || []).map(d => {
+            const prodi = d.prodi ? d.prodi.nama_prodi : '-';
+            const fakultas = (d.prodi && d.prodi.fakultas) ? d.prodi.fakultas.nama_fakultas : '-';
+            return `<span class="peserta-chip" title="${prodi} - ${fakultas}">
+                <i class="ti ti-user" style="font-size:11px;"></i> 
+                ${d.nama_lengkap} 
+                <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(${prodi})</span>
+            </span>`;
+        }).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
 
         document.getElementById('detailTitle').textContent = data.judul;
         document.getElementById('detailBody').innerHTML = `

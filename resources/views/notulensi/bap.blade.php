@@ -24,7 +24,6 @@
 
         .content {
             padding: 20px 40px;
-            /* padding isi surat */
         }
     </style>
 </head>
@@ -80,7 +79,7 @@
                     <th style="border:1px solid #000; padding:6px;">Nama</th>
                     <th style="border:1px solid #000; padding:6px; width:100px;">NIDN</th>
                     <th style="border:1px solid #000; padding:6px;">Program Studi</th>
-                    <th style="border:1px solid #000; padding:6px; width:80px;">Tanda Tangan</th>
+                    <th style="border:1px solid #000; padding:6px; width:80px;">Kehadiran</th>
                 </tr>
             </thead>
             <tbody>
@@ -90,9 +89,8 @@
                         <td style="border:1px solid #000; padding:6px;">{{ $dosen->nama_lengkap }}</td>
                         <td style="border:1px solid #000; padding:6px;">{{ $dosen->nidn }}</td>
                         <td style="border:1px solid #000; padding:6px;">{{ $dosen->prodi->nama_prodi ?? '-' }}</td>
-                        <td style="border:1px solid #000; padding:6px; height:40px;">
-                            <span style="font-size:9px; margin-left: {{ $i % 2 !== 0 ? '40px' : '0' }};">{{ $i + 1 }}
-                                .</span>
+                        <td style="border:1px solid #000; padding:6px; text-align:center; font-size:16px;">
+                            <input type="checkbox" checked disabled style="transform:scale(1.2); cursor:default;">
                         </td>
                     </tr>
                 @endforeach
@@ -105,7 +103,7 @@
             <p style="white-space:pre-wrap; margin-top:6px;">{{ $notulensi->tindak_lanjut ?? '-' }}</p>
         </div>
 
-        <!-- TTD (opsional) -->
+        <!-- TTD -->
         @if($showTtd)
             <div style="margin-top:40px; width: 100%; font-size:12px;">
                 <table style="width: 100%; border: none;">
@@ -128,6 +126,23 @@
                         </td>
                     </tr>
                 </table>
+            </div>
+        @endif
+
+        <!-- DOKUMENTASI KEGIATAN -->
+        @if($notulensi->dokumentasiNotulensi && $notulensi->dokumentasiNotulensi->count() > 0)
+            <div style="page-break-before: always; margin-top:20px; font-size:12px;">
+                <p style="font-weight:bold; margin-bottom:16px; text-align:center; font-size:14px;">DOKUMENTASI KEGIATAN</p>
+                <div style="text-align: center;">
+                    @foreach($notulensi->dokumentasiNotulensi as $dok)
+                        @php
+                            $path = public_path('storage/dokumentasi-notulensi/' . $dok->nama_file);
+                        @endphp
+                        @if(file_exists($path))
+                            <img src="{{ $path }}" style="max-width: 80%; max-height: 300px; margin-bottom: 20px; border: 1px solid #000;" />
+                        @endif
+                    @endforeach
+                </div>
             </div>
         @endif
     </div>
