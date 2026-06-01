@@ -531,7 +531,7 @@
 
 <body>
 
-  <div class="wrap">
+  <div class="wrap" x-data="{ activeModule: localStorage.getItem('activeModule') || 'kas' }">
     <div class="sidebar">
       <div class="sidebar-logo">
         <div class="logo-icon"><i class="ti ti-building-bank" aria-hidden="true"></i></div>
@@ -544,6 +544,34 @@
 
 
       @php $sidebarUser = auth()->user(); @endphp
+
+manajemen-kas-oza
+      {{-- MANAJEMEN FAKULTAS (KAS & NOTULENSI) --}}
+      @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit']))
+      <div x-show="activeModule === 'kas'" x-cloak>
+        <div class="nav-section">Manajemen Kas</div>
+        <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}"><i class="ti ti-cash" aria-hidden="true"></i>Kas Masuk</a>
+        <a href="{{ route('kas.keluar') }}" class="nav-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
+        <a href="{{ route('kas.tagihan') }}" class="nav-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
+        <a href="{{ route('kas.laporan') }}" class="nav-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
+      </div>
+
+      <div x-show="activeModule === 'notulensi'" x-cloak>
+        <div class="nav-section">Notulensi Rapat</div>
+        <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
+          <i class="ti ti-notes" aria-hidden="true"></i>Data Notulensi
+          <span class="badge" style="margin-left:auto;">{{ \App\Models\Notulensi::count() }}</span>
+        </a>
+      </div>
+      @endif
+
+      {{-- MENU DOSEN --}}
+      @if($sidebarUser->role === 'dosen')
+      <div class="nav-section">Modul Dosen</div>
+      <a href="{{ route('kas.masuk') }}" class="nav-item"><i class="ti ti-history" aria-hidden="true"></i>Riwayat Kas Saya</a>
+      <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
+        <i class="ti ti-notes" aria-hidden="true"></i>Data Notulensi
+      </a>
 
       {{-- MENU KAS: sembunyikan untuk admin_notulensi dan dosen --}}
       @if(!in_array($sidebarUser->role, ['admin_notulensi_fst', 'admin_notulensi_fis', 'dosen']))
@@ -583,6 +611,7 @@
               </a>
           </div>
       </div>
+main
       @endif
 
       {{-- MENU MASTER DATA: hanya super_admin --}}
@@ -604,18 +633,47 @@
       </a>
       @endif
 
-      <div class="sidebar-footer">
-        <div class="user-row">
-          <div class="avatar">{{ substr(Auth::user()->name ?? 'SA', 0, 2) }}</div>
-          <div class="user-info">{{ Auth::user()->name ?? 'User' }}<span>{{ Auth::user()->role_label ?? 'Administrator' }}</span></div>
+      <div class="sidebar-footer" x-data="{ openProfileMenu: false }" style="position:relative; padding:12px;">
+        
+        <!-- Popover Menu -->
+        <div x-show="openProfileMenu" @click.outside="openProfileMenu = false" x-cloak x-transition.opacity.duration.200ms
+             style="position:absolute; bottom:calc(100% + 5px); left:12px; width:calc(100% - 24px); 
+                    background:#2e364f; color:#f8fafc; border-radius:12px; padding:8px; 
+                    box-shadow:0 10px 25px rgba(0,0,0,0.25); z-index:50; border: 1px solid #475569;">
+           
+           @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
+           <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; padding:4px 8px; margin-bottom:4px;">Ganti Modul</div>
+           <a href="#" @click.prevent="activeModule = 'kas'; localStorage.setItem('activeModule', 'kas'); openProfileMenu = false" 
+              style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;"
+              onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+              <i class="ti ti-cash-register"></i> Manajemen Kas
+              <i class="ti ti-check" style="margin-left:auto; font-size:14px;" x-show="activeModule === 'kas'"></i>
+           </a>
+           <a href="#" @click.prevent="activeModule = 'notulensi'; localStorage.setItem('activeModule', 'notulensi'); openProfileMenu = false"
+              style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px; margin-bottom:8px;"
+              onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+              <i class="ti ti-clipboard-list"></i> Notulensi Rapat
+              <i class="ti ti-check" style="margin-left:auto; font-size:14px;" x-show="activeModule === 'notulensi'"></i>
+           </a>
+           <div style="height:1px; background:#475569; margin:4px 0 8px 0;"></div>
+           @endif
 
-          <!-- Logout Form & Icon -->
+           <a href="{{ route('pengaturan.profil') }}" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+             <i class="ti ti-user-circle"></i> Profile
+           </a>
+           <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#fca5a5; text-decoration:none; font-size:13px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+             <i class="ti ti-logout"></i> Log Out
+           </a>
+        </div>
+
+        <div class="user-row" @click="openProfileMenu = !openProfileMenu" style="cursor:pointer; padding: 10px; border-radius: 10px; transition: background 0.2s; background: #2e364f;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='#2e364f'">
+          <div class="avatar" style="background:#3b82f6; color:#fff; border: 1px solid #60a5fa;">{{ substr(Auth::user()->name ?? 'SA', 0, 2) }}</div>
+          <div class="user-info" style="color:#f8fafc;">{{ Auth::user()->name ?? 'User' }}<span style="color:#94a3b8;">{{ Auth::user()->email ?? 'Administrator' }}</span></div>
+          <i class="ti ti-chevron-right" style="margin-left:auto;font-size:14px;color:#64748b;" :style="openProfileMenu ? 'transform: rotate(-90deg); transition: transform 0.2s;' : 'transition: transform 0.2s;'"></i>
+
           <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
             @csrf
           </form>
-          <i class="ti ti-logout" style="margin-left:auto;font-size:16px;color:#9ca3af;cursor:pointer"
-            aria-hidden="true" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-            title="Logout"></i>
         </div>
       </div>
     </div>

@@ -143,9 +143,14 @@
 
 
 {{-- ============================================================ --}}
-{{-- ADMIN KAS (FST / FIS)                                        --}}
+{{-- ADMIN FAKULTAS (FST / FIS)                                   --}}
 {{-- ============================================================ --}}
-@elseif(in_array($user->role, ['admin_kas_fst', 'admin_kas_fis']))
+@elseif(in_array($user->role, ['admin_fst', 'admin_fis']))
+
+manajemen-kas-oza
+  <div class="banner banner-blue">
+    <i class="ti ti-shield-check"></i>
+    <span><b>{{ $user->role_label }}</b> — {{ $namaFakultas }}</span>
 
 
 
@@ -162,18 +167,29 @@
       <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Saldo</div>
       <div style="font-size: 28px; font-weight: 700; color: #059669;">Rp {{ number_format($totalKasFakultas, 0, ',', '.') }}</div>
     </div>
+main
   </div>
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-label">Total Dosen</div>
-      <div class="stat-val">{{ $totalDosenFakultas }}</div>
-      <div class="stat-sub">di {{ $namaFakultas }}</div>
+      <div class="stat-label">Saldo Kas Terkini</div>
+      <div class="stat-val">Rp {{ number_format($saldo_kas ?? 0, 0, ',', '.') }}</div>
+      <div class="stat-sub">Masuk: Rp {{ number_format($total_kas_masuk ?? 0, 0, ',', '.') }} | Keluar: Rp {{ number_format($total_kas_keluar ?? 0, 0, ',', '.') }}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Tagihan Belum Lunas</div>
+manajemen-kas-oza
+      <div class="stat-val">{{ $tagihan_pending ?? 0 }}</div>
+      <div class="stat-sub">dosen bulan ini</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Notulensi Rapat</div>
+      <div class="stat-val">{{ $total_notulensi ?? 0 }}</div>
+      <div class="stat-sub">seluruh rapat fakultas</div>
+
       <div class="stat-val">{{ $tagihanBelumLunas }}</div>
       <div class="stat-sub">bulan ini</div>
+main
     </div>
   </div>
 
@@ -185,6 +201,8 @@
       <div class="mod-desc">Kelola kas masuk, kas keluar, dan tagihan dosen {{ $namaFakultas }}.</div>
       <div class="mod-footer"><a href="{{ route('kas.masuk') }}" style="color:#1d4ed8">Buka →</a></div>
     </div>
+manajemen-kas-oza
+
   </div>
 
 {{-- ============================================================ --}}
@@ -216,10 +234,11 @@
 
   <p class="section-title"><i class="ti ti-layout-grid"></i> Modul Aktif</p>
   <div class="modules-grid">
+main
     <div class="mod-card">
       <div class="mod-icon mod-teal"><i class="ti ti-clipboard-list"></i></div>
       <div class="mod-title">Notulensi Rapat</div>
-      <div class="mod-desc">Kelola notulensi rapat {{ $namaFakultas }}.</div>
+      <div class="mod-desc">Kelola notulensi rapat, peserta, dan BAP untuk {{ $namaFakultas }}.</div>
       <div class="mod-footer"><a href="{{ route('notulensi.index') }}" style="color:#0f766e">Buka →</a></div>
     </div>
   </div>

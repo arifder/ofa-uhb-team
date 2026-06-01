@@ -2,6 +2,7 @@
 @section('title', 'Kas ' . $title)
 
 @push('styles')
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <style>
     .master-card {
         background: #ffffff;
@@ -38,7 +39,7 @@
 
     .custom-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.5); align-items: center; justify-content: center; z-index: 50; }
     .custom-modal.active { display: flex; }
-    .custom-modal-content { background: #fff; width: 520px; max-height: 90vh; overflow-y: auto; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,.15); font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-modal-content { background: #fff; width: 640px; max-height: 90vh; overflow-y: auto; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,.15); font-family: 'Plus Jakarta Sans', sans-serif; }
     .custom-modal-header { padding: 18px 22px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fff; z-index: 1; }
     .custom-modal-body { padding: 22px; font-size: 13px; }
     .custom-modal-footer { padding: 16px 22px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; border-radius: 0 0 14px 14px; position: sticky; bottom: 0; }
@@ -362,6 +363,11 @@
                     <label>Keterangan</label>
                     <input type="text" id="kas_keterangan" class="filter-control" required placeholder="cth: Iuran kas bulan Mei 2026">
                 </div>
+manajemen-kas-oza
+                <div class="form-group">
+                    <label>Resume Rapat <span style="color:#94a3b8;">(opsional)</span></label>
+                    <textarea id="kas_resume_rapat" placeholder="Tulis resume / catatan rapat di sini..."></textarea>
+
 
                 @if($jenis === 'keluar')
                 <div class="form-group" style="margin-top:16px;">
@@ -382,6 +388,7 @@
                     
                     <!-- Preview foto yang dipilih -->
                     <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
+main
                 </div>
                 @endif
             </div>
@@ -555,6 +562,23 @@
         setTimeout(() => t.remove(), 3500);
     }
 
+    function initTinyMCE() {
+        if (tinymce.get('kas_resume_rapat')) {
+            tinymce.get('kas_resume_rapat').remove();
+        }
+        tinymce.init({
+            selector: '#kas_resume_rapat',
+            license_key: 'gpl',
+            height: 250,
+            menubar: false,
+            plugins: 'lists link',
+            toolbar: 'bold italic underline | bullist numlist | h2 h3 | removeformat',
+            branding: false,
+            promotion: false,
+            content_style: 'body { font-family: Plus Jakarta Sans, sans-serif; font-size: 13px; line-height: 1.6; }',
+        });
+    }
+
     function openModal() {
         document.getElementById('kasForm').reset();
         document.getElementById('kas_id').value = '';
@@ -576,9 +600,12 @@
         }
 
         document.getElementById('kasModal').classList.add('active');
+        // Init TinyMCE setelah modal visible
+        setTimeout(() => { initTinyMCE(); }, 100);
     }
 
     function closeModal() {
+        if (tinymce.get('kas_resume_rapat')) tinymce.get('kas_resume_rapat').remove();
         document.getElementById('kasModal').classList.remove('active');
     }
 
@@ -661,6 +688,13 @@
                     <div class="detail-label">Keterangan</div>
                     <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.keterangan ?? '-'}</div>
                 </div>
+manajemen-kas-oza
+                ${data.resume_rapat ? `
+                <div class="detail-section">
+                    <div class="detail-label">Resume Rapat</div>
+                    <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px; line-height:1.6;">${data.resume_rapat}</div>
+                </div>` : ''}
+
                 ${data.jenis === 'keluar' && data.bukti_foto ? `
                 <div class="detail-section">
                     <div class="detail-label">Bukti Foto / Struk</div>
@@ -672,6 +706,7 @@
                     </div>
                 </div>
                 ` : ''}
+main
                 <div class="detail-section" style="border-bottom:none;">
                     <div class="detail-label">Dibuat Oleh</div>
                     <div class="detail-value">${data.user ? data.user.name : '-'}</div>
@@ -718,9 +753,19 @@
             document.getElementById('modalTitle').textContent = 'Edit Kas {{ $title }}';
             document.getElementById('kasModal').classList.add('active');
 
+manajemen-kas-oza
+            // Set konten TinyMCE setelah modal terbuka
+            setTimeout(() => {
+                initTinyMCE();
+                setTimeout(() => {
+                    const ed = tinymce.get('kas_resume_rapat');
+                    if (ed) ed.setContent(data.resume_rapat ?? '');
+                }, 200);
+
             // Trigger Alpine x-model
             setTimeout(() => {
                 document.getElementById('kas_jumlah').dispatchEvent(new Event('input'));
+main
             }, 100);
         } catch {
             showToast('Gagal memuat data.', 'error');
@@ -732,13 +777,17 @@
 
         const id = document.getElementById('kas_id').value;
         const url = id ? `/kas/transaksi/${id}` : `/kas/transaksi`;
-        const method = id ? 'PUT' : 'POST';
+
+        // Ambil konten dari TinyMCE
+        const editor = tinymce.get('kas_resume_rapat');
+        const resumeContent = editor ? editor.getContent() : document.getElementById('kas_resume_rapat').value;
 
         const formData = new FormData();
         formData.append('jenis', document.getElementById('kas_jenis').value);
         formData.append('jumlah', document.getElementById('kas_jumlah').value);
         formData.append('tanggal', document.getElementById('kas_tanggal').value);
         formData.append('keterangan', document.getElementById('kas_keterangan').value);
+        formData.append('resume_rapat', resumeContent);
 
         const fakSel = document.getElementById('kas_fakultas_id');
         if (fakSel && fakSel.value) formData.append('fakultas_id', fakSel.value);

@@ -56,6 +56,19 @@ class NotifikasiHelper
     /**
      * Notif rapat dibuat → admin notulensi, super_admin, kepala_unit.
      */
+manajemen-kas-oza
+    public static function notifNotulensi(
+        string $judul,
+        string $pesan,
+        ?string $url = null
+    ): void {
+        self::kirimKeRole([
+            'super_admin',
+            'admin_fst',
+            'admin_fis',
+            'kepala_unit',
+        ], $judul, $pesan, 'notulensi', $url);
+  
     public static function notifNotulensiDibuat(string $judul, ?string $url = null): void
     {
         self::kirimKeRole(
@@ -93,6 +106,7 @@ class NotifikasiHelper
             'notulensi',
             $url
         );
+  main
     }
 
     /**

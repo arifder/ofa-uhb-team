@@ -74,16 +74,16 @@ class User extends Authenticatable
 
     public function isAdminKas(): bool {
         return in_array($this->role, [
-            'admin_kas_fst',
-            'admin_kas_fis',
+            'admin_fst',
+            'admin_fis',
             'super_admin'
         ]);
     }
 
     public function isAdminNotulensi(): bool {
         return in_array($this->role, [
-            'admin_notulensi_fst',
-            'admin_notulensi_fis',
+            'admin_fst',
+            'admin_fis',
             'super_admin'
         ]);
     }
@@ -94,27 +94,23 @@ class User extends Authenticatable
 
     public function getRoleLabelAttribute(): string {
         return match($this->role) {
-            'super_admin'          => 'Super Admin',
-            'admin_kas_fst'        => 'Admin Kas FST',
-            'admin_notulensi_fst'  => 'Admin Notulensi FST',
-            'admin_kas_fis'        => 'Admin Kas FIS',
-            'admin_notulensi_fis'  => 'Admin Notulensi FIS',
-            'kepala_unit'          => 'Kepala Unit',
-            'dosen'                => 'Dosen',
-            default                => $this->role
+            'super_admin' => 'Super Admin',
+            'admin_fst'   => 'Admin FST',
+            'admin_fis'   => 'Admin FIS',
+            'kepala_unit' => 'Kepala Unit',
+            'dosen'       => 'Dosen',
+            default       => $this->role
         };
     }
 
     public function getRoleBadgeColorAttribute(): array {
         return match($this->role) {
-            'super_admin'         => ['bg'=>'#dbeafe','text'=>'#1d4ed8'],
-            'admin_kas_fst'       => ['bg'=>'#dbeafe','text'=>'#1e40af'],
-            'admin_notulensi_fst' => ['bg'=>'#e0f2fe','text'=>'#0284c7'],
-            'admin_kas_fis'       => ['bg'=>'#ffedd5','text'=>'#c2410c'],
-            'admin_notulensi_fis' => ['bg'=>'#fef3c7','text'=>'#92400e'],
-            'kepala_unit'         => ['bg'=>'#d1fae5','text'=>'#065f46'],
-            'dosen'               => ['bg'=>'#ede9fe','text'=>'#5b21b6'],
-            default               => ['bg'=>'#f3f4f6','text'=>'#374151']
+            'super_admin' => ['bg'=>'#dbeafe','text'=>'#1d4ed8'],
+            'admin_fst'   => ['bg'=>'#e0f2fe','text'=>'#0284c7'],
+            'admin_fis'   => ['bg'=>'#ffedd5','text'=>'#c2410c'],
+            'kepala_unit' => ['bg'=>'#d1fae5','text'=>'#065f46'],
+            'dosen'       => ['bg'=>'#ede9fe','text'=>'#5b21b6'],
+            default       => ['bg'=>'#f3f4f6','text'=>'#374151']
         };
     }
 

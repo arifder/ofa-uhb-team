@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ─────────────────────────────────────── */
+@layer base {
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        box-sizing: border-box;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .ofa-body {
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+
+    .font-display {
+        font-family: 'Syne', system-ui, sans-serif;
+    }
+}
+
+/* ─── Components ────────────────────────────────── */
+@layer components {
+    /* Glass card */
+    .glass {
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .glass-dark {
+        background: rgba(13, 26, 62, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Modern input */
+    .ofa-input {
+        @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-800
+               placeholder-slate-400 transition-all duration-200 outline-none;
+    }
+    .ofa-input:hover {
+        @apply border-slate-300;
+    }
+    .ofa-input:focus {
+        @apply border-blue-500 bg-white ring-4 ring-blue-500/10;
+    }
+    .ofa-input.error {
+        @apply border-red-400 bg-red-50;
+    }
+
+    /* Button shine */
+    .ofa-btn-shine {
+        position: relative;
+        overflow: hidden;
+    }
+    .ofa-btn-shine .shine-layer {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+        transform: skewX(-12deg);
+        transition: left 0.7s ease;
+        pointer-events: none;
+    }
+    .ofa-btn-shine:hover .shine-layer {
+        left: 150%;
+    }
+}
+
+/* ─── Utilities ─────────────────────────────────── */
+@layer utilities {
+    /* Anti-gravity float animations */
+    .animate-float {
+        animation: floatMain 6s ease-in-out infinite;
+    }
+    .animate-float-sm {
+        animation: floatSm 5s ease-in-out infinite;
+        animation-delay: 1s;
+    }
+    .animate-float-lg {
+        animation: floatLg 7s ease-in-out infinite;
+        animation-delay: 2s;
+    }
+
+    /* Pulse dot */
+    .animate-pulse-dot {
+        animation: pulseDot 2s ease-in-out infinite;
+    }
+
+    /* Gradient text */
+    .text-gradient-cyan {
+        background: linear-gradient(90deg, #22d3ee, #67e8f9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .text-gradient-white-cyan {
+        background: linear-gradient(90deg, #ffffff, #a5f3fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
+
+/* ─── Keyframes ─────────────────────────────────── */
+@keyframes floatMain {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-8px); }
+}
+
+@keyframes floatSm {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-6px); }
+}
+
+@keyframes floatLg {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-5px); }
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.85); }
+}

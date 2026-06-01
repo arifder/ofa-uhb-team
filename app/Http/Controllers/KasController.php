@@ -27,7 +27,7 @@ class KasController extends Controller
             ->where('jenis', $jenis);
 
         // Role-based filter
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $query->where('fakultas_id', $user->fakultas_id);
         }
 
@@ -81,13 +81,19 @@ class KasController extends Controller
         $this->authorize('create', KasTransaction::class);
 
         $user = auth()->user();
+manajemen-kas-oza
+        $jenis = $request->input('jenis', 'masuk');
+
         $jenis = $request->jenis;
+main
 
         $validated = $request->validate([
-            'jumlah'      => 'required|numeric|min:1',
+            'jenis'        => 'required|in:masuk,keluar',
+            'jumlah'       => 'required|numeric|min:1',
             'tanggal'      => 'required|date',
             'kategori'     => 'nullable|string',
             'keterangan'   => 'required|string|max:255',
+            'resume_rapat' => 'nullable|string',
             'fakultas_id'  => 'nullable|exists:fakultas,id',
             'dosen_id'     => 'nullable|exists:dosens,id',
             'bukti_foto'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -110,6 +116,15 @@ class KasController extends Controller
         }
 
         $kas = KasTransaction::create([
+manajemen-kas-oza
+            'jenis'        => $validated['jenis'],
+            'jumlah'       => $validated['jumlah'],
+            'tanggal'      => $validated['tanggal'],
+            'keterangan'   => $validated['keterangan'],
+            'resume_rapat' => $validated['resume_rapat'] ?? null,
+            'fakultas_id'  => $fakultasId,
+            'user_id'      => $user->id,
+
             'jenis'        => $jenis,
             'kategori'     => $jenis === 'keluar' ? ($validated['kategori'] ?? null) : null,
             'jumlah'       => $validated['jumlah'],
@@ -121,6 +136,7 @@ class KasController extends Controller
             'fakultas_id'   => $fakultasId,
             'dosen_id'      => $validated['dosen_id'] ?? null,
             'user_id'       => $user->id,
+main
         ]);
 
         // ── Notifikasi ───────────────────────────────────────
@@ -165,10 +181,11 @@ class KasController extends Controller
         $jenis = $request->jenis;
 
         $validated = $request->validate([
-            'jumlah'      => 'required|numeric|min:1',
+            'jumlah'       => 'required|numeric|min:1',
             'tanggal'      => 'required|date',
             'kategori'     => 'nullable|string',
             'keterangan'   => 'required|string|max:255',
+            'resume_rapat' => 'nullable|string',
             'fakultas_id'  => 'nullable|exists:fakultas,id',
             'dosen_id'     => 'nullable|exists:dosens,id',
             'bukti_foto'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -197,6 +214,12 @@ class KasController extends Controller
         $kas->update([
             'kategori'     => $jenis === 'keluar' ? ($validated['kategori'] ?? null) : null,
             'jumlah'       => $validated['jumlah'],
+manajemen-kas-oza
+            'tanggal'      => $validated['tanggal'],
+            'keterangan'   => $validated['keterangan'],
+            'resume_rapat' => $validated['resume_rapat'] ?? null,
+            'fakultas_id'  => $fakultasId,
+
             'tabungan'     => $tabungan,
             'uang_sosial'  => $sosial,
             'tanggal'       => $validated['tanggal'],
@@ -204,6 +227,7 @@ class KasController extends Controller
             'bukti_foto'    => $buktiFotoPath,
             'fakultas_id'   => $fakultasId,
             'dosen_id'      => $validated['dosen_id'] ?? null,
+main
         ]);
 
         return response()->json([
@@ -238,7 +262,7 @@ class KasController extends Controller
         $query = KasTagihan::with(['dosen', 'dosen.prodi', 'fakultas']);
 
         // Role-based filter
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $query->where('fakultas_id', $user->fakultas_id);
         } elseif ($user->role === 'dosen') {
             $dosen = \App\Models\Dosen::where('user_id', $user->id)->first();
@@ -475,7 +499,7 @@ class KasController extends Controller
 
         // Total keseluruhan
         $baseQuery = KasTransaction::query();
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $baseQuery->where('fakultas_id', $user->fakultas_id);
         } elseif ($fakId) {
             $baseQuery->where('fakultas_id', $fakId);
@@ -495,7 +519,7 @@ class KasController extends Controller
             ")
             ->whereYear('tanggal', $tahun);
 
-        if (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $reak->where('fakultas_id', $user->fakultas_id);
         } elseif ($fakId) {
             $reak->where('fakultas_id', $fakId);

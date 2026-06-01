@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Dosen;
 use App\Models\Fakultas;
 use App\Models\Notulensi;
+use App\Models\KasTransaction;
+use App\Models\KasTagihan;
 
 class DashboardController extends Controller
 {
@@ -30,6 +32,20 @@ class DashboardController extends Controller
                 ->latest()->take(5)->get();
         }
 
+manajemen-kas-oza
+        // Khusus Admin Fakultas (FST / FIS)
+        elseif (in_array($user->role, ['admin_fst', 'admin_fis'])) {
+            // Data Kas
+            $data['total_kas_masuk'] = KasTransaction::where('fakultas_id', $user->fakultas_id)
+                                          ->where('jenis', 'masuk')->sum('jumlah');
+            $data['total_kas_keluar'] = KasTransaction::where('fakultas_id', $user->fakultas_id)
+                                           ->where('jenis', 'keluar')->sum('jumlah');
+            $data['saldo_kas'] = $data['total_kas_masuk'] - $data['total_kas_keluar'];
+            $data['kas_recent'] = KasTransaction::where('fakultas_id', $user->fakultas_id)
+                                      ->with('fakultas')->latest()->take(5)->get();
+            $data['tagihan_pending'] = KasTagihan::where('fakultas_id', $user->fakultas_id)
+                                        ->where('status', 'belum_lunas')->count();
+
         elseif (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
             $data['totalDosenFakultas'] = Dosen::whereHas('prodi', function($q) use ($user) {
                 $q->where('fakultas_id', $user->fakultas_id);
@@ -51,17 +67,12 @@ class DashboardController extends Controller
                 
             $data['namaFakultas']       = optional($user->fakultas)->nama_fakultas ?? '-';
         }
+main
 
-        elseif (in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis'])) {
-            $data['totalNotulensibulan'] = Notulensi::where('fakultas_id', $user->fakultas_id)
-                ->whereMonth('tanggal', now()->month)
-                ->whereYear('tanggal', now()->year)
-                ->count();
-            $data['totalRapatTahun'] = Notulensi::where('fakultas_id', $user->fakultas_id)
-                ->whereYear('tanggal', now()->year)
-                ->count();
-            $data['notulensiTerakhir'] = Notulensi::where('fakultas_id', $user->fakultas_id)
-                ->latest('tanggal')->first();
+            // Data Notulensi
+            $data['total_notulensi'] = Notulensi::where('fakultas_id', $user->fakultas_id)->count();
+            $data['notulensi_recent'] = Notulensi::where('fakultas_id', $user->fakultas_id)
+                                        ->latest('tanggal')->take(5)->get();
             $data['namaFakultas'] = optional($user->fakultas)->nama_fakultas ?? '-';
         }
 
