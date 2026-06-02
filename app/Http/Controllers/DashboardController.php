@@ -32,7 +32,6 @@ class DashboardController extends Controller
                 ->latest()->take(5)->get();
         }
 
-manajemen-kas-oza
         // Khusus Admin Fakultas (FST / FIS)
         elseif (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             // Data Kas
@@ -46,28 +45,19 @@ manajemen-kas-oza
             $data['tagihan_pending'] = KasTagihan::where('fakultas_id', $user->fakultas_id)
                                         ->where('status', 'belum_lunas')->count();
 
-        elseif (in_array($user->role, ['admin_kas_fst', 'admin_kas_fis'])) {
             $data['totalDosenFakultas'] = Dosen::whereHas('prodi', function($q) use ($user) {
                 $q->where('fakultas_id', $user->fakultas_id);
             })->count();
             
-            $kasMasukFakultas = \App\Models\KasTransaction::where('fakultas_id', $user->fakultas_id)
-                ->where('jenis', 'masuk')->sum('jumlah');
-            $kasKeluarFakultas = \App\Models\KasTransaction::where('fakultas_id', $user->fakultas_id)
-                ->where('jenis', 'keluar')->sum('jumlah');
-            $data['kasMasukFakultas']   = $kasMasukFakultas;
-            $data['kasKeluarFakultas']  = $kasKeluarFakultas;
-            $data['totalKasFakultas']   = $kasMasukFakultas - $kasKeluarFakultas;
+            $data['kasMasukFakultas']   = $data['total_kas_masuk'];
+            $data['kasKeluarFakultas']  = $data['total_kas_keluar'];
+            $data['totalKasFakultas']   = $data['saldo_kas'];
             
             $data['tagihanBelumLunas']  = \App\Models\KasTagihan::where('fakultas_id', $user->fakultas_id)
                 ->where('status', 'belum_lunas')
                 ->where('bulan', now()->month)
                 ->where('tahun', now()->year)
                 ->count();
-                
-            $data['namaFakultas']       = optional($user->fakultas)->nama_fakultas ?? '-';
-        }
-main
 
             // Data Notulensi
             $data['total_notulensi'] = Notulensi::where('fakultas_id', $user->fakultas_id)->count();

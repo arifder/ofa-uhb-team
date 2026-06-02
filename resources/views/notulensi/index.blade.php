@@ -259,8 +259,12 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>Agenda Rapat</label>
+                    <textarea id="not_agenda_rapat" class="filter-control" rows="3" placeholder="Tuliskan agenda/poin-poin rapat..." style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-group">
                     <label>Resume Rapat</label>
-                    <textarea id="not_agenda" class="filter-control" rows="8" placeholder="Tuliskan resume/agenda rapat di sini..."></textarea>
+                    <textarea id="not_agenda" class="filter-control" rows="8" placeholder="Tuliskan resume notulensi rapat di sini..."></textarea>
                 </div>
                 <div class="form-group">
                     <label>Tindak Lanjut <span style="color:#94a3b8;">(opsional)</span></label>
@@ -401,6 +405,7 @@
         if (tinymce.get('not_agenda')) {
             tinymce.get('not_agenda').setContent('');
         }
+        document.getElementById('not_agenda_rapat').value = '';
         newFotoFiles = [];
         deletedFotoIds = [];
         document.getElementById('notulensiModal').classList.add('active');
@@ -580,6 +585,11 @@ function closeExportModal() {
                     </div>
                 </div>
             </div>
+            ${data.agenda_rapat ? `
+            <div class="detail-section">
+                <div class="detail-label">Agenda Rapat</div>
+                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px; white-space:pre-line;">${data.agenda_rapat}</div>
+            </div>` : ''}
             <div class="detail-section">
                 <div class="detail-label">Resume Rapat</div>
                 <div class="detail-value tinymce-content" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
@@ -633,6 +643,7 @@ function closeExportModal() {
             document.getElementById('not_agenda').value = data.agenda || '';
         }
         document.getElementById('not_tindak_lanjut').value = data.tindak_lanjut ?? '';
+        document.getElementById('not_agenda_rapat').value = data.agenda_rapat ?? '';
 
         // Set fakultas if super_admin field exists
         const fakSel = document.getElementById('not_fakultas_id');
@@ -678,7 +689,7 @@ function closeExportModal() {
             agendaContent = document.getElementById('not_agenda').value;
         }
         formData.append('agenda', agendaContent);
-        
+        formData.append('agenda_rapat', document.getElementById('not_agenda_rapat').value);
         formData.append('tindak_lanjut', document.getElementById('not_tindak_lanjut').value);
         
         checked.forEach(pesertaId => formData.append('peserta[]', pesertaId));

@@ -62,9 +62,9 @@
                 <td>{{ $notulensi->tempat }}</td>
             </tr>
             <tr>
-                <td style="vertical-align: top;">Agenda</td>
+                <td style="vertical-align: top;">Agenda Rapat</td>
                 <td style="vertical-align: top;">:</td>
-                <td style="white-space:pre-wrap;">{{ $notulensi->agenda }}</td>
+                <td style="white-space:pre-wrap;">{{ $notulensi->agenda_rapat ?? '-' }}</td>
             </tr>
         </table>
 
@@ -97,10 +97,18 @@
             </tbody>
         </table>
 
+        <!-- RESUME RAPAT -->
+        <div style="margin-top:16px; font-size:12px;">
+            <p style="font-weight:bold; margin-bottom:6px;">Resume Rapat:</p>
+            <div style="background:#f8fafc; border:1px solid #ddd; padding:12px; border-radius:6px;">
+                {!! $notulensi->agenda !!}
+            </div>
+        </div>
+
         <!-- TINDAK LANJUT -->
         <div style="margin-top:16px; font-size:12px;">
-            <p style="font-weight:bold;">Tindak Lanjut / Hasil Rapat:</p>
-            <p style="white-space:pre-wrap; margin-top:6px;">{{ $notulensi->tindak_lanjut ?? '-' }}</p>
+            <p style="font-weight:bold; margin-bottom:6px;">Tindak Lanjut / Hasil Rapat:</p>
+            <p style="white-space:pre-wrap; margin-top:0;">{{ $notulensi->tindak_lanjut ?? '-' }}</p>
         </div>
 
         <!-- TTD -->
@@ -137,9 +145,12 @@
                     @foreach($notulensi->dokumentasiNotulensi as $dok)
                         @php
                             $path = public_path('storage/dokumentasi-notulensi/' . $dok->nama_file);
+                            if (!file_exists($path)) {
+                                $path = storage_path('app/public/dokumentasi-notulensi/' . $dok->nama_file);
+                            }
                         @endphp
                         @if(file_exists($path))
-                            <img src="{{ $path }}" style="max-width: 80%; max-height: 300px; margin-bottom: 20px; border: 1px solid #000;" />
+                            <img src="{{ $path }}" style="max-width: 80%; max-height: 300px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; padding: 4px; background: #fff;" />
                         @endif
                     @endforeach
                 </div>

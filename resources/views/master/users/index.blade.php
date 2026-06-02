@@ -59,10 +59,8 @@
                 <select name="role" class="filter-control w-48" onchange="this.form.submit()">
                     <option value="">Semua Role</option>
                     <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>Super Admin</option>
-                    <option value="admin_kas_fst" {{ request('role') == 'admin_kas_fst' ? 'selected' : '' }}>Admin Kas FST</option>
-                    <option value="admin_notulensi_fst" {{ request('role') == 'admin_notulensi_fst' ? 'selected' : '' }}>Admin Notulensi FST</option>
-                    <option value="admin_kas_fis" {{ request('role') == 'admin_kas_fis' ? 'selected' : '' }}>Admin Kas FIS</option>
-                    <option value="admin_notulensi_fis" {{ request('role') == 'admin_notulensi_fis' ? 'selected' : '' }}>Admin Notulensi FIS</option>
+                    <option value="admin_fst" {{ request('role') == 'admin_fst' ? 'selected' : '' }}>Admin FST</option>
+                    <option value="admin_fis" {{ request('role') == 'admin_fis' ? 'selected' : '' }}>Admin FIS</option>
                     <option value="kepala_unit" {{ request('role') == 'kepala_unit' ? 'selected' : '' }}>Kepala Unit</option>
                     <option value="dosen" {{ request('role') == 'dosen' ? 'selected' : '' }}>Dosen</option>
                 </select>
@@ -111,7 +109,7 @@
                                 @endif
                             </td>
                             <td>
-                                <button class="icon-btn" onclick='window.dispatchEvent(new CustomEvent("open-user-modal", { detail: @js($user) }))' title="Edit User"><i class="ti ti-pencil"></i></button>
+                                <button class="icon-btn edit-user-btn" data-user="{{ json_encode($user) }}" title="Edit User"><i class="ti ti-pencil"></i></button>
                                 <button class="icon-btn" style="color:#d97706" onclick="toggleStatus({{ $user->id }})" title="Arsipkan User"><i class="ti ti-archive"></i></button>
                                 <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})" title="Hapus Permanen"><i class="ti ti-trash"></i></button>
                             </td>
@@ -218,10 +216,8 @@
         prodis: [],
 
         get showFakultas() {
-            return this.role === 'admin_kas_fst' || 
-                   this.role === 'admin_notulensi_fst' || 
-                   this.role === 'admin_kas_fis' || 
-                   this.role === 'admin_notulensi_fis' || 
+            return this.role === 'admin_fst' || 
+                   this.role === 'admin_fis' || 
                    this.role === 'dosen';
         },
         get showProdi() {
@@ -375,10 +371,8 @@
                         <label>Role</label>
                         <select class="filter-control" required x-model="role">
                             <option value="super_admin">Super Admin</option>
-                            <option value="admin_kas_fst">Admin Kas FST</option>
-                            <option value="admin_notulensi_fst">Admin Notulensi FST</option>
-                            <option value="admin_kas_fis">Admin Kas FIS</option>
-                            <option value="admin_notulensi_fis">Admin Notulensi FIS</option>
+                            <option value="admin_fst">Admin FST</option>
+                            <option value="admin_fis">Admin FIS</option>
                             <option value="kepala_unit">Kepala Unit</option>
                             <option value="dosen">Dosen</option>
                         </select>
@@ -411,7 +405,7 @@
                 </div>
                 <div class="custom-modal-footer">
                     <button type="button" class="btn-outline" @click="closeModal()">Batal</button>
-                    <button type="submit" class="btn-primary">Simpan</button>
+                    <button type="submit" class="btn-primary" x-text="userId ? 'Selesai' : 'Simpan'">Simpan</button>
                 </div>
             </form>
         </div>
@@ -422,6 +416,13 @@
 @push('scripts')
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        document.querySelectorAll('.edit-user-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const user = JSON.parse(this.dataset.user);
+                window.dispatchEvent(new CustomEvent('open-user-modal', { detail: user }));
+            });
+        });
 
         function showToast(msg, type = 'success') {
             const t = document.createElement('div');

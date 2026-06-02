@@ -14,18 +14,23 @@ class NotifikasiController extends Controller
     public function index(Request $request)
     {
         $filter = $request->get('filter', 'semua');
+        $tanggal = $request->get('tanggal');
 
         $query = Notifikasi::where('user_id', auth()->id());
 
-        match ($filter) {
-            'hari_ini'  => $query->whereDate('created_at', Carbon::today()),
-            'kemarin'   => $query->whereDate('created_at', Carbon::yesterday()),
-            '7_hari'    => $query->where('created_at', '>=', Carbon::now()->subDays(7)->startOfDay()),
-            '30_hari'   => $query->where('created_at', '>=', Carbon::now()->subDays(30)->startOfDay()),
-            default     => null,
-        };
+        if ($tanggal) {
+            $query->whereDate('created_at', $tanggal);
+        } else {
+            match ($filter) {
+                'hari_ini'  => $query->whereDate('created_at', Carbon::today()),
+                'kemarin'   => $query->whereDate('created_at', Carbon::yesterday()),
+                '7_hari'    => $query->where('created_at', '>=', Carbon::now()->subDays(7)->startOfDay()),
+                '30_hari'   => $query->where('created_at', '>=', Carbon::now()->subDays(30)->startOfDay()),
+                default     => null,
+            };
+        }
 
-        $notifikasi = $query->latest()->paginate(20)->appends(['filter' => $filter]);
+        $notifikasi = $query->latest()->paginate(20)->appends(['filter' => $filter, 'tanggal' => $tanggal]);
 
         return view('notifikasi.index', compact('notifikasi', 'filter'));
     }

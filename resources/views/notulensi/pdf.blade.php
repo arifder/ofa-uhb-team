@@ -18,6 +18,7 @@
         .section-title { font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 1px solid #e2e8f0; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; }
         
         .content-box { background-color: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; white-space: pre-wrap; font-size: 12px; margin-bottom: 15px; }
+        .resume-box { background-color: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; margin-bottom: 15px; }
         
         table.peserta-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
         table.peserta-table th, table.peserta-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
@@ -57,7 +58,10 @@
     </table>
 
     <div class="section-title">Agenda Rapat</div>
-    <div class="content-box">{{ $notulensi->agenda }}</div>
+    <div class="content-box">{{ $notulensi->agenda_rapat ?? '-' }}</div>
+
+    <div class="section-title">Resume Rapat</div>
+    <div class="resume-box">{!! $notulensi->agenda !!}</div>
 
     @if($notulensi->tindak_lanjut)
     <div class="section-title">Tindak Lanjut / Hasil Rapat</div>
@@ -89,6 +93,26 @@
             @endforelse
         </tbody>
     </table>
+
+    <!-- DOKUMENTASI FOTO -->
+    @if($notulensi->dokumentasiNotulensi && $notulensi->dokumentasiNotulensi->count() > 0)
+        <div style="page-break-before: always; margin-top:20px;">
+            <div class="section-title" style="text-align:center; font-size:14px;">DOKUMENTASI FOTO</div>
+            <div style="text-align: center; margin-top: 15px;">
+                @foreach($notulensi->dokumentasiNotulensi as $dok)
+                    @php
+                        $path = public_path('storage/dokumentasi-notulensi/' . $dok->nama_file);
+                        if (!file_exists($path)) {
+                            $path = storage_path('app/public/dokumentasi-notulensi/' . $dok->nama_file);
+                        }
+                    @endphp
+                    @if(file_exists($path))
+                        <img src="{{ $path }}" style="max-width: 80%; max-height: 280px; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; background: #fff;" />
+                    @endif
+                @endforeach
+            </div>
+        </div>
+    @endif
 
 </body>
 </html>

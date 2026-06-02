@@ -53,10 +53,9 @@
     .detail-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
     .detail-value { font-size: 13px; color: #1e293b; }
 
-    .dosen-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-    .dosen-item:hover { background: #f8fafc; }
-    .dosen-item input[type=radio] { width: 15px; height: 15px; accent-color: #2563eb; cursor: pointer; }
-    .dosen-item input[type=radio]:checked + span { color: #2563eb; font-weight: 600; }
+    .dosen-label:hover { background: #f8fafc; }
+    .dosen-label input[type=radio] { width: 15px; height: 15px; accent-color: #2563eb; cursor: pointer; margin-top:2px; }
+    .dosen-label input[type=radio]:checked + span { color: #2563eb; font-weight: 600; }
 
     .pag-wrap { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; }
     .pag-btn { padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #475569; background: #fff; text-decoration: none; }
@@ -228,9 +227,9 @@
                 <div class="form-group">
                     <label>Pilih Dosen</label>
                     <input type="text" id="searchDosen" class="filter-control" placeholder="Ketik nama dosen..." onkeyup="filterDosen()" style="margin-bottom:8px;">
-                    <div class="dosen-item" id="dosenList">
+                    <div id="dosenList" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; padding-right:4px;">
                         @foreach($dosenList as $d)
-                        <label class="dosen-item" data-nama="{{ strtolower($d->nama_lengkap) }}" style="display:flex; align-items:center; gap:8px; padding:8px; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:4px; cursor:pointer;">
+                        <label class="dosen-label" data-nama="{{ strtolower($d->nama_lengkap) }}" style="display:flex; align-items:center; gap:8px; padding:8px; border:1px solid #e2e8f0; border-radius:6px; cursor:pointer; margin:0;">
                             <input type="radio" name="dosen_id" value="{{ $d->id }}" required>
                             <span>
                                 <b>{{ $d->nama_lengkap }}</b>

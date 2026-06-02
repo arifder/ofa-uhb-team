@@ -450,13 +450,19 @@
 
     <div class="notif-header-right">
       {{-- Filter Tabs --}}
-      <div class="filter-tabs">
+      <div class="filter-tabs" style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
         @foreach($filterOptions as $key => $label)
           <a href="{{ route('notifikasi.index', ['filter' => $key]) }}"
-             class="filter-tab {{ $filter === $key ? 'active' : '' }}">
+             class="filter-tab {{ $filter === $key && !request('tanggal') ? 'active' : '' }}">
             {{ $label }}
           </a>
         @endforeach
+        <form action="{{ route('notifikasi.index') }}" method="GET" style="display:flex; align-items:center; gap:4px; margin-left:4px;">
+            <input type="date" name="tanggal" value="{{ request('tanggal') }}" class="filter-tab" style="border:1px solid #cbd5e1; background:#fff; padding:4px 8px; cursor:text; height:28px;" onchange="this.form.submit()">
+            @if(request('tanggal'))
+            <a href="{{ route('notifikasi.index') }}" title="Hapus Filter Tanggal" style="color:#ef4444; font-size:14px; margin-left:4px; text-decoration:none;"><i class="ti ti-circle-x-filled"></i></a>
+            @endif
+        </form>
       </div>
 
       {{-- Tandai Semua Dibaca --}}
@@ -541,16 +547,28 @@
             </span>
             <span class="notif-time-sep">·</span>
             <span class="notif-time-relative">{{ $itemDate->diffForHumans() }}</span>
+            @if(!$item->dibaca)
+            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); markAsRead({{ $item->id }}, this)" title="Tandai sudah dibaca" style="background:none; border:none; color:#10b981; font-size:16px; cursor:pointer; padding:0; margin-left:auto;">
+                <i class="ti ti-circle-check"></i>
+            </button>
+            @endif
           </div>
         </div>
 
         {{-- Time column (sisi kanan, desktop only) --}}
-        <div class="notif-time-col">
-          <span class="notif-time-absolute">
-            <i class="ti ti-clock" style="font-size:11px;vertical-align:-1px;"></i>
-            {{ $itemDate->translatedFormat('d M Y') }} • {{ $itemDate->format('H:i') }} WIB
-          </span>
-          <span class="notif-time-relative">{{ $itemDate->diffForHumans() }}</span>
+        <div class="notif-time-col" style="flex-direction:row; align-items:center; gap:12px;">
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              <span class="notif-time-absolute">
+                <i class="ti ti-clock" style="font-size:11px;vertical-align:-1px;"></i>
+                {{ $itemDate->translatedFormat('d M Y') }} • {{ $itemDate->format('H:i') }} WIB
+              </span>
+              <span class="notif-time-relative">{{ $itemDate->diffForHumans() }}</span>
+          </div>
+          @if(!$item->dibaca)
+          <button type="button" onclick="event.preventDefault(); event.stopPropagation(); markAsRead({{ $item->id }}, this)" title="Tandai sudah dibaca" style="background:none; border:none; color:#10b981; font-size:20px; cursor:pointer; padding:4px; border-radius:50%; transition:transform 0.1s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+              <i class="ti ti-circle-check"></i>
+          </button>
+          @endif
         </div>
 
       </a>
@@ -580,3 +598,48 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function markAsRead(id, btn) {
+    fetch(`/notifikasi/${id}/read`, {
+        method: 'POST',
+        headers: { 
+            'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+            'Accept': 'application/json' 
+        }
+    }).then(r => r.json()).then(data => {
+        if(data.success) {
+            const item = btn.closest('.notif-item');
+            if (item) {
+                item.classList.remove('belum-dibaca');
+                const dot = item.querySelector('.notif-unread-dot');
+                if(dot) dot.remove();
+                
+                // remove the checkmark button in both mobile and desktop views
+                const buttons = item.querySelectorAll('button[title="Tandai sudah dibaca"]');
+                buttons.forEach(b => b.remove());
+                
+                // make the title unbold
+                const title = item.querySelector('.notif-judul');
+                if (title) title.classList.remove('bold');
+            }
+            
+            // update header count
+            const badge = document.querySelector('.notif-count-badge');
+            if(badge) {
+                let count = parseInt(badge.textContent);
+                if(count > 1) {
+                    badge.textContent = (count - 1) + ' baru';
+                } else {
+                    badge.remove();
+                    // if count becomes 0, we can also remove the Tandai Dibaca button if we want
+                    const readAllBtn = document.querySelector('.btn-read-all');
+                    if (readAllBtn) readAllBtn.style.display = 'none';
+                }
+            }
+        }
+    });
+}
+</script>
+@endpush

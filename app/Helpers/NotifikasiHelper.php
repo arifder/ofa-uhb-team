@@ -53,26 +53,32 @@ class NotifikasiHelper
     // NOTULENSI NOTIFICATIONS
     // ─────────────────────────────────────────────────────────────────
 
-    /**
-     * Notif rapat dibuat → admin notulensi, super_admin, kepala_unit.
-     */
-manajemen-kas-oza
+    private static function getAdminRolesByFakultas(?int $fakultasId): array
+    {
+        $roles = ['super_admin', 'kepala_unit'];
+        if ($fakultasId == 1) {
+            $roles[] = 'admin_fst';
+        } elseif ($fakultasId == 2) {
+            $roles[] = 'admin_fis';
+        } else {
+            $roles = array_merge($roles, ['admin_fst', 'admin_fis']);
+        }
+        return $roles;
+    }
+
     public static function notifNotulensi(
         string $judul,
         string $pesan,
-        ?string $url = null
+        ?string $url = null,
+        ?int $fakultasId = null
     ): void {
-        self::kirimKeRole([
-            'super_admin',
-            'admin_fst',
-            'admin_fis',
-            'kepala_unit',
-        ], $judul, $pesan, 'notulensi', $url);
+        self::kirimKeRole(self::getAdminRolesByFakultas($fakultasId), $judul, $pesan, 'notulensi', $url);
+    }
   
-    public static function notifNotulensiDibuat(string $judul, ?string $url = null): void
+    public static function notifNotulensiDibuat(string $judul, ?string $url = null, ?int $fakultasId = null): void
     {
         self::kirimKeRole(
-            ['super_admin', 'admin_notulensi_fst', 'admin_notulensi_fis', 'kepala_unit'],
+            self::getAdminRolesByFakultas($fakultasId),
             '📋 Notulensi Baru Dibuat',
             "Notulensi rapat \"$judul\" telah ditambahkan.",
             'notulensi',
@@ -83,10 +89,10 @@ manajemen-kas-oza
     /**
      * Notif rapat diedit → admin notulensi, super_admin, kepala_unit.
      */
-    public static function notifNotulensiDiedit(string $judul, ?string $url = null): void
+    public static function notifNotulensiDiedit(string $judul, ?string $url = null, ?int $fakultasId = null): void
     {
         self::kirimKeRole(
-            ['super_admin', 'admin_notulensi_fst', 'admin_notulensi_fis', 'kepala_unit'],
+            self::getAdminRolesByFakultas($fakultasId),
             '✏️ Notulensi Diperbarui',
             "Notulensi rapat \"$judul\" telah diperbarui.",
             'notulensi',
@@ -97,16 +103,15 @@ manajemen-kas-oza
     /**
      * Notif rapat dihapus → admin notulensi, super_admin, kepala_unit.
      */
-    public static function notifNotulensiDihapus(string $judul, ?string $url = null): void
+    public static function notifNotulensiDihapus(string $judul, ?string $url = null, ?int $fakultasId = null): void
     {
         self::kirimKeRole(
-            ['super_admin', 'admin_notulensi_fst', 'admin_notulensi_fis', 'kepala_unit'],
+            self::getAdminRolesByFakultas($fakultasId),
             '🗑️ Notulensi Dihapus',
             "Notulensi rapat \"$judul\" telah dihapus dari sistem.",
             'notulensi',
             $url
         );
-  main
     }
 
     /**
@@ -136,10 +141,11 @@ manajemen-kas-oza
     public static function notifKasMasuk(
         string $keterangan,
         string $jumlahFormatted,
-        ?string $url = null
+        ?string $url = null,
+        ?int $fakultasId = null
     ): void {
         self::kirimKeRole(
-            ['super_admin', 'admin_kas_fst', 'admin_kas_fis', 'kepala_unit'],
+            self::getAdminRolesByFakultas($fakultasId),
             '💰 Kas Masuk Baru',
             "Kas masuk sebesar Rp $jumlahFormatted telah dicatat. ($keterangan)",
             'kas',
@@ -153,10 +159,11 @@ manajemen-kas-oza
     public static function notifKasKeluar(
         string $keterangan,
         string $jumlahFormatted,
-        ?string $url = null
+        ?string $url = null,
+        ?int $fakultasId = null
     ): void {
         self::kirimKeRole(
-            ['super_admin', 'admin_kas_fst', 'admin_kas_fis', 'kepala_unit'],
+            self::getAdminRolesByFakultas($fakultasId),
             '📤 Kas Keluar Dicatat',
             "Kas keluar sebesar Rp $jumlahFormatted telah dicatat. ($keterangan)",
             'kas',
@@ -174,7 +181,8 @@ manajemen-kas-oza
         int $tahun,
         string $jumlahFormatted,
         ?string $urlDosen = null,
-        ?string $urlAdmin = null
+        ?string $urlAdmin = null,
+        ?int $fakultasId = null
     ): void {
         // Notif ke dosen ybs
         self::kirim(
@@ -187,7 +195,7 @@ manajemen-kas-oza
 
         // Notif ke admin kas & manajemen
         self::kirimKeRole(
-            ['super_admin', 'admin_kas_fst', 'admin_kas_fis', 'kepala_unit'],
+            self::getAdminRolesByFakultas($fakultasId),
             '🧾 Tagihan Dosen Diterbitkan',
             "Tagihan kas bulan $bulan $tahun sebesar Rp $jumlahFormatted telah diterbitkan untuk $namaDosen.",
             'kas',
@@ -205,7 +213,8 @@ manajemen-kas-oza
         int $tahun,
         string $jumlahFormatted,
         ?string $urlDosen = null,
-        ?string $urlAdmin = null
+        ?string $urlAdmin = null,
+        ?int $fakultasId = null
     ): void {
         // Notif konfirmasi ke dosen
         self::kirim(
@@ -218,7 +227,7 @@ manajemen-kas-oza
 
         // Notif ke admin kas & manajemen
         self::kirimKeRole(
-            ['super_admin', 'admin_kas_fst', 'admin_kas_fis', 'kepala_unit'],
+            self::getAdminRolesByFakultas($fakultasId),
             '✅ Tagihan Dibayar',
             "$namaDosen telah membayar tagihan bulan $bulan $tahun sebesar Rp $jumlahFormatted.",
             'kas',
@@ -229,13 +238,13 @@ manajemen-kas-oza
     /**
      * @deprecated Gunakan notifNotulensiDibuat/Diedit/Dihapus secara langsung.
      */
-    public static function notifNotulensi(
+    public static function notifNotulensiDeprecated(
         string $judul,
         string $pesan,
         ?string $url = null
     ): void {
         self::kirimKeRole(
-            ['super_admin', 'admin_notulensi_fst', 'admin_notulensi_fis', 'kepala_unit'],
+            ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit'],
             $judul, $pesan, 'notulensi', $url
         );
     }

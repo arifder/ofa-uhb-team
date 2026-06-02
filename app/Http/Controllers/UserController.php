@@ -55,12 +55,12 @@ class UserController extends Controller
     {
         $rules = [
             'name' => 'required',
-            'role' => 'required|in:super_admin,admin_fakultas,admin_notulensi_fst,admin_notulensi_fis,admin_kas_fst,admin_kas_fis,kepala_unit,dosen',
+            'role' => 'required|in:super_admin,admin_fst,admin_fis,kepala_unit,dosen',
             'status' => 'required|in:aktif,arsip',
         ];
 
         if ($request->role === 'dosen') {
-            $rules['username'] = 'required|digits:10|unique:users,username|unique:dosens,nidn';
+            $rules['username'] = 'required|unique:users,username|unique:dosens,nidn';
             $rules['email'] = 'nullable|email|unique:users,email';
             $rules['password'] = 'nullable|min:6';
             $rules['prodi_id'] = 'required|exists:prodis,id';
@@ -130,14 +130,14 @@ class UserController extends Controller
 
         $rules = [
             'name' => 'required',
-            'role' => 'required|in:super_admin,admin_fakultas,admin_notulensi_fst,admin_notulensi_fis,admin_kas_fst,admin_kas_fis,kepala_unit,dosen',
+            'role' => 'required|in:super_admin,admin_fst,admin_fis,kepala_unit,dosen',
             'status' => 'required|in:aktif,arsip',
         ];
 
         if ($request->role === 'dosen') {
             $dosen = $user->dosen;
             $dosenIdRule = $dosen ? ',' . $dosen->id : '';
-            $rules['username'] = 'required|digits:10|unique:users,username,' . $user->id . '|unique:dosens,nidn' . $dosenIdRule;
+            $rules['username'] = 'required|unique:users,username,' . $user->id . '|unique:dosens,nidn' . $dosenIdRule;
             $rules['email'] = 'required|email|unique:users,email,' . $user->id;
             $rules['password'] = 'nullable|min:6';
             $rules['prodi_id'] = 'required|exists:prodis,id';

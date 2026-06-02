@@ -534,8 +534,10 @@
   <div class="wrap" x-data="{ activeModule: localStorage.getItem('activeModule') || 'kas' }">
     <div class="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon"><i class="ti ti-building-bank" aria-hidden="true"></i></div>
-        <div class="logo-text">OFA-UHB</div>
+        <div style="width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.05); flex-shrink:0;">
+            <img src="{{ asset('images/logo-uhb.png') }}" alt="Logo UHB" style="width:100%; height:100%; object-fit:contain; padding:4px;">
+        </div>
+        <div class="logo-text" style="font-family:'Syne', sans-serif; font-weight:700; letter-spacing:0.02em; margin-left:4px;">OFA-UHB</div>
       </div>
       <div class="nav-section">Platform</div>
       <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" style="text-decoration:none;">
@@ -545,7 +547,6 @@
 
       @php $sidebarUser = auth()->user(); @endphp
 
-manajemen-kas-oza
       {{-- MANAJEMEN FAKULTAS (KAS & NOTULENSI) --}}
       @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit']))
       <div x-show="activeModule === 'kas'" x-cloak>
@@ -568,50 +569,10 @@ manajemen-kas-oza
       {{-- MENU DOSEN --}}
       @if($sidebarUser->role === 'dosen')
       <div class="nav-section">Modul Dosen</div>
-      <a href="{{ route('kas.masuk') }}" class="nav-item"><i class="ti ti-history" aria-hidden="true"></i>Riwayat Kas Saya</a>
+      <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.*') ? 'active' : '' }}"><i class="ti ti-history" aria-hidden="true"></i>Riwayat Kas Saya</a>
       <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
-        <i class="ti ti-notes" aria-hidden="true"></i>Data Notulensi
+        <i class="ti ti-notes" aria-hidden="true"></i>Manajemen Rapat
       </a>
-
-      {{-- MENU KAS: sembunyikan untuk admin_notulensi dan dosen --}}
-      @if(!in_array($sidebarUser->role, ['admin_notulensi_fst', 'admin_notulensi_fis', 'dosen']))
-      <div class="nav-section">Manajemen Kas</div>
-      @php
-          $kasActive = request()->routeIs('kas.*');
-      @endphp
-      <div class="nav-dropdown" x-data="{ open: {{ $kasActive ? 'true' : 'false' }} }">
-          <button type="button" class="nav-dropdown-btn {{ $kasActive ? 'active' : '' }}" @click="open = !open" :aria-expanded="open">
-              <i class="ti ti-cash" aria-hidden="true"></i>Manajemen Kas
-              <i class="ti ti-chevron-down chevron" aria-hidden="true"></i>
-          </button>
-          <div class="nav-dropdown-menu" x-show="open" x-collapse x-cloak>
-              <a href="{{ route('kas.masuk') }}" class="nav-dropdown-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}">Data Kas Masuk</a>
-              <a href="{{ route('kas.keluar') }}" class="nav-dropdown-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}">Data Kas Keluar</a>
-              <a href="{{ route('kas.tagihan') }}" class="nav-dropdown-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}">Tagihan Dosen</a>
-              <a href="{{ route('kas.laporan') }}" class="nav-dropdown-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}">Laporan Kas</a>
-          </div>
-      </div>
-      @endif
-
-      {{-- MENU NOTULENSI: sembunyikan untuk admin_kas --}}
-      @if(!in_array($sidebarUser->role, ['admin_kas_fst', 'admin_kas_fis', 'dosen']))
-      <div class="nav-section">Manajemen Notulensi</div>
-      @php
-          $notulensiActive = request()->routeIs('notulensi.*');
-      @endphp
-      <div class="nav-dropdown" x-data="{ open: {{ $notulensiActive ? 'true' : 'false' }} }">
-          <button type="button" class="nav-dropdown-btn {{ $notulensiActive ? 'active' : '' }}" @click="open = !open" :aria-expanded="open">
-              <i class="ti ti-notes" aria-hidden="true"></i>Notulensi Rapat
-              <i class="ti ti-chevron-down chevron" aria-hidden="true"></i>
-          </button>
-          <div class="nav-dropdown-menu" x-show="open" x-collapse x-cloak>
-              <a href="{{ route('notulensi.index') }}" class="nav-dropdown-item {{ request()->routeIs('notulensi.index') && !request()->has('action') ? 'active' : '' }}">
-                  Data Notulensi
-                  <span class="badge" style="margin-left: auto; background: #EFF6FF; color: #1D4ED8; font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 600;">{{ \App\Models\Notulensi::count() }}</span>
-              </a>
-          </div>
-      </div>
-main
       @endif
 
       {{-- MENU MASTER DATA: hanya super_admin --}}
@@ -641,7 +602,7 @@ main
                     background:#2e364f; color:#f8fafc; border-radius:12px; padding:8px; 
                     box-shadow:0 10px 25px rgba(0,0,0,0.25); z-index:50; border: 1px solid #475569;">
            
-           @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
+           @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit']))
            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; padding:4px 8px; margin-bottom:4px;">Ganti Modul</div>
            <a href="#" @click.prevent="activeModule = 'kas'; localStorage.setItem('activeModule', 'kas'); openProfileMenu = false" 
               style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;"
@@ -666,10 +627,13 @@ main
            </a>
         </div>
 
-        <div class="user-row" @click="openProfileMenu = !openProfileMenu" style="cursor:pointer; padding: 10px; border-radius: 10px; transition: background 0.2s; background: #2e364f;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='#2e364f'">
-          <div class="avatar" style="background:#3b82f6; color:#fff; border: 1px solid #60a5fa;">{{ substr(Auth::user()->name ?? 'SA', 0, 2) }}</div>
-          <div class="user-info" style="color:#f8fafc;">{{ Auth::user()->name ?? 'User' }}<span style="color:#94a3b8;">{{ Auth::user()->email ?? 'Administrator' }}</span></div>
-          <i class="ti ti-chevron-right" style="margin-left:auto;font-size:14px;color:#64748b;" :style="openProfileMenu ? 'transform: rotate(-90deg); transition: transform 0.2s;' : 'transition: transform 0.2s;'"></i>
+        <div class="user-row" @click="openProfileMenu = !openProfileMenu" style="cursor:pointer; padding: 10px; border-radius: 10px; transition: background 0.2s; background: #2e364f; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='#2e364f'">
+          <div class="avatar" style="background:#3b82f6; color:#fff; border: 1px solid #60a5fa; flex-shrink:0; display:flex; align-items:center; justify-content:center;">{{ substr(Auth::user()->name ?? 'SA', 0, 2) }}</div>
+          <div class="user-info" style="color:#f8fafc; flex:1; min-width:0;">
+             <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Auth::user()->name ?? 'User' }}</div>
+             <div style="font-size:10px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;">{{ Auth::user()->email ?? 'Administrator' }}</div>
+          </div>
+          <i class="ti ti-chevron-right" style="flex-shrink:0; margin-left:auto;font-size:14px;color:#64748b;" :style="openProfileMenu ? 'transform: rotate(-90deg); transition: transform 0.2s;' : 'transition: transform 0.2s;'"></i>
 
           <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
             @csrf

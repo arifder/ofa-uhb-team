@@ -147,27 +147,9 @@
 {{-- ============================================================ --}}
 @elseif(in_array($user->role, ['admin_fst', 'admin_fis']))
 
-manajemen-kas-oza
   <div class="banner banner-blue">
     <i class="ti ti-shield-check"></i>
     <span><b>{{ $user->role_label }}</b> — {{ $namaFakultas }}</span>
-
-
-
-  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-    <div style="background-color: #dcfce7; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px;">
-      <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Total Kas Masuk</div>
-      <div style="font-size: 28px; font-weight: 700; color: #059669;">Rp {{ number_format($kasMasukFakultas, 0, ',', '.') }}</div>
-    </div>
-    <div style="background-color: #fee2e2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px;">
-      <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Total Kas Keluar</div>
-      <div style="font-size: 28px; font-weight: 700; color: #dc2626;">Rp {{ number_format($kasKeluarFakultas, 0, ',', '.') }}</div>
-    </div>
-    <div style="background-color: #dbeafe; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px;">
-      <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Saldo</div>
-      <div style="font-size: 28px; font-weight: 700; color: #059669;">Rp {{ number_format($totalKasFakultas, 0, ',', '.') }}</div>
-    </div>
-main
   </div>
 
   <div class="stats-grid">
@@ -178,7 +160,6 @@ main
     </div>
     <div class="stat-card">
       <div class="stat-label">Tagihan Belum Lunas</div>
-manajemen-kas-oza
       <div class="stat-val">{{ $tagihan_pending ?? 0 }}</div>
       <div class="stat-sub">dosen bulan ini</div>
     </div>
@@ -186,10 +167,6 @@ manajemen-kas-oza
       <div class="stat-label">Total Notulensi Rapat</div>
       <div class="stat-val">{{ $total_notulensi ?? 0 }}</div>
       <div class="stat-sub">seluruh rapat fakultas</div>
-
-      <div class="stat-val">{{ $tagihanBelumLunas }}</div>
-      <div class="stat-sub">bulan ini</div>
-main
     </div>
   </div>
 
@@ -201,40 +178,6 @@ main
       <div class="mod-desc">Kelola kas masuk, kas keluar, dan tagihan dosen {{ $namaFakultas }}.</div>
       <div class="mod-footer"><a href="{{ route('kas.masuk') }}" style="color:#1d4ed8">Buka →</a></div>
     </div>
-manajemen-kas-oza
-
-  </div>
-
-{{-- ============================================================ --}}
-{{-- ADMIN NOTULENSI (FST / FIS)                                  --}}
-{{-- ============================================================ --}}
-@elseif(in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis']))
-
-
-
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-label">Notulensi Bulan Ini</div>
-      <div class="stat-val">{{ $totalNotulensibulan }}</div>
-      <div class="stat-sub">{{ now()->translatedFormat('F Y') }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Rapat Tahun Ini</div>
-      <div class="stat-val">{{ $totalRapatTahun }}</div>
-      <div class="stat-sub" style="color:#9ca3af">akan diisi setelah modul notulensi</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Notulensi Terakhir</div>
-      <div class="stat-val" style="font-size:14px">
-        {{ $notulensiTerakhir ? $notulensiTerakhir->tanggal_rapat : '-' }}
-      </div>
-      <div class="stat-sub">{{ $notulensiTerakhir ? $notulensiTerakhir->judul : 'Belum ada data' }}</div>
-    </div>
-  </div>
-
-  <p class="section-title"><i class="ti ti-layout-grid"></i> Modul Aktif</p>
-  <div class="modules-grid">
-main
     <div class="mod-card">
       <div class="mod-icon mod-teal"><i class="ti ti-clipboard-list"></i></div>
       <div class="mod-title">Notulensi Rapat</div>

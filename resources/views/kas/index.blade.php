@@ -2,7 +2,6 @@
 @section('title', 'Kas ' . $title)
 
 @push('styles')
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <style>
     .master-card {
         background: #ffffff;
@@ -100,11 +99,11 @@
         Kas {{ $title }}
         <span style="font-size:13px; font-weight:400; color:#64748b; margin-left:8px;">Total: {{ $kasList->total() }}</span>
     </h2>
-    @can('create', \App\Models\KasTransaction::class)
+    @if(in_array($authUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
     <button class="btn-primary" onclick="openModal()">
         <i class="ti ti-plus"></i> Tambah Kas {{ $title }}
     </button>
-    @endcan
+    @endif
 </div>
 
 <div id="toast-container"></div>
@@ -205,16 +204,14 @@
                     <button class="icon-btn" onclick="viewDetail({{ $kas->id }})" title="Lihat Detail">
                         <i class="ti ti-eye"></i>
                     </button>
-                    @can('update', $kas)
+                    @if(in_array($authUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
                     <button class="icon-btn" onclick="editKas({{ $kas->id }})" title="Edit">
                         <i class="ti ti-pencil"></i>
                     </button>
-                    @endcan
-                    @can('delete', $kas)
                     <button class="icon-btn delete" onclick="deleteKas({{ $kas->id }})" title="Hapus">
                         <i class="ti ti-trash"></i>
                     </button>
-                    @endcan
+                    @endif
                 </td>
             </tr>
             @empty
@@ -256,7 +253,7 @@
             <span id="modalTitle">Tambah Kas {{ $title }}</span>
             <button class="icon-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
         </div>
-        <form id="kasForm" onsubmit="saveKas(event)" x-data="kasForm()">
+        <form id="formKas" onsubmit="saveKas(event)" x-data="initKasForm()">
             <div class="custom-modal-body">
                 <input type="hidden" id="kas_id">
                 <input type="hidden" id="kas_jenis" value="{{ $jenis }}">
@@ -363,10 +360,6 @@
                     <label>Keterangan</label>
                     <input type="text" id="kas_keterangan" class="filter-control" required placeholder="cth: Iuran kas bulan Mei 2026">
                 </div>
-manajemen-kas-oza
-                <div class="form-group">
-                    <label>Resume Rapat <span style="color:#94a3b8;">(opsional)</span></label>
-                    <textarea id="kas_resume_rapat" placeholder="Tulis resume / catatan rapat di sini..."></textarea>
 
 
                 @if($jenis === 'keluar')
@@ -388,7 +381,6 @@ manajemen-kas-oza
                     
                     <!-- Preview foto yang dipilih -->
                     <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
-main
                 </div>
                 @endif
             </div>
@@ -562,25 +554,10 @@ main
         setTimeout(() => t.remove(), 3500);
     }
 
-    function initTinyMCE() {
-        if (tinymce.get('kas_resume_rapat')) {
-            tinymce.get('kas_resume_rapat').remove();
-        }
-        tinymce.init({
-            selector: '#kas_resume_rapat',
-            license_key: 'gpl',
-            height: 250,
-            menubar: false,
-            plugins: 'lists link',
-            toolbar: 'bold italic underline | bullist numlist | h2 h3 | removeformat',
-            branding: false,
-            promotion: false,
-            content_style: 'body { font-family: Plus Jakarta Sans, sans-serif; font-size: 13px; line-height: 1.6; }',
-        });
-    }
+
 
     function openModal() {
-        document.getElementById('kasForm').reset();
+        document.getElementById('formKas').reset();
         document.getElementById('kas_id').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Kas {{ $title }}';
         document.getElementById('kas_tanggal').value = new Date().toISOString().split('T')[0];
@@ -600,12 +577,9 @@ main
         }
 
         document.getElementById('kasModal').classList.add('active');
-        // Init TinyMCE setelah modal visible
-        setTimeout(() => { initTinyMCE(); }, 100);
     }
 
     function closeModal() {
-        if (tinymce.get('kas_resume_rapat')) tinymce.get('kas_resume_rapat').remove();
         document.getElementById('kasModal').classList.remove('active');
     }
 
@@ -688,12 +662,8 @@ main
                     <div class="detail-label">Keterangan</div>
                     <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.keterangan ?? '-'}</div>
                 </div>
-manajemen-kas-oza
-                ${data.resume_rapat ? `
-                <div class="detail-section">
-                    <div class="detail-label">Resume Rapat</div>
-                    <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px; line-height:1.6;">${data.resume_rapat}</div>
-                </div>` : ''}
+
+
 
                 ${data.jenis === 'keluar' && data.bukti_foto ? `
                 <div class="detail-section">
@@ -706,7 +676,7 @@ manajemen-kas-oza
                     </div>
                 </div>
                 ` : ''}
-main
+
                 <div class="detail-section" style="border-bottom:none;">
                     <div class="detail-label">Dibuat Oleh</div>
                     <div class="detail-value">${data.user ? data.user.name : '-'}</div>
@@ -753,19 +723,11 @@ main
             document.getElementById('modalTitle').textContent = 'Edit Kas {{ $title }}';
             document.getElementById('kasModal').classList.add('active');
 
-manajemen-kas-oza
-            // Set konten TinyMCE setelah modal terbuka
-            setTimeout(() => {
-                initTinyMCE();
-                setTimeout(() => {
-                    const ed = tinymce.get('kas_resume_rapat');
-                    if (ed) ed.setContent(data.resume_rapat ?? '');
-                }, 200);
+
 
             // Trigger Alpine x-model
             setTimeout(() => {
                 document.getElementById('kas_jumlah').dispatchEvent(new Event('input'));
-main
             }, 100);
         } catch {
             showToast('Gagal memuat data.', 'error');
@@ -778,16 +740,11 @@ main
         const id = document.getElementById('kas_id').value;
         const url = id ? `/kas/transaksi/${id}` : `/kas/transaksi`;
 
-        // Ambil konten dari TinyMCE
-        const editor = tinymce.get('kas_resume_rapat');
-        const resumeContent = editor ? editor.getContent() : document.getElementById('kas_resume_rapat').value;
-
         const formData = new FormData();
         formData.append('jenis', document.getElementById('kas_jenis').value);
         formData.append('jumlah', document.getElementById('kas_jumlah').value);
         formData.append('tanggal', document.getElementById('kas_tanggal').value);
         formData.append('keterangan', document.getElementById('kas_keterangan').value);
-        formData.append('resume_rapat', resumeContent);
 
         const fakSel = document.getElementById('kas_fakultas_id');
         if (fakSel && fakSel.value) formData.append('fakultas_id', fakSel.value);
@@ -825,7 +782,7 @@ main
         }
     }
 
-    function kasForm() {
+    function initKasForm() {
         return {
             jumlah: 0,
             tabungan: 0,

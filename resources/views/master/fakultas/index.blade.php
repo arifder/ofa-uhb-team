@@ -7,6 +7,7 @@
         .master-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .master-table th, .master-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         .master-table th { background-color: #f8fafc; font-weight: 600; color: #475569; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+        .master-table tbody tr:last-child td { border-bottom: none; }
         .icon-btn { background: none; border: none; cursor: pointer; color: #64748b; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; }
         .icon-btn:hover { background: #f1f5f9; color: #2563eb; }
         .icon-btn.delete:hover { color: #ef4444; }
@@ -17,14 +18,14 @@
         .filter-control { border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; width: 100%; }
         .filter-control:focus { border-color: #2563eb; }
 
-        /* Summary Cards */
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .summary-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; }
-        .summary-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-        .summary-icon.blue { background: #eff6ff; color: #2563eb; }
-        .summary-icon.violet { background: #f5f3ff; color: #7c3aed; }
-        .summary-label { font-size: 12px; color: #64748b; font-weight: 500; margin-bottom: 4px; }
-        .summary-value { font-size: 26px; font-weight: 700; color: #1e293b; line-height: 1; }
+        /* Stat Cards */
+        .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .stat-icon.blue { background: #EFF6FF; color: #2563EB; }
+        .stat-icon.teal { background: #F0FDFA; color: #0D9488; }
+        .stat-label { font-size: 12px; color: #64748b; margin-bottom: 2px; }
+        .stat-value { font-size: 22px; font-weight: 700; color: #1e293b; }
 
         .custom-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); align-items: center; justify-content: center; z-index: 50; }
         .custom-modal.active { display: flex; }
@@ -35,27 +36,15 @@
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px; color: #475569;}
 
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .custom-toast { min-width: 250px; background: #fff; border-left: 4px solid #10b981; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease forwards; font-family: 'Plus Jakarta Sans', sans-serif;}
-        .custom-toast.error { border-left-color: #ef4444; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
         .card-header-main { padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; }
         .fakultas-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
         .fakultas-meta { font-size: 13px; color: #64748b; }
         .section-title { font-size: 14px; font-weight: 600; padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; color: #334155; }
-manajemen-kas-oza
 
-
-        /* Stat Cards */
-        .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
-        .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; }
-        .stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-        .stat-icon.blue { background: #EFF6FF; color: #2563EB; }
-        .stat-icon.teal { background: #F0FDFA; color: #0D9488; }
-        .stat-label { font-size: 12px; color: #64748b; margin-bottom: 2px; }
-        .stat-value { font-size: 22px; font-weight: 700; color: #1e293b; }
-main
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .custom-toast { min-width: 250px; background: #fff; border-left: 4px solid #10b981; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease forwards; font-family: 'Plus Jakarta Sans', sans-serif;}
+        .custom-toast.error { border-left-color: #ef4444; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 @endpush
 
@@ -68,30 +57,6 @@ main
     </div>
 
     <div id="toast-container"></div>
-
-manajemen-kas-oza
-    {{-- RINGKASAN --}}
-    @php
-        $totalFakultas = count($fakultas);
-        $totalProdi = $fakultas->sum(fn($f) => count($f->prodis));
-    @endphp
-    <div class="summary-grid">
-        <div class="summary-card">
-            <div class="summary-icon blue">
-                <i class="ti ti-school"></i>
-            </div>
-            <div>
-                <div class="summary-label">Jumlah Fakultas</div>
-                <div class="summary-value">{{ $totalFakultas }}</div>
-            </div>
-        </div>
-        <div class="summary-card">
-            <div class="summary-icon violet">
-                <i class="ti ti-books"></i>
-            </div>
-            <div>
-                <div class="summary-label">Jumlah Program Studi</div>
-                <div class="summary-value">{{ $totalProdi }}</div>
 
     {{-- Stat Cards --}}
     <div class="stat-row">
@@ -107,22 +72,10 @@ manajemen-kas-oza
             <div>
                 <div class="stat-label">Total Program Studi</div>
                 <div class="stat-value">{{ $totalProdi }}</div>
-main
             </div>
         </div>
     </div>
 
-manajemen-kas-oza
-    {{-- DAFTAR FAKULTAS --}}
-    @foreach($fakultas as $fak)
-    <div class="master-card">
-        {{-- HEADER KARTU --}}
-        <div class="card-header-main">
-            <div>
-                <div class="fakultas-title">{{ $fak->nama_fakultas }}</div>
-                <div class="fakultas-meta">{{ count($fak->prodis) }} program studi</div>
-            </div>
-            <div class="flex gap-2">
     {{-- Fakultas Cards --}}
     @foreach($fakultas as $fak)
     <div class="master-card">
@@ -133,17 +86,12 @@ manajemen-kas-oza
                 <div class="fakultas-meta">{{ count($fak->prodis) }} Program Studi</div>
             </div>
             <div style="display: flex; gap: 8px;">
-main
                 <button class="btn-outline" onclick='editFakultas(@json($fak))'><i class="ti ti-pencil"></i> Edit</button>
                 <button class="btn-outline" style="color:#ef4444" onclick="deleteFakultas({{ $fak->id }})"><i class="ti ti-trash"></i> Hapus</button>
             </div>
         </div>
 
-manajemen-kas-oza
-        {{-- TABEL PRODI --}}
-
         {{-- Prodi Table --}}
-main
         <div class="section-title">
             <span>Program Studi</span>
             <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openProdiModal({{ $fak->id }})">
@@ -173,20 +121,12 @@ main
             </tbody>
         </table>
         @else
-manajemen-kas-oza
-        <div class="p-4 text-center text-sm text-gray-500">Belum ada program studi.</div>
-
         <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">Belum ada program studi.</div>
-main
         @endif
     </div>
     @endforeach
 
-manajemen-kas-oza
-{{-- Modals --}}
-
 {{-- Modal Fakultas --}}
-main
 <div class="custom-modal" id="fakultasModal">
     <div class="custom-modal-content">
         <div class="custom-modal-header">
@@ -243,7 +183,7 @@ main
 
         function showToast(msg, type = 'success') {
             const t = document.createElement('div');
-            t.className = `custom-toast ${type}`;
+            t.className = `custom-toast ${type === 'error' ? 'error' : ''}`;
             t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
             document.getElementById('toast-container').appendChild(t);
             setTimeout(() => t.remove(), 3000);

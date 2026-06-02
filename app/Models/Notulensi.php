@@ -14,6 +14,7 @@ class Notulensi extends Model
         'tanggal',
         'tempat',
         'agenda',
+        'agenda_rapat',
         'tindak_lanjut',
         'fakultas_id',
         'user_id',

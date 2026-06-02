@@ -81,6 +81,7 @@ class NotulensiController extends Controller
             'tanggal'       => 'required|date',
             'tempat'        => 'required|string|max:255',
             'agenda'        => 'required|string',
+            'agenda_rapat'  => 'nullable|string',
             'tindak_lanjut' => 'nullable|string',
             'peserta'       => 'required|array|min:1',
             'peserta.*'     => 'exists:dosens,id',
@@ -101,6 +102,7 @@ class NotulensiController extends Controller
             'tanggal'       => $validated['tanggal'],
             'tempat'        => $validated['tempat'],
             'agenda'        => $validated['agenda'],
+            'agenda_rapat'  => $validated['agenda_rapat'] ?? null,
             'tindak_lanjut' => $validated['tindak_lanjut'] ?? null,
             'fakultas_id'   => $fakultasId,
             'user_id'       => $user->id,
@@ -130,7 +132,7 @@ class NotulensiController extends Controller
         $notifUrl = route('notulensi.index');
 
         // Notif ke admin notulensi, super_admin, kepala_unit
-        NotifikasiHelper::notifNotulensiDibuat($notulensi->judul, $notifUrl);
+        NotifikasiHelper::notifNotulensiDibuat($notulensi->judul, $notifUrl, $notulensi->fakultas_id);
 
         // Notif ke dosen peserta rapat
         NotifikasiHelper::notifDosenPeserta(
@@ -178,6 +180,7 @@ class NotulensiController extends Controller
             'tanggal'       => 'required|date',
             'tempat'        => 'required|string|max:255',
             'agenda'        => 'required|string',
+            'agenda_rapat'  => 'nullable|string',
             'tindak_lanjut' => 'nullable|string',
             'peserta'       => 'required|array|min:1',
             'peserta.*'     => 'exists:dosens,id',
@@ -196,6 +199,7 @@ class NotulensiController extends Controller
             'tanggal'       => $request->tanggal,
             'tempat'        => $request->tempat,
             'agenda'        => $request->agenda,
+            'agenda_rapat'  => $request->agenda_rapat ?? null,
             'tindak_lanjut' => $request->tindak_lanjut ?? null,
             'fakultas_id'   => $fakultasId,
         ]);
@@ -234,7 +238,7 @@ class NotulensiController extends Controller
         $notifUrl = route('notulensi.index');
 
         // Notif ke admin notulensi, super_admin, kepala_unit
-        NotifikasiHelper::notifNotulensiDiedit($notulensi->judul, $notifUrl);
+        NotifikasiHelper::notifNotulensiDiedit($notulensi->judul, $notifUrl, $notulensi->fakultas_id);
 
         // Notif ke dosen peserta (yang terdaftar setelah update)
         NotifikasiHelper::notifDosenPeserta(
@@ -263,7 +267,7 @@ class NotulensiController extends Controller
         $notulensi->delete();
 
         // Notif ke admin notulensi, super_admin, kepala_unit
-        NotifikasiHelper::notifNotulensiDihapus($judulNotulensi, route('notulensi.index'));
+        NotifikasiHelper::notifNotulensiDihapus($judulNotulensi, route('notulensi.index'), $notulensi->fakultas_id);
 
         // Notif ke dosen peserta yang terdampak
         if (!empty($dosenIds)) {
