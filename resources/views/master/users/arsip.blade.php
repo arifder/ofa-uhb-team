@@ -64,6 +64,7 @@
                     <th>Role</th>
                     <th>Fakultas</th>
                     <th>Prodi</th>
+                    <th>Jabatan</th>
                     <th>Status</th>
                     <th>Aksi</th>
                 </tr>
@@ -89,6 +90,13 @@
                     <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
                     <td>{{ $user->prodi ? $user->prodi->nama_prodi : '-' }}</td>
                     <td>
+                        @if($user->jabatan_struktural)
+                            <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">{{ $user->jabatan_struktural }}</span>
+                        @else
+                            -
+                        @endif
+                    </td>
+                    <td>
                         <span class="master-badge badge-nonaktif">Arsip</span>
                     </td>
                     <td>
@@ -100,7 +108,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 24px; text-align: center; color: #64748b;">Belum ada user yang diarsipkan.</td>
+                    <td colspan="10" class="text-center" style="padding: 24px; text-align: center; color: #64748b;">Belum ada user yang diarsipkan.</td>
                 </tr>
                 @endforelse
             </tbody>

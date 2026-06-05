@@ -666,7 +666,7 @@
             <div x-show="open"
                  x-cloak
                  @click.outside="open = false"
-                 style="position:absolute;right:0;top:44px;width:320px;background:#fff;
+                 style="position:absolute;right:0;top:44px;width:380px;background:#fff;
                         border:1px solid #e2e8f0;border-radius:12px;
                         box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:999;">
 
@@ -679,7 +679,7 @@
                 </span>
               </div>
 
-              <div id="notif-list" style="max-height:300px;overflow-y:auto;"></div>
+              <div id="notif-list" style="max-height:360px;overflow-y:auto;"></div>
 
               <div style="padding:10px 16px;border-top:1px solid #f1f5f9;text-align:center;">
                 <a href="{{ route('notifikasi.index') }}"
@@ -740,25 +740,50 @@
             return;
           }
 
-          list.innerHTML = data.data.map(n => `
+          list.innerHTML = data.data.map(n => {
+            const emojiRegex = /[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FAFF}\u{1F1E0}-\u{1F1FF}]/gu;
+            let cleanJudul = n.judul.replace(/📋|✏️|🗑️|💰|📤|🧾|✅/g, '').replace(emojiRegex, '').trim();
+            let cleanPesan = n.pesan.replace(/📋|✏️|🗑️|💰|📤|🧾|✅/g, '').replace(emojiRegex, '').trim();
+
+            let iconName = 'ti-info-circle', iconBg = '#f1f5f9', iconColor = '#6b7280';
+            let badgeBg = '#f1f5f9', badgeColor = '#6b7280';
+            
+            if (n.tipe === 'notulensi') {
+                iconName = 'ti-notes';
+                iconBg = '#ccfbf1'; iconColor = '#0f766e';
+                badgeBg = '#ccfbf1'; badgeColor = '#0f766e';
+            } else if (n.tipe === 'kas') {
+                iconName = 'ti-cash';
+                iconBg = '#dbeafe'; iconColor = '#1d4ed8';
+                badgeBg = '#dbeafe'; badgeColor = '#1d4ed8';
+            }
+            
+            const badgeText = n.tipe ? (n.tipe.charAt(0).toUpperCase() + n.tipe.slice(1)) : 'Sistem';
+
+            return `
             <div onclick="readNotif(${n.id}, '${n.url || ''}')"
-                 style="padding:12px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;
-                        background:${!n.dibaca ? '#eff6ff' : '#fff'};"
-                 onmouseover="this.style.background='#f1f5f9'"
-                 onmouseout="this.style.background='${!n.dibaca ? '#eff6ff' : '#fff'}'">
-              <div style="display:flex;gap:10px;align-items:flex-start;">
-                <div style="width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;
-                            background:${n.tipe === 'notulensi' ? '#14b8a6' : '#9ca3af'};"></div>
-                <div style="flex:1;min-width:0;">
-                  <p style="font-size:12px;font-weight:${!n.dibaca ? '600' : '500'};
-                             color:#111827;margin:0;white-space:nowrap;
-                             overflow:hidden;text-overflow:ellipsis;">${n.judul}</p>
-                  <p style="font-size:11px;color:#6b7280;margin:2px 0 0;
-                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.pesan}</p>
+                 style="padding:16px 20px;border-bottom:1px solid #f1f5f9;cursor:pointer;
+                        background:${!n.dibaca ? '#f0f7ff' : '#fff'}; display:flex; gap:16px; align-items:flex-start;"
+                 onmouseover="this.style.background='#f8fafc'"
+                 onmouseout="this.style.background='${!n.dibaca ? '#f0f7ff' : '#fff'}'">
+              
+              <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; padding-top:2px;">
+                  <div style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; background:${iconBg}; color:${iconColor};">
+                      <i class="ti ${iconName}"></i>
+                  </div>
+                  ${!n.dibaca ? `<div style="width:7px; height:7px; border-radius:50%; background:#3b82f6; flex-shrink:0;"></div>` : ''}
+              </div>
+
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+                  <span style="font-size:13px; font-weight:${!n.dibaca ? '700' : '500'}; color:#111827; line-height:1.4;">${cleanJudul}</span>
+                  <span style="font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600; flex-shrink:0; background:${badgeBg}; color:${badgeColor};">${badgeText}</span>
                 </div>
+                <p style="font-size:12px; color:#6b7280; line-height:1.6; margin:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${cleanPesan}</p>
               </div>
             </div>
-          `).join('');
+            `;
+          }).join('');
         });
     }
 

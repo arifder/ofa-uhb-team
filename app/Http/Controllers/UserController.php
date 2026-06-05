@@ -57,6 +57,7 @@ class UserController extends Controller
             'name' => 'required',
             'role' => 'required|in:super_admin,admin_fst,admin_fis,kepala_unit,dosen',
             'status' => 'required|in:aktif,arsip',
+            'jabatan_struktural' => 'nullable|string|in:Super Admin,Dekan,Kaprodi,BAAK,Kemahasiswaan,LPPM,Dosen,Kepala Unit,Lainnya',
         ];
 
         if ($request->role === 'dosen') {
@@ -108,6 +109,7 @@ class UserController extends Controller
                 'fakultas_id' => $fakultasId,
                 'prodi_id' => $prodiId,
                 'status' => $request->status,
+                'jabatan_struktural' => $request->jabatan_struktural,
             ]);
 
             if ($request->role === 'dosen') {
@@ -132,6 +134,7 @@ class UserController extends Controller
             'name' => 'required',
             'role' => 'required|in:super_admin,admin_fst,admin_fis,kepala_unit,dosen',
             'status' => 'required|in:aktif,arsip',
+            'jabatan_struktural' => 'nullable|string|in:Super Admin,Dekan,Kaprodi,BAAK,Kemahasiswaan,LPPM,Dosen,Kepala Unit,Lainnya',
         ];
 
         if ($request->role === 'dosen') {

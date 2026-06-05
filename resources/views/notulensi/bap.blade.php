@@ -118,18 +118,23 @@
                     <tr>
                         <td style="text-align:center; width:50%; vertical-align: bottom;">
                             <p style="margin: 0;">Mengetahui,</p>
-                            <p style="margin: 0; margin-bottom: 60px;">Dekan
-                                {{ $notulensi->fakultas->nama_fakultas ?? '-' }}</p>
+                            <p style="margin: 0; margin-bottom: 60px;">{{ $jabatanMengetahui ?? 'Pejabat' }}
+                                @if(str_contains(strtolower($jabatanMengetahui ?? ''), 'dekan'))
+                                    {{ $notulensi->fakultas->nama_fakultas ?? '' }}
+                                @elseif(str_contains(strtolower($jabatanMengetahui ?? ''), 'program studi'))
+                                    {{ $notulensi->dosens->first()->prodi->nama_prodi ?? '' }}
+                                @endif
+                            </p>
                             <p
                                 style="border-top:1px solid #000; padding-top:4px; display:inline-block; width: 200px; margin: 0;">
-                                {{ $namaDekan ?? '_________________________' }}
+                                {{ $namaMengetahui ?? '_________________________' }}
                             </p>
                         </td>
                         <td style="text-align:center; width:50%; vertical-align: bottom;">
-                            <p style="margin: 0; margin-bottom: 60px;">Ketua Program Studi</p>
+                            <p style="margin: 0; margin-bottom: 60px;">Pembuat BAP,</p>
                             <p
                                 style="border-top:1px solid #000; padding-top:4px; display:inline-block; width: 200px; margin: 0;">
-                                {{ $namaKaprodi ?? '_________________________' }}
+                                {{ $notulensi->user->name ?? '_________________________' }}
                             </p>
                         </td>
                     </tr>

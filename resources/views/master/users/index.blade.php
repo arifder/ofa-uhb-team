@@ -79,6 +79,7 @@
                             <th>Role</th>
                             <th>Fakultas</th>
                             <th>Prodi</th>
+                            <th>Jabatan</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
@@ -103,6 +104,13 @@
                             </td>
                             <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
                             <td>{{ $user->prodi ? $user->prodi->nama_prodi : '-' }}</td>
+                            <td>
+                                @if($user->jabatan_struktural)
+                                    <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">{{ $user->jabatan_struktural }}</span>
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td>
                                 @if($user->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
                                 @else <span class="master-badge badge-nonaktif">Arsip</span>
@@ -211,6 +219,7 @@
         password: '',
         role: 'dosen',
         status: 'aktif',
+        jabatanStruktural: '',
         fakultasId: '',
         prodiId: '',
         prodis: [],
@@ -270,6 +279,7 @@
                     this.password = '';
                     this.role = user.role;
                     this.status = user.status;
+                    this.jabatanStruktural = user.jabatan_struktural || '';
                     this.fakultasId = user.fakultas_id || '';
                     this.prodiId = user.prodi_id || '';
                     this.fetchProdi().then(() => {
@@ -284,6 +294,7 @@
                     this.password = '';
                     this.role = 'dosen';
                     this.status = 'aktif';
+                    this.jabatanStruktural = '';
                     this.fakultasId = '';
                     this.prodiId = '';
                     this.prodis = [];
@@ -305,6 +316,7 @@
                 password: this.password,
                 role: this.role,
                 status: this.status,
+                jabatan_struktural: this.jabatanStruktural,
             };
 
             if (this.userId) {
@@ -376,6 +388,22 @@
                             <option value="kepala_unit">Kepala Unit</option>
                             <option value="dosen">Dosen</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jabatan Struktural <span style="color:#94a3b8; font-weight:400;">(opsional)</span></label>
+                        <select class="filter-control" x-model="jabatanStruktural">
+                            <option value="">-- Tidak Ada --</option>
+                            <option value="Super Admin">Super Admin</option>
+                            <option value="Dekan">Dekan</option>
+                            <option value="Kaprodi">Kaprodi</option>
+                            <option value="BAAK">BAAK</option>
+                            <option value="Kemahasiswaan">Kemahasiswaan</option>
+                            <option value="LPPM">LPPM</option>
+                            <option value="Dosen">Dosen</option>
+                            <option value="Kepala Unit">Kepala Unit</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        <div class="text-xs text-gray-500 mt-1" style="font-size: 11px; margin-top: 4px;">Digunakan untuk fitur penandatangan BAP Notulensi.</div>
                     </div>
                     <div class="form-group" x-show="showFakultas" x-cloak>
                         <label>Fakultas</label>

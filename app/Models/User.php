@@ -36,6 +36,7 @@ class User extends Authenticatable
         'fakultas_id',
         'prodi_id',
         'status',
+        'jabatan_struktural',
     ];
 
     /**

@@ -141,8 +141,8 @@
   /* ── Notif Item ──────────────────────────────────────────── */
   .notif-item {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    align-items: flex-start;
+    gap: 16px;
     padding: 16px 20px;
     border-bottom: 0.5px solid #f1f5f9;
     cursor: pointer;
@@ -257,6 +257,7 @@
     align-items: flex-end;
     gap: 4px;
     min-width: 150px;
+    padding-top: 2px;
   }
 
   .notif-time-absolute {
@@ -495,7 +496,6 @@
         $groupLabel = $getGroupLabel($itemDate, $filter);
       @endphp
 
-      {{-- Group Header Divider --}}
       @if($groupLabel !== $prevGroupLabel)
         @if($prevGroupLabel !== null)
           </div>{{-- close .notif-list --}}
@@ -504,6 +504,12 @@
         <div class="notif-list">
         @php $prevGroupLabel = $groupLabel; @endphp
       @endif
+
+      @php
+        $emojiRegex = '/[\x{1F300}-\x{1F5FF}\x{1F600}-\x{1F64F}\x{1F680}-\x{1F6FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FAFF}\x{1F1E0}-\x{1F1FF}]/u';
+        $cleanJudul = trim(preg_replace($emojiRegex, '', str_replace(['📋', '✏️', '🗑️', '💰', '📤', '🧾', '✅'], '', $item->judul)));
+        $cleanPesan = trim(preg_replace($emojiRegex, '', str_replace(['📋', '✏️', '🗑️', '💰', '📤', '🧾', '✅'], '', $item->pesan)));
+      @endphp
 
       {{-- Notif Item --}}
       <a href="{{ route('notifikasi.read', $item->id) }}"
@@ -535,10 +541,10 @@
         {{-- Body --}}
         <div class="notif-body">
           <div class="notif-meta-row">
-            <span class="notif-judul {{ !$item->dibaca ? 'bold' : '' }}">{{ $item->judul }}</span>
+            <span class="notif-judul {{ !$item->dibaca ? 'bold' : '' }}">{{ $cleanJudul }}</span>
             <span class="notif-badge-tipe tipe-{{ $item->tipe }}">{{ ucfirst($item->tipe) }}</span>
           </div>
-          <div class="notif-pesan">{{ $item->pesan }}</div>
+          <div class="notif-pesan">{{ $cleanPesan }}</div>
           {{-- Waktu versi mobile (tersembunyi di desktop) --}}
           <div class="notif-time-mobile" style="display:none; margin-top:6px; align-items:center; gap:6px; flex-wrap:wrap;">
             <span class="notif-time-absolute">

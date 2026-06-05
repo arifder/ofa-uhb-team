@@ -79,7 +79,7 @@ class NotifikasiHelper
     {
         self::kirimKeRole(
             self::getAdminRolesByFakultas($fakultasId),
-            '📋 Notulensi Baru Dibuat',
+            'Notulensi Baru Dibuat',
             "Notulensi rapat \"$judul\" telah ditambahkan.",
             'notulensi',
             $url
@@ -93,7 +93,7 @@ class NotifikasiHelper
     {
         self::kirimKeRole(
             self::getAdminRolesByFakultas($fakultasId),
-            '✏️ Notulensi Diperbarui',
+            'Notulensi Diperbarui',
             "Notulensi rapat \"$judul\" telah diperbarui.",
             'notulensi',
             $url
@@ -107,7 +107,7 @@ class NotifikasiHelper
     {
         self::kirimKeRole(
             self::getAdminRolesByFakultas($fakultasId),
-            '🗑️ Notulensi Dihapus',
+            'Notulensi Dihapus',
             "Notulensi rapat \"$judul\" telah dihapus dari sistem.",
             'notulensi',
             $url
@@ -146,7 +146,7 @@ class NotifikasiHelper
     ): void {
         self::kirimKeRole(
             self::getAdminRolesByFakultas($fakultasId),
-            '💰 Kas Masuk Baru',
+            'Kas Masuk Baru',
             "Kas masuk sebesar Rp $jumlahFormatted telah dicatat. ($keterangan)",
             'kas',
             $url
@@ -164,7 +164,7 @@ class NotifikasiHelper
     ): void {
         self::kirimKeRole(
             self::getAdminRolesByFakultas($fakultasId),
-            '📤 Kas Keluar Dicatat',
+            'Kas Keluar Dicatat',
             "Kas keluar sebesar Rp $jumlahFormatted telah dicatat. ($keterangan)",
             'kas',
             $url
@@ -187,7 +187,7 @@ class NotifikasiHelper
         // Notif ke dosen ybs
         self::kirim(
             $dosenUserId,
-            '🧾 Tagihan Kas Baru',
+            'Tagihan Kas Baru',
             "Tagihan kas bulan $bulan $tahun sebesar Rp $jumlahFormatted telah diterbitkan. Segera lakukan pembayaran.",
             'kas',
             $urlDosen
@@ -196,7 +196,7 @@ class NotifikasiHelper
         // Notif ke admin kas & manajemen
         self::kirimKeRole(
             self::getAdminRolesByFakultas($fakultasId),
-            '🧾 Tagihan Dosen Diterbitkan',
+            'Tagihan Dosen Diterbitkan',
             "Tagihan kas bulan $bulan $tahun sebesar Rp $jumlahFormatted telah diterbitkan untuk $namaDosen.",
             'kas',
             $urlAdmin
@@ -219,7 +219,7 @@ class NotifikasiHelper
         // Notif konfirmasi ke dosen
         self::kirim(
             $dosenUserId,
-            '✅ Pembayaran Tagihan Berhasil',
+            'Pembayaran Tagihan Berhasil',
             "Pembayaran tagihan kas bulan $bulan $tahun sebesar Rp $jumlahFormatted berhasil dikonfirmasi.",
             'kas',
             $urlDosen
@@ -228,7 +228,7 @@ class NotifikasiHelper
         // Notif ke admin kas & manajemen
         self::kirimKeRole(
             self::getAdminRolesByFakultas($fakultasId),
-            '✅ Tagihan Dibayar',
+            'Tagihan Dibayar',
             "$namaDosen telah membayar tagihan bulan $bulan $tahun sebesar Rp $jumlahFormatted.",
             'kas',
             $urlAdmin

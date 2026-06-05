@@ -159,7 +159,7 @@
                     <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
                         <i class="ti ti-eye"></i>
                     </button>
-                    <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
+                    <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
                         <i class="ti ti-printer"></i>
                     </button>
                     <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
@@ -177,7 +177,7 @@
                     <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
                         <i class="ti ti-eye"></i>
                     </button>
-                    <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
+                    <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
                         <i class="ti ti-printer"></i>
                     </button>
                     <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
@@ -349,22 +349,35 @@
         <form id="exportForm" onsubmit="submitExport(event)">
             <div class="custom-modal-body">
                 <input type="hidden" id="export_not_id">
+                <input type="hidden" id="export_fakultas_id">
+                <input type="hidden" id="export_prodi_id">
                 <p style="margin-bottom:16px; color:#475569;">Pilih opsi untuk dokumen BAP yang akan dicetak:</p>
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
                     <input type="checkbox" id="export_show_ttd" checked style="width:16px; height:16px; accent-color:#2563eb;" onchange="toggleExportNames(this)">
-                    <span style="font-weight:500; color:#1e293b;">Sertakan Tanda Tangan Dekan & Kaprodi</span>
+                    <span style="font-weight:500; color:#1e293b;">Sertakan Tanda Tangan</span>
                 </label>
-                <div id="exportNames" style="margin-top:8px; display:none; gap:10px;">
-                    <label style="flex:1;">
-                        Nama Dekan
-                        <input type="text" id="export_nama_dekan" class="filter-control" placeholder="Nama Dekan" style="width:100%; margin-top:4px;" />
+                <div id="exportNames" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;">
+                    <label>
+                        Jenis Rapat / Pihak Mengetahui
+                        <select id="export_jabatan" class="filter-control" style="width:100%; margin-top:4px;" onchange="handleJabatanChange()">
+                            <option value="">-- Pilih --</option>
+                            <option value="Universitas (BAAK)">Universitas (BAAK)</option>
+                            <option value="Fakultas (Dekan)">Fakultas (Dekan)</option>
+                            <option value="Program Studi (Kaprodi)">Program Studi (Kaprodi)</option>
+                            <option value="Kemahasiswaan">Kemahasiswaan</option>
+                            <option value="LPPM">LPPM</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
                     </label>
-                    <label style="flex:1; margin-left:10px;">
-                        Nama Kaprodi
-                        <input type="text" id="export_nama_kaprodi" class="filter-control" placeholder="Nama Kaprodi" style="width:100%; margin-top:4px;" />
+                    <label id="export_nama_container" style="display:none;">
+                        Nama Pejabat
+                        <input type="text" id="export_nama" class="filter-control" placeholder="Nama Pejabat..." style="width:100%; margin-top:4px;" />
+                        <div id="export_nama_info" style="font-size:11px; color:#10b981; margin-top:4px; display:none;">
+                            <i class="ti ti-check"></i> Diambil otomatis dari data user aktif
+                        </div>
                     </label>
                 </div>
-            </div>>
+            </div>
             <div class="custom-modal-footer">
                 <button type="button" class="btn-outline" onclick="closeExportModal()">Batal</button>
                 <button type="submit" class="btn-primary"><i class="ti ti-download"></i> Export BAP</button>
@@ -419,14 +432,21 @@
         document.getElementById('detailModal').classList.remove('active');
     }
 
+    const pejabatList = @json($pejabatList ?? []);
+
     /* ── Export Modal ──────────────────────────────── */
-    function openExportModal(id) {
-    document.getElementById('export_not_id').value = id;
-    const showTtdCheckbox = document.getElementById('export_show_ttd');
-    showTtdCheckbox.checked = true;
-    toggleExportNames(showTtdCheckbox);
-    document.getElementById('exportModal').classList.add('active');
-}
+    function openExportModal(id, fakultasId = null, prodiId = null) {
+        document.getElementById('export_not_id').value = id;
+        document.getElementById('export_fakultas_id').value = fakultasId;
+        document.getElementById('export_prodi_id').value = prodiId;
+        const showTtdCheckbox = document.getElementById('export_show_ttd');
+        showTtdCheckbox.checked = true;
+        document.getElementById('export_jabatan').value = '';
+        document.getElementById('export_nama').value = '';
+        document.getElementById('export_nama').readOnly = false;
+        toggleExportNames(showTtdCheckbox);
+        document.getElementById('exportModal').classList.add('active');
+    }
 
     function toggleExportNames(el) {
         const nameDiv = document.getElementById('exportNames');
@@ -434,27 +454,81 @@
             nameDiv.style.display = 'flex';
         } else {
             nameDiv.style.display = 'none';
-            document.getElementById('export_nama_dekan').value = '';
-            document.getElementById('export_nama_kaprodi').value = '';
+            document.getElementById('export_jabatan').value = '';
+            document.getElementById('export_nama').value = '';
+            document.getElementById('export_nama_container').style.display = 'none';
         }
     }
-function closeExportModal() {
-    document.getElementById('exportModal').classList.remove('active');
-}
+
+    function handleJabatanChange() {
+        const jabatan = document.getElementById('export_jabatan').value;
+        const container = document.getElementById('export_nama_container');
+        const input = document.getElementById('export_nama');
+        const info = document.getElementById('export_nama_info');
+        const fakultasId = document.getElementById('export_fakultas_id').value;
+        const prodiId = document.getElementById('export_prodi_id').value;
+
+        if (!jabatan) {
+            container.style.display = 'none';
+            input.value = '';
+            return;
+        }
+
+        container.style.display = 'block';
+        info.style.display = 'none';
+        input.readOnly = false;
+        input.value = '';
+
+        if (jabatan === 'Lainnya') {
+            input.placeholder = 'Ketik nama pejabat...';
+            return;
+        }
+
+        let targetPejabat = null;
+
+        if (jabatan === 'Universitas (BAAK)') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'BAAK');
+        } else if (jabatan === 'Fakultas (Dekan)') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Dekan' && p.fakultas_id == fakultasId);
+        } else if (jabatan === 'Program Studi (Kaprodi)') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kaprodi' && p.prodi_id == prodiId);
+        } else if (jabatan === 'Kemahasiswaan') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kemahasiswaan');
+        } else if (jabatan === 'LPPM') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'LPPM');
+        }
+
+        if (targetPejabat) {
+            input.value = targetPejabat.name;
+            input.readOnly = true;
+            info.style.display = 'block';
+        } else {
+            input.placeholder = 'Data belum diset, ketik manual...';
+        }
+    }
+
+    function closeExportModal() {
+        document.getElementById('exportModal').classList.remove('active');
+    }
 
     function submitExport(e) {
         e.preventDefault();
         const id = document.getElementById('export_not_id').value;
         const showTtd = document.getElementById('export_show_ttd').checked ? 1 : 0;
-        const namaDekan = document.getElementById('export_nama_dekan').value;
-        const namaKaprodi = document.getElementById('export_nama_kaprodi').value;
+        const jabatan = document.getElementById('export_jabatan').value;
+        const nama = document.getElementById('export_nama').value;
         
         closeExportModal();
         let url = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
         if (showTtd) {
             const params = new URLSearchParams();
-            if (namaDekan) params.append('nama_dekan', encodeURIComponent(namaDekan));
-            if (namaKaprodi) params.append('nama_kaprodi', encodeURIComponent(namaKaprodi));
+            let labelJabatan = jabatan;
+            if (jabatan === 'Universitas (BAAK)') labelJabatan = 'Kepala BAAK';
+            if (jabatan === 'Fakultas (Dekan)') labelJabatan = 'Dekan';
+            if (jabatan === 'Program Studi (Kaprodi)') labelJabatan = 'Ketua Program Studi';
+            
+            if (labelJabatan) params.append('jabatan_mengetahui', labelJabatan);
+            if (nama) params.append('nama_mengetahui', nama);
             const query = params.toString();
             if (query) url += '&' + query;
         }
