@@ -144,7 +144,7 @@
                         <div id="checkbox-ui" class="w-4.5 h-4.5 rounded-md border-2 border-slate-300 flex items-center justify-center transition-all duration-200 flex-shrink-0" style="width:18px;height:18px;">
                             <svg id="check-icon" class="w-3 h-3 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                         </div>
-                        <span class="text-base text-slate-600">Ingat saya</span>
+                        <span class="text-base text-slate-600">Ingat Saya</span>
                     </label>
                 </div>
 
