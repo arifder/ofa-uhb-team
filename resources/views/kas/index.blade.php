@@ -1,5 +1,5 @@
 @extends('layouts.dashboard')
-@section('title', 'Kas {{ $title }}')
+@section('title', 'Kas ' . $title)
 
 @push('styles')
 <style>
@@ -72,11 +72,11 @@
         Kas {{ $title }}
         <span style="font-size:13px; font-weight:400; color:#64748b; margin-left:8px;">Total: {{ $kasList->total() }}</span>
     </h2>
-    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+    @can('create', \App\Models\KasTransaction::class)
     <button class="btn-primary" onclick="openModal()">
         <i class="ti ti-plus"></i> Tambah Kas {{ $title }}
     </button>
-    @endif
+    @endcan
 </div>
 
 <div id="toast-container"></div>
@@ -111,11 +111,15 @@
                 <th>Tanggal</th>
                 <th>Keterangan</th>
                 <th>Fakultas</th>
+                @if($jenis === 'masuk')
+                <th>Dosen</th>
+                <th>Pembagian (Tabungan / Sosial)</th>
+                @elseif($jenis === 'keluar')
+                <th>Kategori</th>
+                @endif
                 <th>Jumlah</th>
                 <th>Dibuat Oleh</th>
-                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
                 <th>Aksi</th>
-                @endif
             </tr>
         </thead>
         <tbody>
@@ -140,33 +144,54 @@
                         -
                     @endif
                 </td>
+                @if($jenis === 'masuk')
+                <td>{{ $kas->dosen->nama_lengkap ?? '-' }}</td>
+                <td>
+                    @if($kas->dosen_id && $kas->jumlah > 0)
+                    <div style="font-size:13px;">
+                        <span style="color:#059669; font-family:monospace;">Rp {{ number_format($kas->tabungan, 0, ',', '.') }}</span>
+                        <span style="color:#9ca3af; margin:0 4px;">/</span>
+                        <span style="color:#2563eb; font-family:monospace;">Rp {{ number_format($kas->uang_sosial, 0, ',', '.') }}</span>
+                    </div>
+                    <div style="font-size:11px; color:#9ca3af;">Tabungan / Sosial</div>
+                    @else
+                    -
+                    @endif
+                </td>
+                @elseif($jenis === 'keluar')
+                <td>
+                    @if($kas->kategori)
+                        <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px; color:#475569; text-transform:capitalize;">
+                            {{ str_replace('_', ' ', $kas->kategori) }}
+                        </span>
+                    @else
+                        -
+                    @endif
+                </td>
+                @endif
                 <td class="{{ $jenis === 'masuk' ? 'jumlah-masuk' : 'jumlah-keluar' }}">
                     {{ $jenis === 'masuk' ? '+' : '-' }}{{ number_format($kas->jumlah, 0, ',', '.') }}
                 </td>
                 <td style="color:#64748b; font-size:12px;">{{ $kas->user->name ?? '-' }}</td>
-                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
                 <td>
                     <button class="icon-btn" onclick="viewDetail({{ $kas->id }})" title="Lihat Detail">
                         <i class="ti ti-eye"></i>
                     </button>
+                    @can('update', $kas)
                     <button class="icon-btn" onclick="editKas({{ $kas->id }})" title="Edit">
                         <i class="ti ti-pencil"></i>
                     </button>
+                    @endcan
+                    @can('delete', $kas)
                     <button class="icon-btn delete" onclick="deleteKas({{ $kas->id }})" title="Hapus">
                         <i class="ti ti-trash"></i>
                     </button>
+                    @endcan
                 </td>
-                @else
-                <td>
-                    <button class="icon-btn" onclick="viewDetail({{ $kas->id }})" title="Lihat Detail">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                </td>
-                @endif
             </tr>
             @empty
             <tr>
-                <td colspan="{{ in_array($authUser->role, ['kepala_unit', 'dosen']) ? '6' : '7' }}" style="text-align:center; padding:40px; color:#9ca3af;">
+                <td colspan="{{ $jenis === 'masuk' ? 9 : 7 }}" style="text-align:center; padding:40px; color:#9ca3af;">
                     <i class="ti ti-wallet" style="font-size:32px; display:block; margin-bottom:8px;"></i>
                     Belum ada data kas {{ strtolower($title) }}.
                 </td>
@@ -203,7 +228,7 @@
             <span id="modalTitle">Tambah Kas {{ $title }}</span>
             <button class="icon-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
         </div>
-        <form id="kasForm" onsubmit="saveKas(event)">
+        <form id="kasForm" onsubmit="saveKas(event)" x-data="kasForm()">
             <div class="custom-modal-body">
                 <input type="hidden" id="kas_id">
                 <input type="hidden" id="kas_jenis" value="{{ $jenis }}">
@@ -220,9 +245,55 @@
                 </div>
                 @endif
 
+                @if($jenis === 'masuk')
+                <div class="form-group">
+                    <label>Nama Dosen (Opsional)</label>
+                    <select id="kas_dosen_id" class="filter-control">
+                        <option value="" selected>-- Pilih Dosen --</option>
+                        @forelse($dosensList as $dosen)
+                            <option value="{{ $dosen->id }}">
+                                {{ $dosen->nama_lengkap }} — {{ $dosen->prodi->nama_prodi ?? '-' }}
+                            </option>
+                        @empty
+                            <option value="" disabled>Tidak ada dosen di fakultas ini</option>
+                        @endforelse
+                    </select>
+                </div>
+                @elseif($jenis === 'keluar')
+                <div class="form-group">
+                    <label>Kategori Pengeluaran</label>
+                    <select id="kas_kategori" class="filter-control" required>
+                        <option value="" disabled selected>Pilih Kategori</option>
+                        <option value="biaya_operasional">Biaya Operasional</option>
+                        <option value="kegiatan_kunjungan_industri">Kegiatan Kunjungan Industri</option>
+                        <option value="pembelian_perlengkapan">Pembelian Perlengkapan</option>
+                        <option value="lainnya">Lainnya</option>
+                    </select>
+                </div>
+                @endif
+
                 <div class="form-group">
                     <label>Jumlah ({{ $jenis === 'masuk' ? 'Rp' : 'Rp' }})</label>
-                    <input type="number" id="kas_jumlah" class="filter-control" min="1" step="1000" required placeholder="cth: 500000">
+                    <input type="number" id="kas_jumlah" class="filter-control" min="1" step="1" required placeholder="Contoh: 60000" x-model="jumlah" @input="hitung()">
+                    
+                    @if($jenis === 'masuk')
+                    {{-- Preview pembagian --}}
+                    <div x-show="jumlah > 0" class="mt-3 p-3 rounded-lg text-sm" style="background:#eff6ff; margin-top:10px; border-radius:8px; padding:12px; display:none;" :style="jumlah > 0 ? 'display:block' : 'display:none'">
+                        <p style="font-weight:600; color:#1d4ed8; margin-bottom:6px;">Pembagian Otomatis:</p>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="color:#4b5563;">Tabungan (33,33%)</span>
+                            <span style="font-family:monospace; font-weight:600; color:#059669;">Rp <span x-text="formatRp(tabungan)"></span></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="color:#4b5563;">Uang Sosial (66,67%)</span>
+                            <span style="font-family:monospace; font-weight:600; color:#2563eb;">Rp <span x-text="formatRp(sosial)"></span></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; border-top:1px solid #bfdbfe; padding-top:6px; margin-top:6px;">
+                            <span style="font-weight:600; color:#374151;">Total</span>
+                            <span style="font-family:monospace; font-weight:700;">Rp <span x-text="formatRp(jumlah)"></span></span>
+                        </div>
+                    </div>
+                    @endif
                 </div>
                 <div class="form-group">
                     <label>Tanggal</label>
@@ -230,8 +301,30 @@
                 </div>
                 <div class="form-group">
                     <label>Keterangan</label>
-                    <input type="text" id="kas_keterangan" class="filter-control" required placeholder="cth: Iuran kasbulan Mei 2026">
+                    <input type="text" id="kas_keterangan" class="filter-control" required placeholder="cth: Iuran kas bulan Mei 2026">
                 </div>
+
+                @if($jenis === 'keluar')
+                <div class="form-group" style="margin-top:16px;">
+                    <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:6px">
+                        Bukti Foto / Struk Pembelian <span style="color:#6b7280; font-weight:400">(opsional)</span>
+                    </label>
+
+                    <!-- Drop zone / input file -->
+                    <div id="dropzone" style="border:2px dashed #d1d5db; border-radius:8px; padding:20px; text-align:center; cursor:pointer; background:#f9fafb" onclick="document.getElementById('kas_bukti_foto').click()">
+                        <i class="ti ti-photo-up" style="font-size:28px;color:#9ca3af"></i>
+                        <p style="font-size:12px; color:#6b7280; margin-top:6px">
+                            Klik atau drag foto ke sini<br>
+                            <span style="font-size:11px">JPG, PNG, WEBP — Maks 2MB</span>
+                        </p>
+                    </div>
+
+                    <input type="file" id="kas_bukti_foto" accept="image/png, image/jpeg, image/jpg, image/webp" style="display:none" onchange="previewFoto(this)">
+                    
+                    <!-- Preview foto yang dipilih -->
+                    <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
+                </div>
+                @endif
             </div>
             <div class="custom-modal-footer">
                 <button type="button" class="btn-outline" onclick="closeModal()">Batal</button>
@@ -276,6 +369,8 @@
         document.getElementById('kas_id').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Kas {{ $title }}';
         document.getElementById('kas_tanggal').value = new Date().toISOString().split('T')[0];
+        const preview = document.getElementById('previewContainer');
+        if (preview) preview.innerHTML = '';
         document.getElementById('kasModal').classList.add('active');
     }
 
@@ -285,6 +380,40 @@
 
     function closeDetail() {
         document.getElementById('detailModal').classList.remove('active');
+    }
+
+    /* ── Foto Preview ──────────────────────────────── */
+    function previewFoto(input) {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = '';
+        
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.size > 2 * 1024 * 1024) {
+                showToast(file.name + ' melebihi 2MB!', 'error');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'position:relative;width:80px;height:80px';
+                div.innerHTML = `
+                    <img src="${e.target.result}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
+                    <span onclick="hapusFoto()" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
+                    <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">${file.name}</p>`;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function hapusFoto() {
+        const input = document.getElementById('kas_bukti_foto');
+        if (input) input.value = '';
+        const container = document.getElementById('previewContainer');
+        if (container) container.innerHTML = '';
     }
 
     async function viewDetail(id) {
@@ -328,6 +457,17 @@
                     <div class="detail-label">Keterangan</div>
                     <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.keterangan ?? '-'}</div>
                 </div>
+                ${data.jenis === 'keluar' && data.bukti_foto ? `
+                <div class="detail-section">
+                    <div class="detail-label">Bukti Foto / Struk</div>
+                    <div class="detail-value" style="margin-top:6px; background:#f8fafc; padding:10px; border-radius:8px; text-align:center;">
+                        <a href="/storage/${data.bukti_foto}" target="_blank">
+                            <img src="/storage/${data.bukti_foto}" alt="Bukti Foto" style="max-width:100%; max-height:200px; border-radius:6px; border:1px solid #e2e8f0; object-fit:contain;">
+                        </a>
+                        <div style="font-size:11px; color:#64748b; margin-top:6px;">Klik gambar untuk memperbesar</div>
+                    </div>
+                </div>
+                ` : ''}
                 <div class="detail-section" style="border-bottom:none;">
                     <div class="detail-label">Dibuat Oleh</div>
                     <div class="detail-value">${data.user ? data.user.name : '-'}</div>
@@ -354,8 +494,24 @@
             const fakSel = document.getElementById('kas_fakultas_id');
             if (fakSel) fakSel.value = data.fakultas_id || '';
 
+            const dosenSel = document.getElementById('kas_dosen_id');
+            if (dosenSel) dosenSel.value = data.dosen_id || '';
+
+            const katSel = document.getElementById('kas_kategori');
+            if (katSel) katSel.value = data.kategori || '';
+
+            const fotoInput = document.getElementById('kas_bukti_foto');
+            if (fotoInput) fotoInput.value = ''; // Clear previous file input
+            const preview = document.getElementById('previewContainer');
+            if (preview) preview.innerHTML = ''; // Clear preview
+
             document.getElementById('modalTitle').textContent = 'Edit Kas {{ $title }}';
             document.getElementById('kasModal').classList.add('active');
+
+            // Trigger Alpine x-model
+            setTimeout(() => {
+                document.getElementById('kas_jumlah').dispatchEvent(new Event('input'));
+            }, 100);
         } catch {
             showToast('Gagal memuat data.', 'error');
         }
@@ -377,6 +533,17 @@
         const fakSel = document.getElementById('kas_fakultas_id');
         if (fakSel && fakSel.value) formData.append('fakultas_id', fakSel.value);
 
+        const dosenSel = document.getElementById('kas_dosen_id');
+        if (dosenSel && dosenSel.value) formData.append('dosen_id', dosenSel.value);
+
+        const katSel = document.getElementById('kas_kategori');
+        if (katSel && katSel.value) formData.append('kategori', katSel.value);
+
+        const fotoInput = document.getElementById('kas_bukti_foto');
+        if (fotoInput && fotoInput.files[0]) {
+            formData.append('bukti_foto', fotoInput.files[0]);
+        }
+
         if (id) formData.append('_method', 'PUT');
 
         try {
@@ -396,6 +563,21 @@
             }
         } catch {
             showToast('Koneksi gagal.', 'error');
+        }
+    }
+
+    function kasForm() {
+        return {
+            jumlah: 0,
+            tabungan: 0,
+            sosial: 0,
+            hitung() {
+                this.tabungan = Math.round(this.jumlah * 0.3333);
+                this.sosial   = this.jumlah - this.tabungan;
+            },
+            formatRp(val) {
+                return Number(val).toLocaleString('id-ID');
+            }
         }
     }
 

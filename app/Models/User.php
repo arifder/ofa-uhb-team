@@ -117,6 +117,14 @@ class User extends Authenticatable
         };
     }
 
+    public function hasRole(string|array $roles): bool
+    {
+        if (is_string($roles)) {
+            return $this->role === $roles;
+        }
+        return in_array($this->role, $roles);
+    }
+
     public function fakultas()
     {
         return $this->belongsTo(Fakultas::class);

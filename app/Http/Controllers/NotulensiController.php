@@ -14,14 +14,19 @@ use App\Helpers\NotifikasiHelper;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
+
 class NotulensiController extends Controller
 {
+    use AuthorizesRequests;
+
     use AuthorizesRequests;
 
     // ── INDEX ───────────────────────────────────────────
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Notulensi::class);
+
         $this->authorize('viewAny', Notulensi::class);
 
         $user  = auth()->user();
@@ -100,6 +105,8 @@ class NotulensiController extends Controller
     {
         $this->authorize('create', Notulensi::class);
 
+        $this->authorize('create', Notulensi::class);
+
         $user = auth()->user();
 
         $validated = $request->validate([
@@ -164,6 +171,7 @@ class NotulensiController extends Controller
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
             '📌 Anda Terdaftar sebagai Peserta Rapat',
+            '📌 Anda Terdaftar sebagai Peserta Rapat',
             'Anda terdaftar dalam rapat "' . $notulensi->judul . '" pada ' . $notulensi->tanggal->format('d/m/Y') . '.',
             $notifUrl
         );
@@ -190,6 +198,8 @@ class NotulensiController extends Controller
 
         $this->authorize('view', $notulensi);
 
+        $this->authorize('view', $notulensi);
+
         return response()->json($notulensi);
     }
 
@@ -197,6 +207,8 @@ class NotulensiController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('update', Notulensi::findOrFail($id));
+
         $this->authorize('update', Notulensi::findOrFail($id));
 
         $user = auth()->user();
@@ -269,6 +281,7 @@ class NotulensiController extends Controller
         // Notif ke dosen peserta (yang terdaftar setelah update)
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
+            '✏️ Data Rapat Diperbarui',
             '✏️ Data Rapat Diperbarui',
             'Data rapat "' . $notulensi->judul . '" yang Anda ikuti telah diperbarui.',
             $notifUrl
