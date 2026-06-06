@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             ProdiSeeder::class,
             UserSeeder::class,
             DosenSeeder::class,
+            PejabatSeeder::class, // Seeder untuk user dengan jabatan_struktural (BAAK, Dekan, Kaprodi, dll)
         ]);
     }
 }
+

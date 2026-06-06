@@ -1,3 +1,5 @@
+
+
 @extends('layouts.dashboard')
 @section('title', 'Notulensi Rapat')
 
@@ -114,82 +116,90 @@
 
 {{-- Table --}}
 <div class="master-card">
-    <table class="master-table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Judul</th>
-                <th>Tanggal</th>
-                <th>Tempat</th>
-                <th>Fakultas</th>
-                <th>Peserta</th>
-                <th>Dibuat Oleh</th>
-                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
-                <th>Aksi</th>
-                @endif
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($notulensiList as $index => $not)
-            <tr>
-                <td>{{ $notulensiList->firstItem() + $index }}</td>
-                <td>
-                    <a href="#" onclick="viewDetail({{ $not->id }})" style="color:#2563eb; font-weight:500; text-decoration:none;">
-                        {{ $not->judul }}
-                    </a>
-                </td>
-                <td>{{ \Carbon\Carbon::parse($not->tanggal)->translatedFormat('d M Y') }}</td>
-                <td>{{ $not->tempat }}</td>
-                <td>
-                    @php
-                        $fakNama = $not->fakultas->nama_fakultas ?? '-';
-                        $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
-                                  : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
-                    @endphp
-                    <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
-                </td>
-                <td>
-                    <span style="font-size:12px; color:#64748b;">
-                        {{ $not->dosens->count() }} dosen
-                    </span>
-                </td>
-                <td style="color:#64748b; font-size:12px;">{{ $not->user->name ?? '-' }}</td>
-                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
-                <td>
-                    <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
-                        <i class="ti ti-printer"></i>
-                    </button>
-                    <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
-                        <i class="ti ti-pencil"></i>
-                    </button>
-                    <button class="icon-btn delete" onclick="deleteNotulensi({{ $not->id }})" title="Hapus">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                </td>
-                @else
-                <td>
-                    <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    <button class="icon-btn" onclick="openExportModal({{ $not->id }})" style="color:#0f766e" title="Export BAP">
-                        <i class="ti ti-printer"></i>
-                    </button>
-                </td>
-                @endif
-            </tr>
-            @empty
-            <tr>
-                <td colspan="8" style="text-align:center; padding:40px; color:#9ca3af;">
-                    <i class="ti ti-clipboard-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
-                    Belum ada data notulensi.
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Judul</th>
+                    <th>Tanggal</th>
+                    <th>Tempat</th>
+                    <th>Fakultas</th>
+                    <th>Peserta</th>
+                    <th>Dibuat Oleh</th>
+                    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                    <th>Aksi</th>
+                    @endif
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($notulensiList as $index => $not)
+                <tr>
+                    <td>{{ $notulensiList->firstItem() + $index }}</td>
+                    <td>
+                        <a href="#" onclick="viewDetail({{ $not->id }})" style="color:#2563eb; font-weight:500; text-decoration:none;">
+                            {{ $not->judul }}
+                        </a>
+                    </td>
+                    <td>{{ \Carbon\Carbon::parse($not->tanggal)->translatedFormat('d M Y') }}</td>
+                    <td>{{ $not->tempat }}</td>
+                    <td>
+                        @php
+                            $fakNama = $not->fakultas->nama_fakultas ?? '-';
+                            $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
+                                      : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
+                        @endphp
+                        <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; color:#64748b;">
+                            {{ $not->dosens->count() }} dosen
+                        </span>
+                    </td>
+                    <td style="color:#64748b; font-size:12px;">{{ $not->user->name ?? '-' }}</td>
+                    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                    <td>
+                        <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                        <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
+                            <i class="ti ti-printer"></i>
+                        </button>
+                        <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                            <i class="ti ti-file-type-pdf"></i>
+                        </a>
+                        <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
+                            <i class="ti ti-pencil"></i>
+                        </button>
+                        <button class="icon-btn delete" onclick="deleteNotulensi({{ $not->id }})" title="Hapus">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                    </td>
+                    @else
+                    <td>
+                        <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                        <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
+                            <i class="ti ti-printer"></i>
+                        </button>
+                        <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                            <i class="ti ti-file-type-pdf"></i>
+                        </a>
+                    </td>
+                    @endif
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:40px; color:#9ca3af;">
+                        <i class="ti ti-clipboard-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                        Belum ada data notulensi.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     {{-- Pagination --}}
     <div class="pag-wrap">
@@ -254,7 +264,11 @@
                 </div>
                 <div class="form-group">
                     <label>Agenda Rapat</label>
-                    <textarea id="not_agenda" class="filter-control" rows="3" required placeholder="1. Evaluasi kinerja&#10;2. Persiapan ujian" style="resize:vertical;"></textarea>
+                    <textarea id="not_agenda_rapat" class="filter-control" rows="3" placeholder="Tuliskan agenda/poin-poin rapat..." style="resize:vertical;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Resume Rapat</label>
+                    <textarea id="not_agenda" class="filter-control" rows="8" placeholder="Tuliskan resume notulensi rapat di sini..."></textarea>
                 </div>
                 <div class="form-group">
                     <label>Tindak Lanjut <span style="color:#94a3b8;">(opsional)</span></label>
@@ -283,6 +297,9 @@
                         Dokumentasi Foto <span style="color:#6b7280; font-weight:400">(opsional, bisa lebih dari 1)</span>
                     </label>
 
+                    <!-- Foto existing saat edit -->
+                    <div id="existingPhotosContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px"></div>
+
                     <!-- Drop zone / input file -->
                     <div id="dropzone" style="border:2px dashed #d1d5db; border-radius:8px; padding:20px; text-align:center; cursor:pointer; background:#f9fafb" onclick="document.getElementById('inputDokumentasi').click()">
                         <i class="ti ti-photo-up" style="font-size:28px;color:#9ca3af"></i>
@@ -292,9 +309,9 @@
                         </p>
                     </div>
 
-                    <input type="file" id="inputDokumentasi" name="dokumentasi[]" multiple accept="image/jpg,image/jpeg,image/png" style="display:none" onchange="previewFoto(this)"/>
+                    <input type="file" id="inputDokumentasi" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png" style="display:none" onchange="tambahFoto(this)"/>
 
-                    <!-- Preview foto yang dipilih -->
+                    <!-- Preview foto baru yang dipilih -->
                     <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
                 </div>
             </div>
@@ -336,11 +353,34 @@
         <form id="exportForm" onsubmit="submitExport(event)">
             <div class="custom-modal-body">
                 <input type="hidden" id="export_not_id">
+                <input type="hidden" id="export_fakultas_id">
+                <input type="hidden" id="export_prodi_id">
                 <p style="margin-bottom:16px; color:#475569;">Pilih opsi untuk dokumen BAP yang akan dicetak:</p>
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                    <input type="checkbox" id="export_show_ttd" checked style="width:16px; height:16px; accent-color:#2563eb;">
-                    <span style="font-weight:500; color:#1e293b;">Sertakan Tanda Tangan Dekan & Kaprodi</span>
+                    <input type="checkbox" id="export_show_ttd" checked style="width:16px; height:16px; accent-color:#2563eb;" onchange="toggleExportNames(this)">
+                    <span style="font-weight:500; color:#1e293b;">Sertakan Tanda Tangan</span>
                 </label>
+                <div id="exportNames" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;">
+                    <label>
+                        Jenis Rapat / Pihak Mengetahui
+                        <select id="export_jabatan" class="filter-control" style="width:100%; margin-top:4px;" onchange="handleJabatanChange()">
+                            <option value="">-- Pilih --</option>
+                            <option value="BAAK">Universitas (BAAK)</option>
+                            <option value="Dekan">Fakultas (Dekan)</option>
+                            <option value="Kaprodi">Program Studi (Kaprodi)</option>
+                            <option value="Kemahasiswaan">Kemahasiswaan</option>
+                            <option value="LPPM">LPPM</option>
+                            <option value="Lainnya">Lainnya (Manual)</option>
+                        </select>
+                    </label>
+                    <div id="export_nama_container" style="display:none;">
+                        <label id="export_nama_label">Nama Pejabat</label>
+                        <input type="text" id="export_nama" class="filter-control" placeholder="Nama Pejabat..." style="width:100%; margin-top:4px;" />
+                        <div id="export_nama_info" style="font-size:11px; color:#10b981; margin-top:4px; display:none;">
+                            <i class="ti ti-check"></i> Diambil otomatis dari data pejabat aktif
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="custom-modal-footer">
                 <button type="button" class="btn-outline" onclick="closeExportModal()">Batal</button>
@@ -365,6 +405,10 @@
         setTimeout(() => t.remove(), 3500);
     }
 
+    /* ── State foto baru (accumulative) ────────────── */
+    let newFotoFiles = [];
+    let deletedFotoIds = [];
+
     /* ── Modal Open/Close ──────────────────────────── */
     function openModal() {
         document.getElementById('notulensiForm').reset();
@@ -374,6 +418,13 @@
         document.getElementById('pesertaError').style.display = 'none';
         document.getElementById('inputDokumentasi').value = '';
         document.getElementById('previewContainer').innerHTML = '';
+        document.getElementById('existingPhotosContainer').innerHTML = '';
+        if (tinymce.get('not_agenda')) {
+            tinymce.get('not_agenda').setContent('');
+        }
+        document.getElementById('not_agenda_rapat').value = '';
+        newFotoFiles = [];
+        deletedFotoIds = [];
         document.getElementById('notulensiModal').classList.add('active');
     }
 
@@ -385,11 +436,114 @@
         document.getElementById('detailModal').classList.remove('active');
     }
 
+    const pejabatList = @json($pejabatList ?? []);
+    const pejabatFakultas = @json($pejabatFakultas ?? []);
+    const pejabatProdi = @json($pejabatProdi ?? []);
+
     /* ── Export Modal ──────────────────────────────── */
-    function openExportModal(id) {
+    function openExportModal(id, fakultasId = null, prodiId = null) {
         document.getElementById('export_not_id').value = id;
-        document.getElementById('export_show_ttd').checked = true;
+        document.getElementById('export_fakultas_id').value = fakultasId;
+        document.getElementById('export_prodi_id').value = prodiId;
+        const showTtdCheckbox = document.getElementById('export_show_ttd');
+        showTtdCheckbox.checked = true;
+        document.getElementById('export_jabatan').value = '';
+        document.getElementById('export_nama').value = '';
+        document.getElementById('export_nama').readOnly = false;
+        toggleExportNames(showTtdCheckbox);
         document.getElementById('exportModal').classList.add('active');
+    }
+
+    function toggleExportNames(el) {
+        const nameDiv = document.getElementById('exportNames');
+        if (el.checked) {
+            nameDiv.style.display = 'flex';
+        } else {
+            nameDiv.style.display = 'none';
+            document.getElementById('export_jabatan').value = '';
+            document.getElementById('export_nama').value = '';
+            document.getElementById('export_nama_container').style.display = 'none';
+        }
+    }
+
+    function handleJabatanChange() {
+        const jabatan = document.getElementById('export_jabatan').value;
+        const container = document.getElementById('export_nama_container');
+        const input = document.getElementById('export_nama');
+        const label = document.getElementById('export_nama_label');
+        const info = document.getElementById('export_nama_info');
+        const fakultasId = document.getElementById('export_fakultas_id').value;
+        const prodiId = document.getElementById('export_prodi_id').value;
+
+        if (!jabatan) {
+            container.style.display = 'none';
+            input.value = '';
+            return;
+        }
+
+        container.style.display = 'block';
+        info.style.display = 'none';
+        input.readOnly = false;
+        input.value = '';
+        input.placeholder = 'Ketik nama pejabat...';
+
+        if (jabatan === 'Lainnya') {
+            label.textContent = 'Nama Pejabat';
+            input.placeholder = 'Ketik nama pejabat...';
+            input.readOnly = false;
+            return;
+        }
+
+        // Set label sesuai jabatan
+        const labelMap = {
+            'BAAK': 'Nama Kepala BAAK',
+            'Dekan': 'Nama Dekan',
+            'Kaprodi': 'Nama Kaprodi',
+            'Kemahasiswaan': 'Nama Kepala Kemahasiswaan',
+            'LPPM': 'Nama Ketua LPPM'
+        };
+        label.textContent = labelMap[jabatan] || 'Nama Pejabat';
+
+        let targetPejabat = null;
+        let autoFilled = false;
+
+        // 1. Cari dari pejabatList (User dengan jabatan_struktural aktif)
+        if (jabatan === 'BAAK') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'BAAK' && p.status === 'aktif');
+        } else if (jabatan === 'Dekan') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Dekan' && p.fakultas_id == fakultasId && p.status === 'aktif');
+        } else if (jabatan === 'Kaprodi') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kaprodi' && p.prodi_id == prodiId && p.status === 'aktif');
+        } else if (jabatan === 'Kemahasiswaan') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kemahasiswaan' && p.status === 'aktif');
+        } else if (jabatan === 'LPPM') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'LPPM' && p.status === 'aktif');
+        }
+
+        // 2. Jika tidak ditemukan, cari dari pejabatFakultas (nama_dekan di tabel fakultas)
+        if (!targetPejabat && jabatan === 'Dekan' && fakultasId && pejabatFakultas[fakultasId]) {
+            input.value = pejabatFakultas[fakultasId].nama;
+            input.readOnly = true;
+            info.style.display = 'block';
+            autoFilled = true;
+        }
+
+        // 3. Jika tidak ditemukan, cari dari pejabatProdi (nama_kaprodi di tabel prodi)
+        if (!targetPejabat && !autoFilled && jabatan === 'Kaprodi' && prodiId && pejabatProdi[prodiId]) {
+            input.value = pejabatProdi[prodiId].nama;
+            input.readOnly = true;
+            info.style.display = 'block';
+            autoFilled = true;
+        }
+
+        if (targetPejabat) {
+            input.value = targetPejabat.name;
+            input.readOnly = true;
+            info.style.display = 'block';
+        } else if (!autoFilled) {
+            input.placeholder = 'Data belum diset, ketik manual...';
+            input.readOnly = false;
+        }
     }
 
     function closeExportModal() {
@@ -400,9 +554,28 @@
         e.preventDefault();
         const id = document.getElementById('export_not_id').value;
         const showTtd = document.getElementById('export_show_ttd').checked ? 1 : 0;
-        
+        const jabatan = document.getElementById('export_jabatan').value;
+        const nama = document.getElementById('export_nama').value;
+
         closeExportModal();
-        window.location.href = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
+        let url = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
+        if (showTtd) {
+            const params = new URLSearchParams();
+            let labelJabatan = '';
+
+            if (jabatan === 'BAAK') labelJabatan = 'Kepala BAAK';
+            else if (jabatan === 'Dekan') labelJabatan = 'Dekan';
+            else if (jabatan === 'Kaprodi') labelJabatan = 'Ketua Program Studi';
+            else if (jabatan === 'Kemahasiswaan') labelJabatan = 'Kepala Kemahasiswaan';
+            else if (jabatan === 'LPPM') labelJabatan = 'Ketua LPPM';
+            else if (jabatan === 'Lainnya') labelJabatan = 'Pejabat';
+
+            if (labelJabatan) params.append('jabatan_mengetahui', labelJabatan);
+            if (nama) params.append('nama_mengetahui', nama);
+            const query = params.toString();
+            if (query) url += '&' + query;
+        }
+        window.location.href = url;
     }
 
     /* ── Peserta Search ────────────────────────────── */
@@ -413,43 +586,77 @@
         });
     }
 
-    /* ── Foto Preview ──────────────────────────────── */
-    function previewFoto(input) {
-        const container = document.getElementById('previewContainer');
-        container.innerHTML = '';
-        
-        Array.from(input.files).forEach((file, i) => {
-            if (file.size > 5 * 1024 * 1024) {
-                alert(file.name + ' melebihi 5MB!');
+    /* ── Foto Preview (accumulative) ──────────────── */
+    function tambahFoto(input) {
+        Array.from(input.files).forEach(file => {
+            if (!file.type.match(/image\/(jpeg|png)/)) {
+                showToast(file.name + ' bukan file gambar yang valid!', 'error');
                 return;
             }
-            
+            if (file.size > 5 * 1024 * 1024) {
+                showToast(file.name + ' melebihi 5MB!', 'error');
+                return;
+            }
+            newFotoFiles.push(file);
+        });
+        // Reset input agar bisa memilih file yang sama lagi
+        input.value = '';
+        renderNewFotoPreview();
+    }
+
+    function renderNewFotoPreview() {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = '';
+        newFotoFiles.forEach((file, i) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const div = document.createElement('div');
-                div.style.cssText = 'position:relative;width:80px;height:80px';
+                div.style.cssText = 'position:relative;width:80px;';
                 div.innerHTML = `
-                    <img src="${e.target.result}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
-                    <span onclick="hapusFoto(${i})" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
-                    <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">${file.name}</p>`;
+                    <img src="${e.target.result}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"/>
+                    <span onclick="hapusFotoBaru(${i})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1">×</span>
+                    <p style="font-size:9px;color:#6b7280;text-align:center;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${file.name}</p>`;
                 container.appendChild(div);
             };
             reader.readAsDataURL(file);
         });
     }
 
-    function hapusFoto(index) {
-        const input = document.getElementById('inputDokumentasi');
-        const dt = new DataTransfer();
-        
-        for (let i = 0; i < input.files.length; i++) {
-            if (i !== index) {
-                dt.items.add(input.files[i]);
-            }
-        }
-        
-        input.files = dt.files;
-        previewFoto(input);
+    function hapusFotoBaru(index) {
+        newFotoFiles.splice(index, 1);
+        renderNewFotoPreview();
+    }
+
+    function renderExistingPhotos(photos) {
+        const container = document.getElementById('existingPhotosContainer');
+        container.innerHTML = '';
+        if (!photos || photos.length === 0) return;
+
+        const label = document.createElement('p');
+        label.style.cssText = 'font-size:11px;color:#64748b;width:100%;margin-bottom:4px;font-weight:500;';
+        label.textContent = 'Foto tersimpan:';
+        container.appendChild(label);
+
+        photos.forEach(dok => {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:relative;width:80px;';
+            div.dataset.dokId = dok.id;
+            div.innerHTML = `
+                <img src="/storage/dokumentasi-notulensi/${dok.nama_file}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"/>
+                <span onclick="hapusFotoExisting(this, ${dok.id})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1" title="Hapus foto ini">×</span>
+                <p style="font-size:9px;color:#6b7280;text-align:center;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${dok.nama_file}</p>`;
+            container.appendChild(div);
+        });
+    }
+
+    function hapusFotoExisting(btn, dokId) {
+        deletedFotoIds.push(dokId);
+        const div = btn.closest('div[data-dok-id]');
+        if (div) div.remove();
+        // Sembunyikan label jika tidak ada foto tersimpan lagi
+        const container = document.getElementById('existingPhotosContainer');
+        const remaining = container.querySelectorAll('div[data-dok-id]');
+        if (remaining.length === 0) container.innerHTML = '';
     }
 
     /* ── View Detail ───────────────────────────────── */
@@ -459,9 +666,15 @@
         });
         const data = await res.json();
 
-        const pesertaChips = (data.dosens || []).map(d =>
-            `<span class="peserta-chip"><i class="ti ti-user" style="font-size:11px;"></i>${d.nama_lengkap}</span>`
-        ).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
+        const pesertaChips = (data.dosens || []).map(d => {
+            const prodi = d.prodi ? d.prodi.nama_prodi : '-';
+            const fakultas = (d.prodi && d.prodi.fakultas) ? d.prodi.fakultas.nama_fakultas : '-';
+            return `<span class="peserta-chip" title="${prodi} - ${fakultas}">
+                <i class="ti ti-user" style="font-size:11px;"></i> 
+                ${d.nama_lengkap} 
+                <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(${prodi})</span>
+            </span>`;
+        }).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
 
         document.getElementById('detailTitle').textContent = data.judul;
         document.getElementById('detailBody').innerHTML = `
@@ -489,9 +702,14 @@
                     </div>
                 </div>
             </div>
+            ${data.agenda_rapat ? `
             <div class="detail-section">
                 <div class="detail-label">Agenda Rapat</div>
-                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
+                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px; white-space:pre-line;">${data.agenda_rapat}</div>
+            </div>` : ''}
+            <div class="detail-section">
+                <div class="detail-label">Resume Rapat</div>
+                <div class="detail-value tinymce-content" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
             </div>
             ${data.tindak_lanjut ? `
             <div class="detail-section">
@@ -525,13 +743,24 @@
         });
         const data = await res.json();
 
+        // Reset state foto
+        newFotoFiles = [];
+        deletedFotoIds = [];
+        document.getElementById('previewContainer').innerHTML = '';
+        document.getElementById('inputDokumentasi').value = '';
+
         document.getElementById('modalTitle').textContent = 'Edit Notulensi';
         document.getElementById('not_id').value = data.id;
         document.getElementById('not_judul').value = data.judul;
         document.getElementById('not_tanggal').value = data.tanggal;
         document.getElementById('not_tempat').value = data.tempat;
-        document.getElementById('not_agenda').value = data.agenda;
+        if (tinymce.get('not_agenda')) {
+            tinymce.get('not_agenda').setContent(data.agenda || '');
+        } else {
+            document.getElementById('not_agenda').value = data.agenda || '';
+        }
         document.getElementById('not_tindak_lanjut').value = data.tindak_lanjut ?? '';
+        document.getElementById('not_agenda_rapat').value = data.agenda_rapat ?? '';
 
         // Set fakultas if super_admin field exists
         const fakSel = document.getElementById('not_fakultas_id');
@@ -542,6 +771,9 @@
         document.querySelectorAll('.peserta-check').forEach(c => {
             c.checked = pesertaIds.includes(c.value);
         });
+
+        // Tampilkan foto existing
+        renderExistingPhotos(data.dokumentasi_notulensi || []);
 
         document.getElementById('pesertaError').style.display = 'none';
         document.getElementById('notulensiModal').classList.add('active');
@@ -566,17 +798,30 @@
         formData.append('judul', document.getElementById('not_judul').value);
         formData.append('tanggal', document.getElementById('not_tanggal').value);
         formData.append('tempat', document.getElementById('not_tempat').value);
-        formData.append('agenda', document.getElementById('not_agenda').value);
+        
+        let agendaContent = '';
+        if (tinymce.get('not_agenda')) {
+            agendaContent = tinymce.get('not_agenda').getContent();
+        } else {
+            agendaContent = document.getElementById('not_agenda').value;
+        }
+        formData.append('agenda', agendaContent);
+        formData.append('agenda_rapat', document.getElementById('not_agenda_rapat').value);
         formData.append('tindak_lanjut', document.getElementById('not_tindak_lanjut').value);
         
-        checked.forEach(id => formData.append('peserta[]', id));
+        checked.forEach(pesertaId => formData.append('peserta[]', pesertaId));
         
         if (fakSel) formData.append('fakultas_id', fakSel.value);
         if (id) formData.append('_method', 'PUT');
 
-        const fotoInput = document.getElementById('inputDokumentasi');
-        Array.from(fotoInput.files).forEach(file => {
+        // Append foto-foto baru dari array accumulative
+        newFotoFiles.forEach(file => {
             formData.append('dokumentasi[]', file);
+        });
+
+        // Kirim ID foto existing yang ingin dihapus
+        deletedFotoIds.forEach(dokId => {
+            formData.append('deleted_dokumentasi[]', dokId);
         });
 
         try {
@@ -620,4 +865,21 @@
         }
     }
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+<script>
+    tinymce.init({
+        selector: '#not_agenda',
+        menubar: 'file edit view insert format tools table',
+        promotion: false,
+        toolbar_mode: 'wrap',
+        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+        toolbar: 'undo redo | blocks | ' +
+                 'bold italic backcolor | alignleft aligncenter ' +
+                 'alignright alignjustify | bullist numlist outdent indent | ' +
+                 'removeformat | help',
+        content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 13px; }'
+    });
+</script>
 @endpush
+

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Notulensi;
 use App\Models\PesertaRapat;
 use App\Models\Dosen;
@@ -11,17 +12,23 @@ use App\Models\DokumentasiNotulensi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Helpers\NotifikasiHelper;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class NotulensiController extends Controller
 {
+    use AuthorizesRequests;
+
     // ── INDEX ───────────────────────────────────────────
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Notulensi::class);
+
         $user  = auth()->user();
         $query = Notulensi::with(['fakultas', 'user', 'pesertaRapat', 'dosens']);
 
         // Role-based filter
-        if (in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $query->fakultas($user->fakultas_id);
         } elseif ($user->role === 'dosen') {
             $dosen = Dosen::where('user_id', $user->id)->first();
@@ -48,7 +55,7 @@ class NotulensiController extends Controller
         $notulensiList = $query->latest()->paginate(10)->withQueryString();
 
         // Dosen list for peserta dropdown
-        if (in_array($user->role, ['admin_notulensi_fst', 'admin_notulensi_fis'])) {
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
             $dosenList = Dosen::whereHas('prodi', function ($q) use ($user) {
                 $q->where('fakultas_id', $user->fakultas_id);
             })->with('prodi')->orderBy('nama_lengkap')->get();
@@ -58,13 +65,41 @@ class NotulensiController extends Controller
 
         $fakultasList = Fakultas::all();
 
-        return view('notulensi.index', compact('notulensiList', 'dosenList', 'fakultasList'));
+        // Pejabat list from users with jabatan_struktural
+        $pejabatList = \App\Models\User::whereNotNull('jabatan_struktural')
+                            ->where('status', 'aktif')
+                            ->get(['id', 'name', 'jabatan_struktural', 'fakultas_id', 'prodi_id']);
+
+        // Pejabat dari tabel fakultas (nama_dekan) dan prodi (nama_kaprodi)
+        $pejabatFakultas = [];
+        foreach ($fakultasList as $fak) {
+            if ($fak->nama_dekan) {
+                $pejabatFakultas[$fak->id] = [
+                    'jabatan' => 'Dekan',
+                    'nama' => $fak->nama_dekan
+                ];
+            }
+        }
+
+        $pejabatProdi = [];
+        foreach (\App\Models\Prodi::whereNotNull('nama_kaprodi')->get() as $prodi) {
+            if ($prodi->nama_kaprodi) {
+                $pejabatProdi[$prodi->id] = [
+                    'jabatan' => 'Kaprodi',
+                    'nama' => $prodi->nama_kaprodi
+                ];
+            }
+        }
+
+        return view('notulensi.index', compact('notulensiList', 'dosenList', 'fakultasList', 'pejabatList', 'pejabatFakultas', 'pejabatProdi'));
     }
 
     // ── STORE ───────────────────────────────────────────
 
     public function store(Request $request)
     {
+        $this->authorize('create', Notulensi::class);
+
         $user = auth()->user();
 
         $validated = $request->validate([
@@ -72,6 +107,7 @@ class NotulensiController extends Controller
             'tanggal'       => 'required|date',
             'tempat'        => 'required|string|max:255',
             'agenda'        => 'required|string',
+            'agenda_rapat'  => 'nullable|string',
             'tindak_lanjut' => 'nullable|string',
             'peserta'       => 'required|array|min:1',
             'peserta.*'     => 'exists:dosens,id',
@@ -92,6 +128,7 @@ class NotulensiController extends Controller
             'tanggal'       => $validated['tanggal'],
             'tempat'        => $validated['tempat'],
             'agenda'        => $validated['agenda'],
+            'agenda_rapat'  => $validated['agenda_rapat'] ?? null,
             'tindak_lanjut' => $validated['tindak_lanjut'] ?? null,
             'fakultas_id'   => $fakultasId,
             'user_id'       => $user->id,
@@ -120,15 +157,13 @@ class NotulensiController extends Controller
         // ── Notifikasi ───────────────────────────────────────
         $notifUrl = route('notulensi.index');
 
-        NotifikasiHelper::notifNotulensi(
-            'Notulensi Baru',
-            'Notulensi "' . $notulensi->judul . '" telah ditambahkan.',
-            $notifUrl
-        );
+        // Notif ke admin notulensi, super_admin, kepala_unit
+        NotifikasiHelper::notifNotulensiDibuat($notulensi->judul, $notifUrl, $notulensi->fakultas_id);
 
+        // Notif ke dosen peserta rapat
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
-            'Anda Terdaftar sebagai Peserta Rapat',
+            '📌 Anda Terdaftar sebagai Peserta Rapat',
             'Anda terdaftar dalam rapat "' . $notulensi->judul . '" pada ' . $notulensi->tanggal->format('d/m/Y') . '.',
             $notifUrl
         );
@@ -153,6 +188,8 @@ class NotulensiController extends Controller
             'dokumentasiNotulensi',
         ])->findOrFail($id);
 
+        $this->authorize('view', $notulensi);
+
         return response()->json($notulensi);
     }
 
@@ -160,6 +197,8 @@ class NotulensiController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('update', Notulensi::findOrFail($id));
+
         $user = auth()->user();
 
         $request->validate([
@@ -167,6 +206,7 @@ class NotulensiController extends Controller
             'tanggal'       => 'required|date',
             'tempat'        => 'required|string|max:255',
             'agenda'        => 'required|string',
+            'agenda_rapat'  => 'nullable|string',
             'tindak_lanjut' => 'nullable|string',
             'peserta'       => 'required|array|min:1',
             'peserta.*'     => 'exists:dosens,id',
@@ -185,6 +225,7 @@ class NotulensiController extends Controller
             'tanggal'       => $request->tanggal,
             'tempat'        => $request->tempat,
             'agenda'        => $request->agenda,
+            'agenda_rapat'  => $request->agenda_rapat ?? null,
             'tindak_lanjut' => $request->tindak_lanjut ?? null,
             'fakultas_id'   => $fakultasId,
         ]);
@@ -193,6 +234,18 @@ class NotulensiController extends Controller
         PesertaRapat::where('notulensi_id', $id)->delete();
         foreach ($request->peserta as $dosenId) {
             PesertaRapat::create(['notulensi_id' => $id, 'dosen_id' => $dosenId]);
+        }
+
+        if ($request->has('deleted_dokumentasi') && is_array($request->deleted_dokumentasi)) {
+            foreach ($request->deleted_dokumentasi as $dokId) {
+                $dok = DokumentasiNotulensi::where('id', $dokId)
+                            ->where('notulensi_id', $id)
+                            ->first();
+                if ($dok) {
+                    Storage::disk('public')->delete($dok->path_file);
+                    $dok->delete();
+                }
+            }
         }
 
         if ($request->hasFile('dokumentasi')) {
@@ -210,15 +263,13 @@ class NotulensiController extends Controller
         // ── Notifikasi ───────────────────────────────────────
         $notifUrl = route('notulensi.index');
 
-        NotifikasiHelper::notifNotulensi(
-            'Notulensi Diperbarui',
-            'Notulensi "' . $notulensi->judul . '" telah diperbarui.',
-            $notifUrl
-        );
+        // Notif ke admin notulensi, super_admin, kepala_unit
+        NotifikasiHelper::notifNotulensiDiedit($notulensi->judul, $notifUrl, $notulensi->fakultas_id);
 
+        // Notif ke dosen peserta (yang terdaftar setelah update)
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
-            'Data Rapat Diperbarui',
+            '✏️ Data Rapat Diperbarui',
             'Data rapat "' . $notulensi->judul . '" yang Anda ikuti telah diperbarui.',
             $notifUrl
         );
@@ -233,7 +284,26 @@ class NotulensiController extends Controller
 
     public function destroy($id)
     {
-        Notulensi::findOrFail($id)->delete();
+        $notulensi = Notulensi::with('dosens')->findOrFail($id);
+        $this->authorize('delete', $notulensi);
+
+        $judulNotulensi = $notulensi->judul;
+        $dosenIds = $notulensi->dosens->pluck('id')->toArray();
+
+        $notulensi->delete();
+
+        // Notif ke admin notulensi, super_admin, kepala_unit
+        NotifikasiHelper::notifNotulensiDihapus($judulNotulensi, route('notulensi.index'), $notulensi->fakultas_id);
+
+        // Notif ke dosen peserta yang terdampak
+        if (!empty($dosenIds)) {
+            NotifikasiHelper::notifDosenPeserta(
+                $dosenIds,
+                '🗑️ Rapat Dihapus',
+                "Rapat \"$judulNotulensi\" yang Anda ikuti telah dihapus dari sistem.",
+                null
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -251,19 +321,15 @@ class NotulensiController extends Controller
             'dosens',
             'dosens.prodi',
             'dosens.prodi.fakultas',
+            'dokumentasiNotulensi',
         ])->findOrFail($id);
 
-        $showTtd     = (bool) $request->get('show_ttd', false);
-        $namaDekan   = null;
-        $namaKaprodi = null;
-
-        if ($showTtd) {
-            $namaDekan   = $notulensi->fakultas->nama_dekan ?? null;
-            $namaKaprodi = $notulensi->dosens->first()?->prodi?->nama_kaprodi ?? null;
-        }
+        $showTtd = (bool) $request->get('show_ttd', false);
+        $jabatanMengetahui = $request->query('jabatan_mengetahui');
+        $namaMengetahui = $request->query('nama_mengetahui');
 
         $pdf = Pdf::loadView('notulensi.bap', compact(
-            'notulensi', 'showTtd', 'namaDekan', 'namaKaprodi'
+            'notulensi', 'showTtd', 'jabatanMengetahui', 'namaMengetahui'
         ))->setPaper('a4', 'portrait');
 
         $filename = 'BAP-' . $notulensi->nomor_bap . '.pdf';
@@ -283,4 +349,26 @@ class NotulensiController extends Controller
 
         return response()->json($notulensis);
     }
+
+    // ── EXPORT PDF ──────────────────────────────────────
+
+    public function exportPdf($id, Request $request)
+    {
+        $notulensi = Notulensi::with([
+            'fakultas',
+            'user',
+            'dosens',
+            'dosens.prodi',
+            'dosens.prodi.fakultas',
+            'dokumentasiNotulensi',
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('notulensi.pdf', compact('notulensi'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'Notulensi-' . str_replace([' ', '/'], '-', $notulensi->judul) . '.pdf';
+
+        return $pdf->download($filename);
+    }
 }
+
