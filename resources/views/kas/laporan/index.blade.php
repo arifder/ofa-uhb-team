@@ -1,5 +1,12 @@
 @extends('layouts.dashboard')
 @section('title', 'Laporan Kas')
+@section('subtitle', 'Rekapitulasi transaksi keuangan per tahun')
+
+@section('topbar_actions')
+    <button class="btn-primary" onclick="openExportModal()" style="background:#0f766e;">
+        <i class="ti ti-file-export"></i> Export PDF
+    </button>
+@endsection
 
 @push('styles')
 <style>
@@ -63,14 +70,6 @@
 
 @php $authUser = auth()->user(); @endphp
 
-{{-- Page Header --}}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2 style="font-size:18px; font-weight:600; color:#1e293b;">Laporan Kas</h2>
-    <button class="btn-primary" onclick="openExportModal()" style="background:#0f766e;">
-        <i class="ti ti-file-export"></i> Export PDF
-    </button>
-</div>
-
 {{-- Filter Bar --}}
 <form method="GET" action="{{ route('kas.laporan') }}" class="master-card p-4 mb-4">
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -116,64 +115,66 @@
     <div style="padding:16px 20px; border-bottom:1px solid #e2e8f0;">
         <h3 style="font-size:14px; font-weight:600; color:#1e293b;">Rekapitulasi Per Bulan — {{ $tahun }}</h3>
     </div>
-    <table class="master-table">
-        <thead>
-            <tr>
-                <th>Bulan</th>
-                <th style="text-align:right;">Kas Masuk</th>
-                <th style="text-align:right;">Kas Keluar</th>
-                <th style="text-align:right;">Saldo</th>
-            </tr>
-        </thead>
-        <tbody>
-            @php $runningSaldo = 0; @endphp
-            @forelse($reakByBulan as $row)
-            @php
-                $runningSaldo += $row['saldo'];
-            @endphp
-            <tr>
-                <td>
-                    <span style="font-weight:500;">{{ $row['bulan_nama'] }}</span>
-                    <span style="color:#94a3b8; font-size:11px; margin-left:6px;">{{ $row['bulan_romawi'] }}</span>
-                </td>
-                <td style="text-align:right; color:#059669; font-weight:600;">
-                    @if($row['total_masuk'] > 0)
-                    Rp {{ number_format($row['total_masuk'], 0, ',', '.') }}
-                    @else
-                    <span style="color:#9ca3af;">-</span>
-                    @endif
-                </td>
-                <td style="text-align:right; color:#dc2626; font-weight:600;">
-                    @if($row['total_keluar'] > 0)
-                    Rp {{ number_format($row['total_keluar'], 0, ',', '.') }}
-                    @else
-                    <span style="color:#9ca3af;">-</span>
-                    @endif
-                </td>
-                <td style="text-align:right; font-weight:700; color:{{ $runningSaldo >= 0 ? '#059669' : '#dc2626' }};">
-                    Rp {{ number_format($runningSaldo, 0, ',', '.') }}
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="4" style="text-align:center; padding:40px; color:#9ca3af;">
-                    <i class="ti ti-chart-bar" style="font-size:32px; display:block; margin-bottom:8px;"></i>
-                    Tidak ada data untuk tahun ini.
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-        <tfoot>
-            <tr style="background:#f8fafc; font-weight:700;">
-                <td>TOTAL</td>
-                <td style="text-align:right; color:#059669;">Rp {{ number_format($totalMasuk, 0, ',', '.') }}</td>
-                <td style="text-align:right; color:#dc2626;">Rp {{ number_format($totalKeluar, 0, ',', '.') }}</td>
-                <td style="text-align:right; color:{{ $saldo >= 0 ? '#059669' : '#dc2626' }};">
-                    Rp {{ number_format($saldo, 0, ',', '.') }}
-                </td>
-            </tr>
-        </tfoot>
-    </table>
+    <div class="table-responsive">
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th>Bulan</th>
+                    <th style="text-align:right;">Kas Masuk</th>
+                    <th style="text-align:right;">Kas Keluar</th>
+                    <th style="text-align:right;">Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $runningSaldo = 0; @endphp
+                @forelse($reakByBulan as $row)
+                @php
+                    $runningSaldo += $row['saldo'];
+                @endphp
+                <tr>
+                    <td>
+                        <span style="font-weight:500;">{{ $row['bulan_nama'] }}</span>
+                        <span style="color:#94a3b8; font-size:11px; margin-left:6px;">{{ $row['bulan_romawi'] }}</span>
+                    </td>
+                    <td style="text-align:right; color:#059669; font-weight:600;">
+                        @if($row['total_masuk'] > 0)
+                        Rp {{ number_format($row['total_masuk'], 0, ',', '.') }}
+                        @else
+                        <span style="color:#9ca3af;">-</span>
+                        @endif
+                    </td>
+                    <td style="text-align:right; color:#dc2626; font-weight:600;">
+                        @if($row['total_keluar'] > 0)
+                        Rp {{ number_format($row['total_keluar'], 0, ',', '.') }}
+                        @else
+                        <span style="color:#9ca3af;">-</span>
+                        @endif
+                    </td>
+                    <td style="text-align:right; font-weight:700; color:{{ $runningSaldo >= 0 ? '#059669' : '#dc2626' }};">
+                        Rp {{ number_format($runningSaldo, 0, ',', '.') }}
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:40px; color:#9ca3af;">
+                        <i class="ti ti-chart-bar" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                        Tidak ada data untuk tahun ini.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+            <tfoot>
+                <tr style="background:#f8fafc; font-weight:700;">
+                    <td>TOTAL</td>
+                    <td style="text-align:right; color:#059669;">Rp {{ number_format($totalMasuk, 0, ',', '.') }}</td>
+                    <td style="text-align:right; color:#dc2626;">Rp {{ number_format($totalKeluar, 0, ',', '.') }}</td>
+                    <td style="text-align:right; color:{{ $saldo >= 0 ? '#059669' : '#dc2626' }};">
+                        Rp {{ number_format($saldo, 0, ',', '.') }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
 </div>
 
 {{-- ======================================================= --}}

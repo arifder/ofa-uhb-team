@@ -1,5 +1,12 @@
 @extends('layouts.dashboard')
 @section('title', 'Data Dosen')
+@section('subtitle', 'Kelola data dosen dan NIDN')
+
+@section('topbar_actions')
+    <button class="btn-primary" onclick="openModal()">
+        <i class="ti ti-plus"></i> Tambah Dosen
+    </button>
+@endsection
 
 @push('styles')
     <style>
@@ -47,16 +54,19 @@
         .confirm-box h3 { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
         .confirm-box p { font-size: 13px; color: #64748b; margin-bottom: 20px; }
         .confirm-actions { display: flex; justify-content: center; gap: 10px; }
+
+        /* Inline nominal edit */
+        .nominal-wrap { display: flex; align-items: center; gap: 6px; min-width: 180px; }
+        .nominal-input { border: 1px solid #e2e8f0; padding: 5px 8px; border-radius: 6px; font-size: 12px; width: 110px; outline: none; }
+        .nominal-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+        .btn-save-nominal { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-save-nominal:hover { background: #1d4ed8; }
+        .btn-save-nominal:disabled { background: #93c5fd; cursor: not-allowed; }
+        .saved-badge { background: #dcfce7; color: #166534; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 10px; display: none; }
     </style>
 @endpush
 
 @section('content')
-    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 18px; font-weight: 600; color: #1e293b;">Data Dosen</h2>
-        <button class="btn-primary" onclick="openModal()">
-            <i class="ti ti-plus"></i> Tambah Dosen
-        </button>
-    </div>
 
     <div id="toast-container"></div>
 
@@ -79,48 +89,61 @@
         <a href="{{ route('master.dosen.index') }}" class="btn-outline text-center">Reset</a>
     </form>
 
-    {{-- TABEL DOSEN --}}
     <div class="master-card">
-        <table class="master-table">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Nama Dosen</th>
-                    <th>NIDN</th>
-                    <th>Fakultas</th>
-                    <th>Prodi</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($dosens as $index => $dosen)
-                <tr>
-                    <td>{{ $dosens->firstItem() + $index }}</td>
-                    <td>{{ $dosen->nama_lengkap }}</td>
-                    <td><span style="font-family: monospace; font-size:12px; background:#f1f5f9; padding:2px 6px; border-radius:4px;">{{ $dosen->nidn }}</span></td>
-                    <td>{{ $dosen->fakultas ? $dosen->fakultas->nama_fakultas : '-' }}</td>
-                    <td>{{ $dosen->prodi ? $dosen->prodi->nama_prodi : '-' }}</td>
-                    <td>
-                        @if($dosen->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
-                        @else <span class="master-badge badge-nonaktif">Nonaktif</span>
-                        @endif
-                    </td>
-                    <td>
-                        <button class="icon-btn" title="Edit" onclick='editDosen(@json($dosen))'><i class="ti ti-pencil"></i></button>
-                        <button class="icon-btn delete" title="Hapus" onclick="confirmDelete({{ $dosen->id }}, '{{ addslashes($dosen->nama_lengkap) }}')"><i class="ti ti-trash"></i></button>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="7" style="text-align:center; padding: 32px; color:#94a3b8;">
-                        <i class="ti ti-user-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
-                        Tidak ada data dosen.
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="master-table">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Dosen</th>
+                        <th>NIDN</th>
+                        <th>Fakultas</th>
+                        <th>Prodi</th>
+                        <th>Status</th>
+                        <th>Nominal Tagihan/Bulan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($dosens as $index => $dosen)
+                    <tr>
+                        <td>{{ $dosens->firstItem() + $index }}</td>
+                        <td>{{ $dosen->nama_lengkap }}</td>
+                        <td><span style="font-family: monospace; font-size:12px; background:#f1f5f9; padding:2px 6px; border-radius:4px;">{{ $dosen->nidn }}</span></td>
+                        <td>{{ $dosen->fakultas ? $dosen->fakultas->nama_fakultas : '-' }}</td>
+                        <td>{{ $dosen->prodi ? $dosen->prodi->nama_prodi : '-' }}</td>
+                        <td>
+                            @if($dosen->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
+                            @else <span class="master-badge badge-nonaktif">Nonaktif</span>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="nominal-wrap">
+                                <input type="number" class="nominal-input" id="nominal_input_{{ $dosen->id }}"
+                                    value="{{ $dosen->nominal_tagihan ?? 0 }}" min="0" placeholder="0">
+                                <button class="btn-save-nominal" id="nominal_btn_{{ $dosen->id }}"
+                                    onclick="saveNominal({{ $dosen->id }})">
+                                    <i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan
+                                </button>
+                                <span class="saved-badge" id="nominal_saved_{{ $dosen->id }}">✓ Tersimpan</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="icon-btn" title="Edit" onclick='editDosen(@json($dosen))'><i class="ti ti-pencil"></i></button>
+                            <button class="icon-btn delete" title="Hapus" onclick="confirmDelete({{ $dosen->id }}, '{{ addslashes($dosen->nama_lengkap) }}')"><i class="ti ti-trash"></i></button>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding: 32px; color:#94a3b8;">
+                            <i class="ti ti-user-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                            Tidak ada data dosen.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         <div class="p-4 border-t border-gray-200">
             {{ $dosens->withQueryString()->links() }}
         </div>
@@ -178,6 +201,14 @@
                     </select>
                     <div class="field-error" id="err_status"></div>
                 </div>
+
+                <div class="form-group">
+                    <label>Nominal Tagihan Bulanan (Rp)</label>
+                    <input type="number" id="nominal_tagihan" class="filter-control" placeholder="Contoh: 150000" min="0"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="0">
+                    <div class="field-hint">Kosongkan atau isi 0 jika belum ditentukan.</div>
+                    <div class="field-error" id="err_nominal_tagihan"></div>
+                </div>
             </div>
             <div class="custom-modal-footer">
                 <button type="button" class="btn-outline" onclick="closeModal()">Batal</button>
@@ -231,7 +262,7 @@
             if (el) { el.textContent = ''; el.style.display = 'none'; }
         }
         function clearAllErrors() {
-            ['err_nama','err_nidn','err_fakultas','err_prodi','err_status'].forEach(clearError);
+            ['err_nama','err_nidn','err_fakultas','err_prodi','err_status','err_nominal_tagihan'].forEach(clearError);
             document.querySelectorAll('#dosenModal .filter-control').forEach(el => el.classList.remove('error'));
         }
         function markError(inputId, errId, msg) {
@@ -314,6 +345,7 @@
             document.getElementById('nama').value = dosen.nama_lengkap;
             document.getElementById('nidn').value = dosen.nidn;
             document.getElementById('status').value = dosen.status;
+            document.getElementById('nominal_tagihan').value = dosen.nominal_tagihan ?? 0;
             clearAllErrors();
 
             // Load fakultas & prodi
@@ -337,10 +369,11 @@
             const url = id ? `/master/dosen/${id}` : `/master/dosen`;
 
             const body = {
-                nama_lengkap: document.getElementById('nama').value.trim(),
-                nidn: document.getElementById('nidn').value.trim(),
-                prodi_id: document.getElementById('prodi_id').value,
-                status: document.getElementById('status').value,
+                nama_lengkap:    document.getElementById('nama').value.trim(),
+                nidn:            document.getElementById('nidn').value.trim(),
+                prodi_id:        document.getElementById('prodi_id').value,
+                status:          document.getElementById('status').value,
+                nominal_tagihan: parseInt(document.getElementById('nominal_tagihan').value || '0', 10),
             };
             if (id) body._method = 'PUT';
 
@@ -361,6 +394,7 @@
                     if (data.errors.nidn) markError('nidn', 'err_nidn', data.errors.nidn[0]);
                     if (data.errors.prodi_id) markError('prodi_id', 'err_prodi', data.errors.prodi_id[0]);
                     if (data.errors.status) markError('status', 'err_status', data.errors.status[0]);
+                    if (data.errors.nominal_tagihan) markError('nominal_tagihan', 'err_nominal_tagihan', data.errors.nominal_tagihan[0]);
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="ti ti-device-floppy"></i> Simpan';
                 } else {
@@ -372,6 +406,45 @@
                 showToast('Koneksi gagal. Periksa koneksi internet Anda.', 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="ti ti-device-floppy"></i> Simpan';
+            }
+        }
+
+        /* ===== SIMPAN NOMINAL INLINE ===== */
+        async function saveNominal(id) {
+            const input = document.getElementById('nominal_input_' + id);
+            const btn   = document.getElementById('nominal_btn_' + id);
+            const badge = document.getElementById('nominal_saved_' + id);
+
+            const nominal = parseInt(input.value || '0', 10);
+            if (isNaN(nominal) || nominal < 0) {
+                input.style.borderColor = '#ef4444';
+                showToast('Nominal tidak valid.', 'error');
+                return;
+            }
+            input.style.borderColor = '';
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ti ti-loader ti-spin" style="font-size:12px;"></i>';
+
+            try {
+                const res = await fetch(`/master/dosen/${id}/nominal`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                    body: JSON.stringify({ _method: 'PATCH', nominal_tagihan: nominal })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    badge.style.display = 'inline-block';
+                    setTimeout(() => badge.style.display = 'none', 2500);
+                } else {
+                    showToast(data.message || 'Gagal menyimpan nominal.', 'error');
+                }
+            } catch(e) {
+                showToast('Koneksi gagal.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan';
             }
         }
 

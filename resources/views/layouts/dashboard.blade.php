@@ -525,6 +525,28 @@
       color: #fff;
       border-color: #2563eb
     }
+
+    /* Table responsiveness & formatting */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-responsive table {
+      width: 100%;
+    }
+    .table-responsive table th,
+    .table-responsive table td {
+      white-space: nowrap;
+      text-align: center !important;
+    }
+    .table-responsive .master-table {
+      min-width: 1000px;
+    }
+    .master-table th,
+    .master-table td {
+      text-align: center !important;
+    }
   </style>
   @stack('styles')
 </head>
@@ -644,12 +666,8 @@
 
     <div class="main">
       <div class="topbar">
-        <div>
-          <div class="topbar-title">@yield('title', 'Dashboard')</div>
-          <div style="font-size:11px;color:#6b7280">{{ now()->translatedFormat('l, d F Y') }}</div>
-        </div>
+        <div></div>
         <div class="topbar-actions">
-
 
           {{-- Notifikasi Dropdown --}}
           <div style="position:relative" x-data="{ open: false }">
@@ -698,6 +716,29 @@
       </div>
 
       <div class="content">
+          <!-- Page Header -->
+          @if(View::hasSection('title'))
+          <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 8px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0; font-family: var(--font-sans);">@yield('title')</h1>
+                @if (trim($__env->yieldContent('title_addon')))
+                  <span style="font-size: 12px; font-weight: 600; color: #1d4ed8; background: #eff6ff; padding: 2px 8px; border-radius: 20px; border: 0.5px solid #bfdbfe;">@yield('title_addon')</span>
+                @endif
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <i class="ti ti-calendar" style="font-size: 14px;"></i>
+                <span>@yield('subtitle', now()->translatedFormat('l, d F Y'))</span>
+              </div>
+            </div>
+            @if (trim($__env->yieldContent('topbar_actions')))
+            <div style="display: flex; align-items: center; gap: 8px;">
+              @yield('topbar_actions')
+            </div>
+            @endif
+          </div>
+          @endif
+
           @yield('content')
       </div>
     </div>

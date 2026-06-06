@@ -32,6 +32,8 @@ Route::middleware(['auth', 'checkRole:super_admin,admin_fst,admin_fis,kepala_uni
         Route::get('masuk', [KasController::class, 'index'])->defaults('jenis', 'masuk')->name('masuk');
         Route::get('keluar', [KasController::class, 'index'])->defaults('jenis', 'keluar')->name('keluar');
         Route::get('tagihan', [KasController::class, 'tagihan'])->name('tagihan');
+        Route::get('tagihan/export-pdf', [KasController::class, 'exportPdfTagihan'])->name('tagihan.exportPdf');
+        Route::post('tagihan/generate-otomatis', [KasController::class, 'generateOtomatisTagihan'])->name('tagihan.generateOtomatis');
         Route::get('tagihan/{id}', [KasController::class, 'showTagihan'])->name('tagihan.show');
         Route::post('tagihan/{id}/bayar', [KasController::class, 'bayarTagihan'])->name('tagihan.bayar');
         Route::post('tagihan', [KasController::class, 'storeTagihan'])->name('tagihan.store');
@@ -76,6 +78,9 @@ Route::middleware(['auth', 'checkRole:super_admin'])
 
         Route::resource('dosen', DosenController::class)
             ->except(['show', 'create', 'edit']);
+
+        Route::patch('dosen/{id}/nominal', [DosenController::class, 'updateNominal'])
+            ->name('master.dosen.updateNominal');
     });
 
 // Route Notifikasi

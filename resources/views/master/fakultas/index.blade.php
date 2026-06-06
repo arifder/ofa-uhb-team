@@ -1,5 +1,12 @@
 @extends('layouts.dashboard')
 @section('title', 'Fakultas & Prodi')
+@section('subtitle', 'Kelola data fakultas dan program studi')
+
+@section('topbar_actions')
+    <button class="btn-primary" onclick="openFakultasModal()">
+        <i class="ti ti-plus"></i> Tambah Fakultas
+    </button>
+@endsection
 
 @push('styles')
     <style>
@@ -49,12 +56,6 @@
 @endpush
 
 @section('content')
-    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 18px; font-weight: 600; color: #1e293b;">Fakultas & Prodi</h2>
-        <button class="btn-primary" onclick="openFakultasModal()">
-            <i class="ti ti-plus"></i> Tambah Fakultas
-        </button>
-    </div>
 
     <div id="toast-container"></div>
 
@@ -99,27 +100,29 @@
             </button>
         </div>
         @if(count($fak->prodis) > 0)
-        <table class="master-table">
-            <thead>
-                <tr>
-                    <th style="width: 50px">No</th>
-                    <th>Nama Prodi</th>
-                    <th style="width: 100px">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($fak->prodis as $idx => $prodi)
-                <tr>
-                    <td>{{ $idx + 1 }}</td>
-                    <td>{{ $prodi->nama_prodi }}</td>
-                    <td>
-                        <button class="icon-btn" onclick='editProdi(@json($prodi))'><i class="ti ti-pencil"></i></button>
-                        <button class="icon-btn delete" onclick="deleteProdi({{ $prodi->id }})"><i class="ti ti-trash"></i></button>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="master-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px">No</th>
+                        <th>Nama Prodi</th>
+                        <th style="width: 100px">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($fak->prodis as $idx => $prodi)
+                    <tr>
+                        <td>{{ $idx + 1 }}</td>
+                        <td>{{ $prodi->nama_prodi }}</td>
+                        <td>
+                            <button class="icon-btn" onclick='editProdi(@json($prodi))'><i class="ti ti-pencil"></i></button>
+                            <button class="icon-btn delete" onclick="deleteProdi({{ $prodi->id }})"><i class="ti ti-trash"></i></button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
         @else
         <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">Belum ada program studi.</div>
         @endif

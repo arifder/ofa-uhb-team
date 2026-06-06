@@ -1,5 +1,18 @@
 @extends('layouts.dashboard')
 @section('title', 'Notifikasi')
+@section('subtitle', 'Riwayat notifikasi sistem dan aktivitas')
+
+@section('topbar_actions')
+@php $jumlahBaru = \App\Models\Notifikasi::where('user_id', auth()->id())->where('dibaca', false)->count(); @endphp
+@if($jumlahBaru > 0)
+    <form action="{{ route('notifikasi.readAll') }}" method="POST" style="margin:0;">
+        @csrf
+        <button type="submit" class="btn-read-all" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            <i class="ti ti-checks"></i> Tandai Semua Dibaca
+        </button>
+    </form>
+@endif
+@endsection
 
 @push('styles')
 <style>
@@ -437,16 +450,13 @@
 
 <div class="notif-wrapper">
 
-  {{-- ── Header ── --}}
+  {{-- ── Filter Tabs ── --}}
   <div class="notif-header">
     <div class="notif-header-left">
-      <div class="notif-header-title">
-        <i class="ti ti-bell"></i>
-        Notifikasi
-        @if($jumlahBelumDibaca > 0)
-          <span class="notif-count-badge">{{ $jumlahBelumDibaca }} baru</span>
-        @endif
-      </div>
+      {{-- badge --}}
+      @if($jumlahBelumDibaca > 0)
+        <span class="notif-count-badge">{{ $jumlahBelumDibaca }} baru</span>
+      @endif
     </div>
 
     <div class="notif-header-right">
@@ -465,16 +475,6 @@
             @endif
         </form>
       </div>
-
-      {{-- Tandai Semua Dibaca --}}
-      @if($jumlahBelumDibaca > 0)
-        <form action="{{ route('notifikasi.readAll') }}" method="POST">
-          @csrf
-          <button type="submit" class="btn-read-all">
-            <i class="ti ti-checks"></i> Tandai Dibaca
-          </button>
-        </form>
-      @endif
     </div>
   </div>
 

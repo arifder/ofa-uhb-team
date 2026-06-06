@@ -1,5 +1,6 @@
 @extends('layouts.dashboard')
 @section('title', 'Dashboard')
+@section('subtitle', 'Ringkasan aktivitas dan statistik sistem')
 
 @push('styles')
 <style>
@@ -263,98 +264,104 @@
 
   <p class="section-title" style="margin-top:24px;"><i class="ti ti-file-invoice"></i> Tagihan Kas Saya</p>
   <div class="master-card" style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden; margin-bottom:24px;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
-          <thead style="background:#f8fafc; font-size:11px; color:#475569; text-transform:uppercase;">
-              <tr>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Periode</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Jumlah</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Status</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Aksi</th>
-              </tr>
-          </thead>
-          <tbody>
-              @forelse($tagihanList as $tg)
-              @php 
-                 $namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']; 
-                 $isLunas = $tg->status === 'lunas';
-              @endphp
-              <tr>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:500;">{{ $namaBulan[($tg->bulan)-1] }} {{ $tg->tahun }}</td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:600;">Rp {{ number_format($tg->jumlah, 0, ',', '.') }}</td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">
-                      <span style="padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; {{ $isLunas ? 'background:#d1fae5; color:#065f46;' : 'background:#fee2e2; color:#991b1b;' }}">
-                          {{ $isLunas ? 'Lunas' : 'Belum Lunas' }}
-                      </span>
-                  </td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">
-                      @if(!$isLunas)
-                      <button onclick="openBayarModal({{ $tg->id }}, {{ $tg->jumlah }}, {{ $tg->dibayar_amount }}, '{{ $namaBulan[($tg->bulan)-1] }}', {{ $tg->tahun }})" style="background:#059669; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i class="ti ti-cash"></i> Bayar</button>
-                      @else
-                      <span style="color:#9ca3af; font-size:12px;"><i class="ti ti-check"></i> Selesai</span>
-                      @endif
-                  </td>
-              </tr>
-              @empty
-              <tr><td colspan="4" style="padding:20px; text-align:center; color:#9ca3af;">Belum ada tagihan.</td></tr>
-              @endforelse
-          </tbody>
-      </table>
+      <div class="table-responsive">
+          <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+              <thead style="background:#f8fafc; font-size:11px; color:#475569; text-transform:uppercase;">
+                  <tr>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Periode</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Jumlah</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Status</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Aksi</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  @forelse($tagihanList as $tg)
+                  @php 
+                     $namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']; 
+                     $isLunas = $tg->status === 'lunas';
+                  @endphp
+                  <tr>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:500;">{{ $namaBulan[($tg->bulan)-1] }} {{ $tg->tahun }}</td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:600;">Rp {{ number_format($tg->jumlah, 0, ',', '.') }}</td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">
+                          <span style="padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; {{ $isLunas ? 'background:#d1fae5; color:#065f46;' : 'background:#fee2e2; color:#991b1b;' }}">
+                              {{ $isLunas ? 'Lunas' : 'Belum Lunas' }}
+                          </span>
+                      </td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">
+                          @if(!$isLunas)
+                          <button onclick="openBayarModal({{ $tg->id }}, {{ $tg->jumlah }}, {{ $tg->dibayar_amount }}, '{{ $namaBulan[($tg->bulan)-1] }}', {{ $tg->tahun }})" style="background:#059669; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i class="ti ti-cash"></i> Bayar</button>
+                          @else
+                          <span style="color:#9ca3af; font-size:12px;"><i class="ti ti-check"></i> Selesai</span>
+                          @endif
+                      </td>
+                  </tr>
+                  @empty
+                  <tr><td colspan="4" style="padding:20px; text-align:center; color:#9ca3af;">Belum ada tagihan.</td></tr>
+                  @endforelse
+              </tbody>
+          </table>
+      </div>
   </div>
 
   <p class="section-title"><i class="ti ti-history"></i> Riwayat Pembayaran Kas</p>
   <div class="master-card" style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden; margin-bottom:24px;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
-          <thead style="background:#f8fafc; font-size:11px; color:#475569; text-transform:uppercase;">
-              <tr>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Tanggal</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Total Bayar</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Tabungan (33.33%)</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Uang Sosial (66.67%)</th>
-              </tr>
-          </thead>
-          <tbody>
-              @forelse($riwayatKasList as $kas)
-              <tr>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">{{ $kas->tanggal->format('d/m/Y') }}</td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:600;">Rp {{ number_format($kas->jumlah, 0, ',', '.') }}</td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; color:#059669; font-weight:500;">+ Rp {{ number_format($kas->tabungan, 0, ',', '.') }}</td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; color:#2563eb; font-weight:500;">+ Rp {{ number_format($kas->uang_sosial, 0, ',', '.') }}</td>
-              </tr>
-              @empty
-              <tr><td colspan="4" style="padding:20px; text-align:center; color:#9ca3af;">Belum ada riwayat pembayaran.</td></tr>
-              @endforelse
-          </tbody>
-      </table>
+      <div class="table-responsive">
+          <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+              <thead style="background:#f8fafc; font-size:11px; color:#475569; text-transform:uppercase;">
+                  <tr>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Tanggal</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Total Bayar</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Tabungan (33.33%)</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Uang Sosial (66.67%)</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  @forelse($riwayatKasList as $kas)
+                  <tr>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">{{ $kas->tanggal->format('d/m/Y') }}</td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:600;">Rp {{ number_format($kas->jumlah, 0, ',', '.') }}</td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; color:#059669; font-weight:500;">+ Rp {{ number_format($kas->tabungan, 0, ',', '.') }}</td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; color:#2563eb; font-weight:500;">+ Rp {{ number_format($kas->uang_sosial, 0, ',', '.') }}</td>
+                  </tr>
+                  @empty
+                  <tr><td colspan="4" style="padding:20px; text-align:center; color:#9ca3af;">Belum ada riwayat pembayaran.</td></tr>
+                  @endforelse
+              </tbody>
+          </table>
+      </div>
   </div>
 
   <p class="section-title"><i class="ti ti-notes"></i> Notulensi Rapat yang Diikuti</p>
   <div class="master-card" style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden; margin-bottom:24px;">
-      <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
-          <thead style="background:#f8fafc; font-size:11px; color:#475569; text-transform:uppercase;">
-              <tr>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Tanggal</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Judul Rapat</th>
-                  <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Aksi</th>
-              </tr>
-          </thead>
-          <tbody>
-              @forelse($notulensiList as $notul)
-              <tr>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">{{ $notul->tanggal->format('d/m/Y') }}</td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:500;">{{ $notul->judul }}</td>
-                  <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">
-                      @if($notul->nomor_bap)
-                          <a href="{{ route('notulensi.exportBap', $notul->id) }}" target="_blank" style="background:#f1f5f9; color:#0f766e; border:none; padding:6px 12px; border-radius:6px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;"><i class="ti ti-download"></i> BAP</a>
-                      @else
-                          <span style="color:#9ca3af; font-size:11px;">Belum ada BAP</span>
-                      @endif
-                  </td>
-              </tr>
-              @empty
-              <tr><td colspan="3" style="padding:20px; text-align:center; color:#9ca3af;">Belum ada notulensi rapat.</td></tr>
-              @endforelse
-          </tbody>
-      </table>
+      <div class="table-responsive">
+          <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+              <thead style="background:#f8fafc; font-size:11px; color:#475569; text-transform:uppercase;">
+                  <tr>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Tanggal</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Judul Rapat</th>
+                      <th style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">Aksi</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  @forelse($notulensiList as $notul)
+                  <tr>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">{{ $notul->tanggal->format('d/m/Y') }}</td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0; font-weight:500;">{{ $notul->judul }}</td>
+                      <td style="padding:12px 16px; border-bottom:1px solid #e2e8f0;">
+                          @if($notul->nomor_bap)
+                              <a href="{{ route('notulensi.exportBap', $notul->id) }}" target="_blank" style="background:#f1f5f9; color:#0f766e; border:none; padding:6px 12px; border-radius:6px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:500;"><i class="ti ti-download"></i> BAP</a>
+                          @else
+                              <span style="color:#9ca3af; font-size:11px;">Belum ada BAP</span>
+                          @endif
+                      </td>
+                  </tr>
+                  @empty
+                  <tr><td colspan="3" style="padding:20px; text-align:center; color:#9ca3af;">Belum ada notulensi rapat.</td></tr>
+                  @endforelse
+              </tbody>
+          </table>
+      </div>
   </div>
 
   {{-- Modal Bayar Tagihan (Dosen) --}}

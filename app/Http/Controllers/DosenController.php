@@ -78,20 +78,22 @@ class DosenController extends Controller
         $dosen = Dosen::findOrFail($id);
 
         $request->validate([
-            'nama_lengkap' => 'required',
-            'nidn' => 'required|unique:dosens,nidn,' . $dosen->id . '|digits:10',
-            'prodi_id' => 'required|exists:prodis,id',
-            'status' => 'required|in:aktif,nonaktif',
+            'nama_lengkap'    => 'required',
+            'nidn'            => 'required|unique:dosens,nidn,' . $dosen->id . '|digits:10',
+            'prodi_id'        => 'required|exists:prodis,id',
+            'status'          => 'required|in:aktif,nonaktif',
+            'nominal_tagihan' => 'nullable|integer|min:0',
         ]);
 
         $prodi = Prodi::findOrFail($request->prodi_id);
 
         DB::transaction(function () use ($request, $dosen, $prodi) {
             $dosen->update([
-                'prodi_id' => $request->prodi_id,
-                'nidn' => $request->nidn,
-                'nama_lengkap' => $request->nama_lengkap,
-                'status' => $request->status,
+                'prodi_id'        => $request->prodi_id,
+                'nidn'            => $request->nidn,
+                'nama_lengkap'    => $request->nama_lengkap,
+                'status'          => $request->status,
+                'nominal_tagihan' => $request->input('nominal_tagihan', 0),
             ]);
 
             if ($dosen->user) {
@@ -105,6 +107,25 @@ class DosenController extends Controller
         });
 
         return response()->json(['success' => true, 'message' => 'Dosen berhasil diupdate']);
+    }
+
+    public function updateNominal(Request $request, $id)
+    {
+        $dosen = Dosen::findOrFail($id);
+
+        $request->validate([
+            'nominal_tagihan' => 'required|integer|min:0',
+        ]);
+
+        $dosen->update([
+            'nominal_tagihan' => $request->nominal_tagihan,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Nominal tagihan berhasil disimpan',
+            'nominal' => $dosen->nominal_tagihan,
+        ]);
     }
 
     public function destroy($id)

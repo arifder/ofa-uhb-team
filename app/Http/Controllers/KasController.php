@@ -52,12 +52,26 @@ class KasController extends Controller
             $query->where('fakultas_id', $request->fakultas_id);
         }
 
-        // Filter by tanggal range
-        if ($request->filled('tanggal_awal')) {
-            $query->whereDate('tanggal', '>=', $request->tanggal_awal);
-        }
-        if ($request->filled('tanggal_akhir')) {
-            $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+        // Filter by tanggal range / period
+        $filterTipe = $request->input('filter_tipe', 'hari');
+        if ($filterTipe === 'hari') {
+            if ($request->filled('tanggal_awal')) {
+                $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+            }
+            if ($request->filled('tanggal_akhir')) {
+                $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+            }
+        } elseif ($filterTipe === 'bulan') {
+            if ($request->filled('bulan')) {
+                $query->whereMonth('tanggal', $request->bulan);
+            }
+            if ($request->filled('tahun')) {
+                $query->whereYear('tanggal', $request->tahun);
+            }
+        } elseif ($filterTipe === 'tahun') {
+            if ($request->filled('tahun')) {
+                $query->whereYear('tanggal', $request->tahun);
+            }
         }
 
         $kasList = $query->latest('tanggal')->paginate(10)->withQueryString();
@@ -268,6 +282,8 @@ class KasController extends Controller
             $dosen = \App\Models\Dosen::where('user_id', $user->id)->first();
             if ($dosen) {
                 $query->where('dosen_id', $dosen->id);
+            } else {
+                $query->whereRaw('1=0');
             }
         }
 
@@ -293,6 +309,12 @@ class KasController extends Controller
             $query->where('tahun', $request->tahun);
         }
 
+        // Hitung totals berdasarkan filter yang aktif (sebelum dipaginate)
+        $totalQuery = clone $query;
+        $totalTagihan = (clone $totalQuery)->sum('jumlah');
+        $totalDibayar = (clone $totalQuery)->sum('dibayar_amount');
+        $totalSisa = $totalTagihan - $totalDibayar;
+
         $tagihanList = $query->latest()->paginate(10)->withQueryString();
 
         $fakultasList = ($user->role === 'super_admin' || $user->role === 'kepala_unit')
@@ -304,8 +326,138 @@ class KasController extends Controller
             : Dosen::whereHas('prodi', fn($q) => $q->where('fakultas_id', $user->fakultas_id))
                 ->with('prodi')->orderBy('nama_lengkap')->get();
 
-        return view('kas.tagihan.index', compact('tagihanList', 'fakultasList', 'dosenList'));
+        return view('kas.tagihan.index', compact(
+            'tagihanList', 
+            'fakultasList', 
+            'dosenList', 
+            'totalTagihan', 
+            'totalDibayar', 
+            'totalSisa'
+        ));
     }
+
+    public function generateOtomatisTagihan(Request $request)
+    {
+        $user = auth()->user();
+        if (!in_array($user->role, ['super_admin', 'admin_fst', 'admin_fis'])) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Generate untuk bulan & tahun yang diinput, default ke bulan ini
+        $month = $request->filled('bulan') ? (int)$request->bulan : (int)date('n');
+        $year = $request->filled('tahun') ? (int)$request->tahun : (int)date('Y');
+
+        $query = Dosen::with('prodi');
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
+            $query->whereHas('prodi', fn($q) => $q->where('fakultas_id', $user->fakultas_id));
+        }
+
+        $dosens = $query->get();
+        $count = 0;
+
+        foreach ($dosens as $dosen) {
+            $exists = KasTagihan::where('dosen_id', $dosen->id)
+                ->where('bulan', $month)
+                ->where('tahun', $year)
+                ->exists();
+
+            if (!$exists) {
+                $fakultasId = $dosen->prodi->fakultas_id ?? null;
+                if (!$fakultasId) continue;
+
+                $nominalTagihan = $dosen->nominal_tagihan ?? 0;
+
+                $tagihan = KasTagihan::create([
+                    'dosen_id'           => $dosen->id,
+                    'fakultas_id'        => $fakultasId,
+                    'bulan'              => $month,
+                    'tahun'              => $year,
+                    'jumlah'             => $nominalTagihan,
+                    'tanggal_jatuh_tempo'=> \Carbon\Carbon::createFromDate($year, $month, 10)->toDateString(),
+                    'user_id'            => $user->id,
+                    'status'             => 'belum_lunas',
+                    'dibayar_amount'     => 0,
+                ]);
+
+                $count++;
+
+                if ($dosen->user_id) {
+                    $namaBulanList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    $namaBulan = $namaBulanList[$month - 1];
+
+                    \App\Helpers\NotifikasiHelper::notifTagihanDibuat(
+                        $dosen->user_id,
+                        $dosen->nama_lengkap,
+                        $namaBulan,
+                        $year,
+                        number_format($nominalTagihan, 0, ',', '.'),
+                        route('dashboard'),
+                        route('kas.tagihan'),
+                        $fakultasId
+                    );
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Berhasil menghasilkan {$count} tagihan otomatis sesuai nominal masing-masing dosen.",
+        ]);
+    }
+
+    public function exportPdfTagihan(Request $request)
+    {
+        $this->authorize('viewAny', KasTagihan::class);
+
+        $user = auth()->user();
+        $query = KasTagihan::with(['dosen', 'dosen.prodi', 'fakultas']);
+
+        // Role-based filter
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
+            $query->where('fakultas_id', $user->fakultas_id);
+        } elseif ($user->role === 'dosen') {
+            $dosen = \App\Models\Dosen::where('user_id', $user->id)->first();
+            if ($dosen) {
+                $query->where('dosen_id', $dosen->id);
+            } else {
+                $query->whereRaw('1=0');
+            }
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('dosen', fn($q) => $q->where('nama_lengkap', 'like', "%{$search}%"));
+            });
+        }
+
+        // Filter
+        if ($request->filled('fakultas_id')) {
+            $query->where('fakultas_id', $request->fakultas_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('bulan')) {
+            $query->where('bulan', $request->bulan);
+        }
+        if ($request->filled('tahun')) {
+            $query->where('tahun', $request->tahun);
+        }
+
+        $tagihanList = $query->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->get();
+
+        $totalTagihan = $tagihanList->sum('jumlah');
+        $totalDibayar = $tagihanList->sum('dibayar_amount');
+        $totalSisa = $totalTagihan - $totalDibayar;
+
+        $pdf = Pdf::loadView('kas.tagihan.export-pdf', compact('tagihanList', 'totalTagihan', 'totalDibayar', 'totalSisa', 'request'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan-Tagihan-Kas-' . date('Y-m-d') . '.pdf');
+    }
+
 
     // ── STORE TAGIHAN ───────────────────────────────────────
 
@@ -601,17 +753,39 @@ class KasController extends Controller
         }
 
         // Apply filters
-        if ($request->filled('tanggal_awal')) {
-            $query->whereDate('tanggal', '>=', $request->tanggal_awal);
-        }
-        if ($request->filled('tanggal_akhir')) {
-            $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
-        }
-        if ($request->filled('bulan')) {
-            $query->whereMonth('tanggal', $request->bulan);
-        }
-        if ($request->filled('tahun')) {
-            $query->whereYear('tanggal', $request->tahun);
+        $filterTipe = $request->input('filter_tipe');
+        if ($filterTipe === 'hari') {
+            if ($request->filled('tanggal_awal')) {
+                $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+            }
+            if ($request->filled('tanggal_akhir')) {
+                $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+            }
+        } elseif ($filterTipe === 'bulan') {
+            if ($request->filled('bulan')) {
+                $query->whereMonth('tanggal', $request->bulan);
+            }
+            if ($request->filled('tahun')) {
+                $query->whereYear('tanggal', $request->tahun);
+            }
+        } elseif ($filterTipe === 'tahun') {
+            if ($request->filled('tahun')) {
+                $query->whereYear('tanggal', $request->tahun);
+            }
+        } else {
+            // Fallback for direct export with any parameters
+            if ($request->filled('tanggal_awal')) {
+                $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+            }
+            if ($request->filled('tanggal_akhir')) {
+                $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+            }
+            if ($request->filled('bulan')) {
+                $query->whereMonth('tanggal', $request->bulan);
+            }
+            if ($request->filled('tahun')) {
+                $query->whereYear('tanggal', $request->tahun);
+            }
         }
         if ($request->filled('jenis')) {
             $query->where('jenis', $request->jenis);

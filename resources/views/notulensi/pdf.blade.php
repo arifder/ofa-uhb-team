@@ -21,7 +21,7 @@
         .resume-box { background-color: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; margin-bottom: 15px; }
         
         table.peserta-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-        table.peserta-table th, table.peserta-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+        table.peserta-table th, table.peserta-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
         table.peserta-table th { background-color: #f1f5f9; font-weight: bold; color: #475569; }
         table.peserta-table tbody tr:nth-child(even) { background-color: #f8fafc; }
         

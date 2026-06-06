@@ -114,88 +114,90 @@
 
 {{-- Table --}}
 <div class="master-card">
-    <table class="master-table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Judul</th>
-                <th>Tanggal</th>
-                <th>Tempat</th>
-                <th>Fakultas</th>
-                <th>Peserta</th>
-                <th>Dibuat Oleh</th>
-                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
-                <th>Aksi</th>
-                @endif
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($notulensiList as $index => $not)
-            <tr>
-                <td>{{ $notulensiList->firstItem() + $index }}</td>
-                <td>
-                    <a href="#" onclick="viewDetail({{ $not->id }})" style="color:#2563eb; font-weight:500; text-decoration:none;">
-                        {{ $not->judul }}
-                    </a>
-                </td>
-                <td>{{ \Carbon\Carbon::parse($not->tanggal)->translatedFormat('d M Y') }}</td>
-                <td>{{ $not->tempat }}</td>
-                <td>
-                    @php
-                        $fakNama = $not->fakultas->nama_fakultas ?? '-';
-                        $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
-                                  : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
-                    @endphp
-                    <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
-                </td>
-                <td>
-                    <span style="font-size:12px; color:#64748b;">
-                        {{ $not->dosens->count() }} dosen
-                    </span>
-                </td>
-                <td style="color:#64748b; font-size:12px;">{{ $not->user->name ?? '-' }}</td>
-                @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
-                <td>
-                    <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
-                        <i class="ti ti-printer"></i>
-                    </button>
-                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
-                        <i class="ti ti-file-type-pdf"></i>
-                    </a>
-                    <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
-                        <i class="ti ti-pencil"></i>
-                    </button>
-                    <button class="icon-btn delete" onclick="deleteNotulensi({{ $not->id }})" title="Hapus">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                </td>
-                @else
-                <td>
-                    <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
-                        <i class="ti ti-printer"></i>
-                    </button>
-                    <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
-                        <i class="ti ti-file-type-pdf"></i>
-                    </a>
-                </td>
-                @endif
-            </tr>
-            @empty
-            <tr>
-                <td colspan="8" style="text-align:center; padding:40px; color:#9ca3af;">
-                    <i class="ti ti-clipboard-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
-                    Belum ada data notulensi.
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Judul</th>
+                    <th>Tanggal</th>
+                    <th>Tempat</th>
+                    <th>Fakultas</th>
+                    <th>Peserta</th>
+                    <th>Dibuat Oleh</th>
+                    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                    <th>Aksi</th>
+                    @endif
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($notulensiList as $index => $not)
+                <tr>
+                    <td>{{ $notulensiList->firstItem() + $index }}</td>
+                    <td>
+                        <a href="#" onclick="viewDetail({{ $not->id }})" style="color:#2563eb; font-weight:500; text-decoration:none;">
+                            {{ $not->judul }}
+                        </a>
+                    </td>
+                    <td>{{ \Carbon\Carbon::parse($not->tanggal)->translatedFormat('d M Y') }}</td>
+                    <td>{{ $not->tempat }}</td>
+                    <td>
+                        @php
+                            $fakNama = $not->fakultas->nama_fakultas ?? '-';
+                            $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
+                                      : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
+                        @endphp
+                        <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; color:#64748b;">
+                            {{ $not->dosens->count() }} dosen
+                        </span>
+                    </td>
+                    <td style="color:#64748b; font-size:12px;">{{ $not->user->name ?? '-' }}</td>
+                    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                    <td>
+                        <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                        <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
+                            <i class="ti ti-printer"></i>
+                        </button>
+                        <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                            <i class="ti ti-file-type-pdf"></i>
+                        </a>
+                        <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
+                            <i class="ti ti-pencil"></i>
+                        </button>
+                        <button class="icon-btn delete" onclick="deleteNotulensi({{ $not->id }})" title="Hapus">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                    </td>
+                    @else
+                    <td>
+                        <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                        <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
+                            <i class="ti ti-printer"></i>
+                        </button>
+                        <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
+                            <i class="ti ti-file-type-pdf"></i>
+                        </a>
+                    </td>
+                    @endif
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:40px; color:#9ca3af;">
+                        <i class="ti ti-clipboard-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                        Belum ada data notulensi.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     {{-- Pagination --}}
     <div class="pag-wrap">

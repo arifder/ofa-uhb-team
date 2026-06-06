@@ -25,6 +25,9 @@
         .content {
             padding: 20px 40px;
         }
+        table.data-table th, table.data-table td {
+            text-align: center !important;
+        }
     </style>
 </head>
 
@@ -72,7 +75,7 @@
         <p style="font-weight:bold; font-size:12px; margin-bottom:6px;">
             DAFTAR HADIR PESERTA
         </p>
-        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+        <table class="data-table" style="width:100%; border-collapse:collapse; font-size:11px;">
             <thead>
                 <tr style="background:#f0f0f0;">
                     <th style="border:1px solid #000; padding:6px; width:30px;">No</th>

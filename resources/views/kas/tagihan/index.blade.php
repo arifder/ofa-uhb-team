@@ -1,5 +1,21 @@
 @extends('layouts.dashboard')
 @section('title', 'Tagihan Dosen')
+@section('title_addon', 'Total: ' . $tagihanList->total())
+@section('subtitle', 'Kelola tagihan iuran kas dosen')
+
+@section('topbar_actions')
+    @if(in_array(auth()->user()->role, ['super_admin', 'admin_fst', 'admin_fis']))
+    <button class="btn-primary" onclick="generateOtomatis()" style="background:#0f766e;">
+        <i class="ti ti-loader"></i> Generate Tagihan Otomatis
+    </button>
+    <button class="btn-primary" onclick="openModal()">
+        <i class="ti ti-plus"></i> Tambah Tagihan
+    </button>
+    @endif
+    <a href="{{ route('kas.tagihan.exportPdf', request()->query()) }}" class="btn-outline" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="ti ti-file-export"></i> Export PDF
+    </a>
+@endsection
 
 @push('styles')
 <style>
@@ -66,25 +82,23 @@
     .custom-toast { min-width: 260px; background: #fff; border-left: 4px solid #10b981; box-shadow: 0 4px 12px rgba(0,0,0,.1); padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; animation: slideIn .3s ease forwards; }
     .custom-toast.error { border-left-color: #ef4444; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .stat-card {
+        display: inline-block;
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .stat-masuk  { background: linear-gradient(135deg, #d1fae5, #a7f3d0); border: 1px solid #6ee7b7; }
+    .stat-keluar { background: linear-gradient(135deg, #fee2e2, #fecaca); border: 1px solid #fca5a5; }
+    .stat-saldo  { background: linear-gradient(135deg, #dbeafe, #bfdbfe); border: 1px solid #93c5fd; }
+    .stat-number { font-size: 22px; font-weight: 700; display: block; margin-bottom: 2px; }
+    .stat-label  { font-size: 12px; font-weight: 500; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
 </style>
 @endpush
 
 @section('content')
 
 @php $authUser = auth()->user(); @endphp
-
-{{-- Page Header --}}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2 style="font-size:18px; font-weight:600; color:#1e293b;">
-        Tagihan Dosen
-        <span style="font-size:13px; font-weight:400; color:#64748b; margin-left:8px;">Total: {{ $tagihanList->total() }}</span>
-    </h2>
-    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
-    <button class="btn-primary" onclick="openModal()">
-        <i class="ti ti-plus"></i> Tambah Tagihan
-    </button>
-    @endif
-</div>
 
 <div id="toast-container"></div>
 
@@ -124,73 +138,91 @@
     </div>
 </form>
 
+{{-- Summary Cards --}}
+<div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
+    <div class="stat-card stat-saldo" style="flex:1; min-width:200px;">
+        <span class="stat-label">Total Tagihan</span>
+        <span class="stat-number" style="color:#475569;">Rp {{ number_format($totalTagihan, 0, ',', '.') }}</span>
+    </div>
+    <div class="stat-card stat-masuk" style="flex:1; min-width:200px;">
+        <span class="stat-label">Total Terbayar</span>
+        <span class="stat-number" style="color:#059669;">Rp {{ number_format($totalDibayar, 0, ',', '.') }}</span>
+    </div>
+    <div class="stat-card stat-keluar" style="flex:1; min-width:200px;">
+        <span class="stat-label">Sisa Tagihan</span>
+        <span class="stat-number" style="color:#dc2626;">Rp {{ number_format($totalSisa, 0, ',', '.') }}</span>
+    </div>
+</div>
+
 {{-- Table --}}
 <div class="master-card">
-    <table class="master-table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Dosen</th>
-                <th>Fakultas</th>
-                <th>Periode</th>
-                <th>Jumlah</th>
-                <th>Status</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($tagihanList as $index => $tagihan)
-            <tr>
-                <td>{{ $tagihanList->firstItem() + $index }}</td>
-                <td style="font-weight:500;">{{ $tagihan->dosen->nama_lengkap ?? '-' }}</td>
-                <td>
-                    @if($tagihan->fakultas)
-                        @php
-                            $fakNama = $tagihan->fakultas->nama_fakultas ?? '-';
-                            $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
-                                      : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
-                        @endphp
-                        <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
-                    @else
-                        -
-                    @endif
-                </td>
-                <td>{{ ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][($tagihan->bulan ?? 1) - 1] }} {{ $tagihan->tahun }}</td>
-                <td style="font-weight:600;">Rp {{ number_format($tagihan->jumlah, 0, ',', '.') }}</td>
-                <td>
-                    <span class="status-badge {{ $tagihan->status === 'lunas' ? 'status-lunas' : 'status-belum' }}">
-                        {{ $tagihan->status === 'lunas' ? 'Lunas' : 'Belum Lunas' }}
-                    </span>
-                </td>
-                <td>
-                    <button class="icon-btn" onclick="viewDetail({{ $tagihan->id }})" title="Lihat Detail">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    @if($authUser->role !== 'kepala_unit')
-                        @if($tagihan->status !== 'lunas')
-                        <button class="icon-btn" onclick="openBayarModal({{ $tagihan->id }})" title="Bayar" style="color:#059669;">
-                            <i class="ti ti-cash"></i>
-                        </button>
+    <div class="table-responsive">
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Dosen</th>
+                    <th>Fakultas</th>
+                    <th>Periode</th>
+                    <th>Jumlah</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($tagihanList as $index => $tagihan)
+                <tr>
+                    <td>{{ $tagihanList->firstItem() + $index }}</td>
+                    <td style="font-weight:500;">{{ $tagihan->dosen->nama_lengkap ?? '-' }}</td>
+                    <td>
+                        @if($tagihan->fakultas)
+                            @php
+                                $fakNama = $tagihan->fakultas->nama_fakultas ?? '-';
+                                $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
+                                          : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
+                            @endphp
+                            <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
+                        @else
+                            -
                         @endif
-                        
-                        @if($authUser->role !== 'dosen')
-                        <button class="icon-btn delete" onclick="deleteTagihan({{ $tagihan->id }})" title="Hapus">
-                            <i class="ti ti-trash"></i>
+                    </td>
+                    <td>{{ ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][($tagihan->bulan ?? 1) - 1] }} {{ $tagihan->tahun }}</td>
+                    <td style="font-weight:600;">Rp {{ number_format($tagihan->jumlah, 0, ',', '.') }}</td>
+                    <td>
+                        <span class="status-badge {{ $tagihan->status === 'lunas' ? 'status-lunas' : 'status-belum' }}">
+                            {{ $tagihan->status === 'lunas' ? 'Lunas' : 'Belum Lunas' }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="icon-btn" onclick="viewDetail({{ $tagihan->id }})" title="Lihat Detail">
+                            <i class="ti ti-eye"></i>
                         </button>
+                        @if($authUser->role !== 'kepala_unit')
+                            @if($tagihan->status !== 'lunas')
+                            <button class="icon-btn" onclick="openBayarModal({{ $tagihan->id }})" title="Bayar" style="color:#059669;">
+                                <i class="ti ti-cash"></i>
+                            </button>
+                            @endif
+                            
+                            @if($authUser->role !== 'dosen')
+                            <button class="icon-btn delete" onclick="deleteTagihan({{ $tagihan->id }})" title="Hapus">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                            @endif
                         @endif
-                    @endif
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="7" style="text-align:center; padding:40px; color:#9ca3af;">
-                    <i class="ti ti-receipt" style="font-size:32px; display:block; margin-bottom:8px;"></i>
-                    Belum ada data tagihan.
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:40px; color:#9ca3af;">
+                        <i class="ti ti-receipt" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                        Belum ada data tagihan.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     {{-- Pagination --}}
     <div class="pag-wrap">
@@ -631,6 +663,39 @@
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showToast(data.message || 'Gagal menghapus.', 'error');
+            }
+        } catch {
+            showToast('Koneksi gagal.', 'error');
+        }
+    }
+
+    async function generateOtomatis() {
+        const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        if (!confirm(`Yakin ingin generate otomatis tagihan sesuai nominal masing-masing dosen untuk bulan ${monthNames[currentMonth]} ${currentYear}?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch('{{ route("kas.tagihan.generateOtomatis") }}', {
+                method: 'POST',
+                headers: { 
+                    'X-CSRF-TOKEN': csrfToken, 
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({
+                    bulan: currentMonth + 1,
+                    tahun: currentYear
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Terjadi kesalahan.', 'error');
             }
         } catch {
             showToast('Koneksi gagal.', 'error');

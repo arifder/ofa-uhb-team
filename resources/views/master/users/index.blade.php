@@ -1,5 +1,13 @@
 @extends('layouts.dashboard')
 @section('title', 'Manajemen User')
+@section('title_addon', 'Total: ' . $users->total())
+@section('subtitle', 'Kelola akun pengguna dan hak akses')
+
+@section('topbar_actions')
+    <button class="btn-primary" onclick="window.dispatchEvent(new CustomEvent('open-user-modal'))">
+        <i class="ti ti-plus"></i> Tambah User
+    </button>
+@endsection
 
 @push('styles')
     <style>
@@ -42,14 +50,7 @@
 @endpush
 
 @section('content')
-    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 18px; font-weight: 600; color: #1e293b;">
-            Daftar User <span style="font-size: 13px; font-weight: 400; color: #64748b; margin-left: 8px;">Total: {{ $users->total() }}</span>
-        </h2>
-        <button class="btn-primary" onclick="window.dispatchEvent(new CustomEvent('open-user-modal'))">
-            <i class="ti ti-plus"></i> Tambah User
-        </button>
-    </div>
+
 
     <div id="toast-container"></div>
 
@@ -69,62 +70,64 @@
             </form>
 
             <div class="master-card">
-                <table class="master-table">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Nama</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Fakultas</th>
-                            <th>Prodi</th>
-                            <th>Jabatan</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($users as $index => $user)
-                        <tr>
-                            <td>{{ $users->firstItem() + $index }}</td>
-                            <td>{{ $user->name }}</td>
-                            <td>{{ $user->username }}</td>
-                            <td>{{ $user->email }}</td>
-                            <td>
-                                <span style="
-                                  background:{{ $user->role_badge_color['bg'] }};
-                                  color:{{ $user->role_badge_color['text'] }};
-                                  padding:2px 10px;
-                                  border-radius:99px;
-                                  font-size:11px;
-                                  font-weight:600">
-                                  {{ $user->role_label }}
-                                </span>
-                            </td>
-                            <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
-                            <td>{{ $user->prodi ? $user->prodi->nama_prodi : '-' }}</td>
-                            <td>
-                                @if($user->jabatan_struktural)
-                                    <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">{{ $user->jabatan_struktural }}</span>
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td>
-                                @if($user->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
-                                @else <span class="master-badge badge-nonaktif">Arsip</span>
-                                @endif
-                            </td>
-                            <td>
-                                <button class="icon-btn edit-user-btn" data-user="{{ json_encode($user) }}" title="Edit User"><i class="ti ti-pencil"></i></button>
-                                <button class="icon-btn" style="color:#d97706" onclick="toggleStatus({{ $user->id }})" title="Arsipkan User"><i class="ti ti-archive"></i></button>
-                                <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})" title="Hapus Permanen"><i class="ti ti-trash"></i></button>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Fakultas</th>
+                                <th>Prodi</th>
+                                <th>Jabatan</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($users as $index => $user)
+                            <tr>
+                                <td>{{ $users->firstItem() + $index }}</td>
+                                <td>{{ $user->name }}</td>
+                                <td>{{ $user->username }}</td>
+                                <td>{{ $user->email }}</td>
+                                <td>
+                                    <span style="
+                                      background:{{ $user->role_badge_color['bg'] }};
+                                      color:{{ $user->role_badge_color['text'] }};
+                                      padding:2px 10px;
+                                      border-radius:99px;
+                                      font-size:11px;
+                                      font-weight:600">
+                                      {{ $user->role_label }}
+                                    </span>
+                                </td>
+                                <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
+                                <td>{{ $user->prodi ? $user->prodi->nama_prodi : '-' }}</td>
+                                <td>
+                                    @if($user->jabatan_struktural)
+                                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">{{ $user->jabatan_struktural }}</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($user->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
+                                    @else <span class="master-badge badge-nonaktif">Arsip</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <button class="icon-btn edit-user-btn" data-user="{{ json_encode($user) }}" title="Edit User"><i class="ti ti-pencil"></i></button>
+                                    <button class="icon-btn" style="color:#d97706" onclick="toggleStatus({{ $user->id }})" title="Arsipkan User"><i class="ti ti-archive"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})" title="Hapus Permanen"><i class="ti ti-trash"></i></button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
                 <div class="p-4 border-t border-gray-200 pagination-container">
                     {{ $users->withQueryString()->links() }}
                 </div>

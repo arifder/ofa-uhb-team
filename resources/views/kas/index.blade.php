@@ -86,144 +86,270 @@
     .search-select-option.selected { background: #EFF6FF; color: #1D4ED8; font-weight: 500; }
     .search-select-option small { color: #94a3b8; font-weight: 400; }
     .search-select-empty { padding: 16px; text-align: center; color: #94a3b8; font-size: 12px; }
+    [x-cloak] { display: none !important; }
+
+    /* ── Filter Chips ───────────────────────────── */
+    .filter-chip {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+    }
+    .filter-chip a {
+        color: #1d4ed8;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+    }
+    .filter-chip a:hover {
+        color: #ef4444;
+    }
+    
+    /* ── Filter Modal Toggles ───────────────────── */
+    .period-toggle-label {
+        flex: 1;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        transition: all 0.2s ease;
+    }
+    .period-toggle-label:hover {
+        background: #f8fafc;
+    }
 </style>
 @endpush
 
-@section('content')
+@php
+    $authUser = auth()->user();
+    $filterTipe = request('filter_tipe', 'hari');
+    
+    if (request('search') || request('fakultas_id') || request('tanggal_awal') || request('tanggal_akhir') || request('bulan') || request('tahun')) {
+        if ($filterTipe === 'hari') {
+            if (request('tanggal_awal') && request('tanggal_akhir')) {
+                if (request('tanggal_awal') === request('tanggal_akhir')) {
+                    $sub = \Carbon\Carbon::parse(request('tanggal_awal'))->translatedFormat('l, d F Y');
+                } else {
+                    $sub = \Carbon\Carbon::parse(request('tanggal_awal'))->translatedFormat('d M Y') . ' - ' . \Carbon\Carbon::parse(request('tanggal_akhir'))->translatedFormat('d M Y');
+                }
+            } elseif (request('tanggal_awal')) {
+                $sub = 'Sejak ' . \Carbon\Carbon::parse(request('tanggal_awal'))->translatedFormat('d M Y');
+            } elseif (request('tanggal_akhir')) {
+                $sub = 'Sampai ' . \Carbon\Carbon::parse(request('tanggal_akhir'))->translatedFormat('d M Y');
+            } else {
+                $sub = 'Semua Tanggal';
+            }
+        } elseif ($filterTipe === 'bulan') {
+            $months = [
+                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+                7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            ];
+            $mLabel = request('bulan') ? ($months[request('bulan')] ?? '') : 'Semua Bulan';
+            $yLabel = request('tahun') ?? now()->year;
+            $sub = $mLabel . ' ' . $yLabel;
+        } elseif ($filterTipe === 'tahun') {
+            $sub = 'Tahun ' . (request('tahun') ?? now()->year);
+        } else {
+            $sub = now()->translatedFormat('l, d F Y');
+        }
+    } else {
+        $sub = now()->translatedFormat('l, d F Y');
+    }
+@endphp
 
-@php $authUser = auth()->user(); @endphp
+@section('title_addon', 'Total: ' . $kasList->total())
+@section('subtitle', $sub)
 
-{{-- Page Header --}}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2 style="font-size:18px; font-weight:600; color:#1e293b;">
-        Kas {{ $title }}
-        <span style="font-size:13px; font-weight:400; color:#64748b; margin-left:8px;">Total: {{ $kasList->total() }}</span>
-    </h2>
+@section('topbar_actions')
     @if(in_array($authUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
     <button class="btn-primary" onclick="openModal()">
         <i class="ti ti-plus"></i> Tambah Kas {{ $title }}
     </button>
     @endif
-</div>
+@endsection
+
+@section('content')
 
 <div id="toast-container"></div>
 
-{{-- Filter Bar --}}
-<form method="GET" action="{{ route('kas.' . $jenis) }}" class="master-card p-4 mb-4">
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <input type="text" name="search" class="filter-control" placeholder="Cari keterangan..." value="{{ request('search') }}" style="flex:1; min-width:200px;">
-        @if(in_array($authUser->role, ['super_admin', 'kepala_unit']))
-        <select name="fakultas_id" class="filter-control" style="width:180px;" onchange="this.form.submit()">
-            <option value="">Semua Fakultas</option>
-            @foreach($fakultasList as $fak)
-                <option value="{{ $fak->id }}" {{ request('fakultas_id') == $fak->id ? 'selected' : '' }}>
-                    {{ $fak->nama_fakultas }}
-                </option>
-            @endforeach
-        </select>
+{{-- Filter & Search Row --}}
+<form method="GET" action="{{ route('kas.' . $jenis) }}" class="mb-4">
+    @if(request('filter_tipe'))
+        <input type="hidden" name="filter_tipe" value="{{ request('filter_tipe') }}">
+    @endif
+    @if(request('tanggal_awal'))
+        <input type="hidden" name="tanggal_awal" value="{{ request('tanggal_awal') }}">
+    @endif
+    @if(request('tanggal_akhir'))
+        <input type="hidden" name="tanggal_akhir" value="{{ request('tanggal_akhir') }}">
+    @endif
+    @if(request('bulan'))
+        <input type="hidden" name="bulan" value="{{ request('bulan') }}">
+    @endif
+    @if(request('tahun'))
+        <input type="hidden" name="tahun" value="{{ request('tahun') }}">
+    @endif
+    @if(request('fakultas_id'))
+        <input type="hidden" name="fakultas_id" value="{{ request('fakultas_id') }}">
+    @endif
+
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+        <div style="display: flex; flex: 1; min-width: 260px; gap: 8px;">
+            <input type="text" name="search" class="filter-control" placeholder="Cari keterangan..." value="{{ request('search') }}" style="flex: 1; height: 38px;">
+            <button type="submit" class="btn-primary" style="background: #475569; height: 38px;">Cari</button>
+        </div>
+        
+        <button type="button" class="btn-outline" onclick="openFilterModal()" style="display: inline-flex; align-items: center; gap: 8px; height: 38px;">
+            <i class="ti ti-adjustments-horizontal"></i> Filter Periode
+        </button>
+        
+        @if(request('search') || request('fakultas_id') || request('filter_tipe'))
+            <a href="{{ route('kas.' . $jenis) }}" class="btn-outline" style="text-decoration: none; color: #ef4444; height: 38px; display: inline-flex; align-items: center;">Reset</a>
         @endif
-        <input type="date" name="tanggal_awal" class="filter-control" style="width:150px;" value="{{ request('tanggal_awal') }}" placeholder="Tgl Awal">
-        <input type="date" name="tanggal_akhir" class="filter-control" style="width:150px;" value="{{ request('tanggal_akhir') }}" placeholder="Tgl Akhir">
-        <button type="submit" class="btn-outline">Filter</button>
-        <a href="{{ route('kas.' . $jenis) }}" class="btn-outline">Reset</a>
     </div>
+
+    {{-- Active filter indicators/badges --}}
+    @if(request('search') || request('fakultas_id') || request('filter_tipe'))
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        @if(request('search'))
+            <span class="filter-chip">Cari: "{{ request('search') }}" <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}">&times;</a></span>
+        @endif
+        @if(request('fakultas_id') && isset($fakultasList))
+            @php $selectedFak = $fakultasList->firstWhere('id', request('fakultas_id')); @endphp
+            @if($selectedFak)
+                <span class="filter-chip">Fakultas: {{ $selectedFak->nama_fakultas }} <a href="{{ request()->fullUrlWithQuery(['fakultas_id' => null]) }}">&times;</a></span>
+            @endif
+        @endif
+        @if(request('filter_tipe') == 'hari')
+            @if(request('tanggal_awal') || request('tanggal_akhir'))
+                <span class="filter-chip">Tanggal: {{ request('tanggal_awal') ?? '...' }} s/d {{ request('tanggal_akhir') ?? '...' }} <a href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'tanggal_awal' => null, 'tanggal_akhir' => null]) }}">&times;</a></span>
+            @endif
+        @elseif(request('filter_tipe') == 'bulan')
+            @if(request('bulan') || request('tahun'))
+                @php
+                    $months = [1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun', 7=>'Jul', 8=>'Agu', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'];
+                    $mLabel = request('bulan') ? ($months[request('bulan')] ?? '') : '';
+                @endphp
+                <span class="filter-chip">Bulan: {{ $mLabel }} {{ request('tahun') }} <a href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'bulan' => null, 'tahun' => null]) }}">&times;</a></span>
+            @endif
+        @elseif(request('filter_tipe') == 'tahun')
+            @if(request('tahun'))
+                <span class="filter-chip">Tahun: {{ request('tahun') }} <a href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'tahun' => null]) }}">&times;</a></span>
+            @endif
+        @endif
+    </div>
+    @endif
 </form>
 
 {{-- Table --}}
 <div class="master-card">
-    <table class="master-table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Tanggal</th>
-                <th>Keterangan</th>
-                <th>Fakultas</th>
-                @if($jenis === 'masuk')
-                <th>Dosen</th>
-                <th>Pembagian (Tabungan / Sosial)</th>
-                @elseif($jenis === 'keluar')
-                <th>Kategori</th>
-                @endif
-                <th>Jumlah</th>
-                <th>Dibuat Oleh</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($kasList as $index => $kas)
-            <tr>
-                <td>{{ $kasList->firstItem() + $index }}</td>
-                <td>{{ \Carbon\Carbon::parse($kas->tanggal)->translatedFormat('d M Y') }}</td>
-                <td>
-                    <a href="#" onclick="viewDetail({{ $kas->id }})" style="color:#2563eb; font-weight:500; text-decoration:none;">
-                        {{ $kas->keterangan }}
-                    </a>
-                </td>
-                <td>
-                    @if($kas->fakultas)
-                        @php
-                            $fakNama = $kas->fakultas->nama_fakultas ?? '-';
-                            $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
-                                      : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
-                        @endphp
-                        <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
-                    @else
+    <div class="table-responsive">
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Tanggal</th>
+                    <th>Keterangan</th>
+                    <th>Fakultas</th>
+                    @if($jenis === 'masuk')
+                    <th>Dosen</th>
+                    <th>Pembagian (Tabungan / Sosial)</th>
+                    @elseif($jenis === 'keluar')
+                    <th>Kategori</th>
+                    @endif
+                    <th>Jumlah</th>
+                    <th>Dibuat Oleh</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($kasList as $index => $kas)
+                <tr>
+                    <td>{{ $kasList->firstItem() + $index }}</td>
+                    <td>{{ \Carbon\Carbon::parse($kas->tanggal)->translatedFormat('d M Y') }}</td>
+                    <td>
+                        <a href="#" onclick="viewDetail({{ $kas->id }})" style="color:#2563eb; font-weight:500; text-decoration:none;">
+                            {{ $kas->keterangan }}
+                        </a>
+                    </td>
+                    <td>
+                        @if($kas->fakultas)
+                            @php
+                                $fakNama = $kas->fakultas->nama_fakultas ?? '-';
+                                $fakClass = str_contains(strtolower($fakNama), 'sains') ? 'fak-fst'
+                                          : (str_contains(strtolower($fakNama), 'sosial') ? 'fak-fis' : 'fak-other');
+                            @endphp
+                            <span class="fak-badge {{ $fakClass }}">{{ $fakNama }}</span>
+                        @else
+                            -
+                        @endif
+                    </td>
+                    @if($jenis === 'masuk')
+                    <td>{{ $kas->dosen->nama_lengkap ?? '-' }}</td>
+                    <td>
+                        @if($kas->dosen_id && $kas->jumlah > 0)
+                        <div style="font-size:13px;">
+                            <span style="color:#059669; font-family:monospace;">Rp {{ number_format($kas->tabungan, 0, ',', '.') }}</span>
+                            <span style="color:#9ca3af; margin:0 4px;">/</span>
+                            <span style="color:#2563eb; font-family:monospace;">Rp {{ number_format($kas->uang_sosial, 0, ',', '.') }}</span>
+                        </div>
+                        <div style="font-size:11px; color:#9ca3af;">Tabungan / Sosial</div>
+                        @else
                         -
+                        @endif
+                    </td>
+                    @elseif($jenis === 'keluar')
+                    <td>
+                        @if($kas->kategori)
+                            <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px; color:#475569; text-transform:capitalize;">
+                                {{ str_replace('_', ' ', $kas->kategori) }}
+                            </span>
+                        @else
+                            -
+                        @endif
+                    </td>
                     @endif
-                </td>
-                @if($jenis === 'masuk')
-                <td>{{ $kas->dosen->nama_lengkap ?? '-' }}</td>
-                <td>
-                    @if($kas->dosen_id && $kas->jumlah > 0)
-                    <div style="font-size:13px;">
-                        <span style="color:#059669; font-family:monospace;">Rp {{ number_format($kas->tabungan, 0, ',', '.') }}</span>
-                        <span style="color:#9ca3af; margin:0 4px;">/</span>
-                        <span style="color:#2563eb; font-family:monospace;">Rp {{ number_format($kas->uang_sosial, 0, ',', '.') }}</span>
-                    </div>
-                    <div style="font-size:11px; color:#9ca3af;">Tabungan / Sosial</div>
-                    @else
-                    -
-                    @endif
-                </td>
-                @elseif($jenis === 'keluar')
-                <td>
-                    @if($kas->kategori)
-                        <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px; color:#475569; text-transform:capitalize;">
-                            {{ str_replace('_', ' ', $kas->kategori) }}
-                        </span>
-                    @else
-                        -
-                    @endif
-                </td>
-                @endif
-                <td class="{{ $jenis === 'masuk' ? 'jumlah-masuk' : 'jumlah-keluar' }}">
-                    {{ $jenis === 'masuk' ? '+' : '-' }}{{ number_format($kas->jumlah, 0, ',', '.') }}
-                </td>
-                <td style="color:#64748b; font-size:12px;">{{ $kas->user->name ?? '-' }}</td>
-                <td>
-                    <button class="icon-btn" onclick="viewDetail({{ $kas->id }})" title="Lihat Detail">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    @if(in_array($authUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
-                    <button class="icon-btn" onclick="editKas({{ $kas->id }})" title="Edit">
-                        <i class="ti ti-pencil"></i>
-                    </button>
-                    <button class="icon-btn delete" onclick="deleteKas({{ $kas->id }})" title="Hapus">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                    @endif
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="{{ $jenis === 'masuk' ? 9 : 7 }}" style="text-align:center; padding:40px; color:#9ca3af;">
-                    <i class="ti ti-wallet" style="font-size:32px; display:block; margin-bottom:8px;"></i>
-                    Belum ada data kas {{ strtolower($title) }}.
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+                    <td class="{{ $jenis === 'masuk' ? 'jumlah-masuk' : 'jumlah-keluar' }}">
+                        {{ $jenis === 'masuk' ? '+' : '-' }}{{ number_format($kas->jumlah, 0, ',', '.') }}
+                    </td>
+                    <td style="color:#64748b; font-size:12px;">{{ $kas->user->name ?? '-' }}</td>
+                    <td>
+                        <button class="icon-btn" onclick="viewDetail({{ $kas->id }})" title="Lihat Detail">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                        @if(in_array($authUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
+                        <button class="icon-btn" onclick="editKas({{ $kas->id }})" title="Edit">
+                            <i class="ti ti-pencil"></i>
+                        </button>
+                        <button class="icon-btn delete" onclick="deleteKas({{ $kas->id }})" title="Hapus">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="{{ $jenis === 'masuk' ? 9 : 7 }}" style="text-align:center; padding:40px; color:#9ca3af;">
+                        <i class="ti ti-wallet" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                        Belum ada data kas {{ strtolower($title) }}.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     {{-- Pagination --}}
     <div class="pag-wrap">
@@ -407,6 +533,118 @@
     </div>
 </div>
 
+{{-- Filter Modal --}}
+<div class="custom-modal" id="filterModal" x-data="{ filterTipe: '{{ request('filter_tipe', 'hari') }}' }">
+    <div class="custom-modal-content" style="width: 460px;">
+        <div class="custom-modal-header">
+            <span>Filter Periode Kas {{ $title }}</span>
+            <button class="icon-btn" onclick="closeFilterModal()"><i class="ti ti-x"></i></button>
+        </div>
+        <form method="GET" action="{{ route('kas.' . $jenis) }}">
+            @if(request('search'))
+                <input type="hidden" name="search" value="{{ request('search') }}">
+            @endif
+            <div class="custom-modal-body">
+
+                {{-- Fakultas (Super Admin / Kepala Unit only) --}}
+                @if(in_array($authUser->role, ['super_admin', 'kepala_unit']))
+                <div class="form-group">
+                    <label>Fakultas</label>
+                    <select name="fakultas_id" class="filter-control">
+                        <option value="">Semua Fakultas</option>
+                        @foreach($fakultasList as $fak)
+                            <option value="{{ $fak->id }}" {{ request('fakultas_id') == $fak->id ? 'selected' : '' }}>
+                                {{ $fak->nama_fakultas }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                {{-- Period buttons --}}
+                <div class="form-group">
+                    <label>Periode Waktu</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="period-toggle-label" :style="filterTipe === 'hari' ? 'background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; font-weight: 600;' : ''" @click="filterTipe = 'hari'">
+                            Hari
+                        </button>
+                        <button type="button" class="period-toggle-label" :style="filterTipe === 'bulan' ? 'background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; font-weight: 600;' : ''" @click="filterTipe = 'bulan'">
+                            Bulan
+                        </button>
+                        <button type="button" class="period-toggle-label" :style="filterTipe === 'tahun' ? 'background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; font-weight: 600;' : ''" @click="filterTipe = 'tahun'">
+                            Tahun
+                        </button>
+                        <input type="hidden" name="filter_tipe" :value="filterTipe">
+                    </div>
+                </div>
+
+                {{-- Hari inputs --}}
+                <div x-show="filterTipe === 'hari'" x-cloak>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label>Tanggal Awal</label>
+                            <input type="date" class="filter-control"
+                                :name="filterTipe === 'hari' ? 'tanggal_awal' : '_tanggal_awal'"
+                                value="{{ request('tanggal_awal') }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Akhir</label>
+                            <input type="date" class="filter-control"
+                                :name="filterTipe === 'hari' ? 'tanggal_akhir' : '_tanggal_akhir'"
+                                value="{{ request('tanggal_akhir') }}">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Bulan inputs --}}
+                <div x-show="filterTipe === 'bulan'" x-cloak>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label>Bulan</label>
+                            <select class="filter-control"
+                                :name="filterTipe === 'bulan' ? 'bulan' : '_bulan'">
+                                <option value="">Semua Bulan</option>
+                                @foreach([1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'] as $num => $name)
+                                    <option value="{{ $num }}" {{ request('bulan') == $num ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tahun</label>
+                            <select class="filter-control"
+                                :name="filterTipe === 'bulan' ? 'tahun' : '_tahun_bulan'">
+                                <option value="">Semua Tahun</option>
+                                @for($y = date('Y') + 2; $y >= 2020; $y--)
+                                    <option value="{{ $y }}" {{ (request('tahun') == $y || (!request('tahun') && $y == date('Y'))) ? 'selected' : '' }}>{{ $y }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tahun inputs --}}
+                <div x-show="filterTipe === 'tahun'" x-cloak>
+                    <div class="form-group">
+                        <label>Tahun</label>
+                        <select class="filter-control"
+                            :name="filterTipe === 'tahun' ? 'tahun' : '_tahun'">
+                            <option value="">Semua Tahun</option>
+                            @for($y = date('Y') + 2; $y >= 2020; $y--)
+                                <option value="{{ $y }}" {{ (request('tahun') == $y || (!request('tahun') && $y == date('Y'))) ? 'selected' : '' }}>{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+            <div class="custom-modal-footer">
+                <a href="{{ route('kas.' . $jenis) }}" class="btn-outline" style="text-decoration: none; display: flex; align-items: center; justify-content: center; height: 38px;">Reset</a>
+                <button type="submit" class="btn-primary">Terapkan Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -585,6 +823,14 @@
 
     function closeDetail() {
         document.getElementById('detailModal').classList.remove('active');
+    }
+
+    function openFilterModal() {
+        document.getElementById('filterModal').classList.add('active');
+    }
+
+    function closeFilterModal() {
+        document.getElementById('filterModal').classList.remove('active');
     }
 
     /* ── Foto Preview ──────────────────────────────── */

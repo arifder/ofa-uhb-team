@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Dosen extends Model
 {
-    protected $fillable = ['user_id', 'prodi_id', 'nidn', 'nama_lengkap', 'status'];
+    protected $fillable = ['user_id', 'prodi_id', 'nidn', 'nama_lengkap', 'status', 'nominal_tagihan'];
+
+    protected $casts = [
+        'nominal_tagihan' => 'integer',
+    ];
 
     public function user()
     {
