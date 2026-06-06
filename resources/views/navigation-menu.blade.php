@@ -17,19 +17,25 @@
                     </x-nav-link>
 
                     @php $user = auth()->user(); @endphp
-                    
+
                     {{-- MENU KAS --}}
-                    @if(in_array($user->role, ['super_admin','admin_kas_fst','admin_kas_fis','kepala_unit']))
-                        <x-nav-link href="{{ route('kas.masuk') }}" :active="request()->routeIs('kas.masuk')">Kas Masuk</x-nav-link>
-                        <x-nav-link href="{{ route('kas.keluar') }}" :active="request()->routeIs('kas.keluar')">Kas Keluar</x-nav-link>
-                        <x-nav-link href="{{ route('kas.tagihan') }}" :active="request()->routeIs('kas.tagihan')">Tagihan Dosen</x-nav-link>
-                        <x-nav-link href="{{ route('kas.laporan') }}" :active="request()->routeIs('kas.laporan')">Laporan Kas</x-nav-link>
+                    @if(in_array($user->role, ['super_admin', 'admin_kas_fst', 'admin_kas_fis', 'kepala_unit', 'dosen']))
+                        <x-nav-link href="{{ route('kas.masuk') }}" :active="request()->routeIs('kas.*')">Kas
+                            Masuk</x-nav-link>
+                        <x-nav-link href="{{ route('kas.keluar') }}" :active="request()->routeIs('kas.*')">Kas
+                            Keluar</x-nav-link>
+                        <x-nav-link href="{{ route('kas.tagihan') }}" :active="request()->routeIs('kas.*')">Tagihan
+                            Dosen</x-nav-link>
+                        <x-nav-link href="{{ route('kas.laporan') }}" :active="request()->routeIs('kas.*')">Laporan
+                            Kas</x-nav-link>
                     @endif
 
                     {{-- MENU NOTULENSI --}}
-                    @if(in_array($user->role, ['super_admin','admin_notulensi_fst','admin_notulensi_fis','kepala_unit']))
-                        <x-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Data Notulensi</x-nav-link>
-                        <x-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Peserta Rapat</x-nav-link>
+                    @if(in_array($user->role, ['super_admin', 'admin_notulensi_fst', 'admin_notulensi_fis', 'kepala_unit']))
+                        <x-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Data
+                            Notulensi</x-nav-link>
+                        <x-nav-link href="{{ route('notulensi.index') }}"
+                            :active="request()->routeIs('notulensi.*')">Peserta Rapat</x-nav-link>
                         <x-nav-link href="#">Export BAP</x-nav-link>
                     @endif
 
@@ -188,17 +194,23 @@
             @php $user = auth()->user(); @endphp
 
             {{-- MENU KAS (Responsive) --}}
-            @if(in_array($user->role, ['super_admin','admin_kas_fst','admin_kas_fis','kepala_unit']))
-                <x-responsive-nav-link href="{{ route('kas.masuk') }}" :active="request()->routeIs('kas.masuk')">Kas Masuk</x-responsive-nav-link>
-                <x-responsive-nav-link href="{{ route('kas.keluar') }}" :active="request()->routeIs('kas.keluar')">Kas Keluar</x-responsive-nav-link>
-                <x-responsive-nav-link href="{{ route('kas.tagihan') }}" :active="request()->routeIs('kas.tagihan')">Tagihan Dosen</x-responsive-nav-link>
-                <x-responsive-nav-link href="{{ route('kas.laporan') }}" :active="request()->routeIs('kas.laporan')">Laporan Kas</x-responsive-nav-link>
+            @if(in_array($user->role, ['super_admin', 'admin_kas_fst', 'admin_kas_fis', 'kepala_unit', 'dosen']))
+                <x-responsive-nav-link href="{{ route('kas.masuk') }}" :active="request()->routeIs('kas.*')">Kas
+                    Masuk</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('kas.keluar') }}" :active="request()->routeIs('kas.*')">Kas
+                    Keluar</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('kas.tagihan') }}" :active="request()->routeIs('kas.*')">Tagihan
+                    Dosen</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('kas.laporan') }}" :active="request()->routeIs('kas.*')">Laporan
+                    Kas</x-responsive-nav-link>
             @endif
 
             {{-- MENU NOTULENSI --}}
-            @if(in_array($user->role, ['super_admin','admin_notulensi_fst','admin_notulensi_fis','kepala_unit']))
-                <x-responsive-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Data Notulensi</x-responsive-nav-link>
-                <x-responsive-nav-link href="{{ route('notulensi.index') }}" :active="request()->routeIs('notulensi.*')">Peserta Rapat</x-responsive-nav-link>
+            @if(in_array($user->role, ['super_admin', 'admin_notulensi_fst', 'admin_notulensi_fis', 'kepala_unit']))
+                <x-responsive-nav-link href="{{ route('notulensi.index') }}"
+                    :active="request()->routeIs('notulensi.*')">Data Notulensi</x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('notulensi.index') }}"
+                    :active="request()->routeIs('notulensi.*')">Peserta Rapat</x-responsive-nav-link>
                 <x-responsive-nav-link href="#">Export BAP</x-responsive-nav-link>
             @endif
 
