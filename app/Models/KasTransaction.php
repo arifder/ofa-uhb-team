@@ -16,6 +16,7 @@ class KasTransaction extends Model
         'uang_sosial',
         'tanggal',
         'keterangan',
+        'resume_rapat',
         'bukti_foto',
         'fakultas_id',
         'dosen_id',

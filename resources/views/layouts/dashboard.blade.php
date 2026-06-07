@@ -147,6 +147,86 @@
       font-weight: 500
     }
 
+    .nav-dropdown {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin: 0 8px;
+    }
+
+    .nav-dropdown-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #4b5563;
+      transition: background 0.1s;
+      width: 100%;
+      border: none;
+      background: none;
+      text-align: left;
+    }
+
+    .nav-dropdown-btn:hover {
+      background: #f1f5f9
+    }
+
+    .nav-dropdown-btn.active {
+      background: #EFF6FF;
+      color: #1D4ED8
+    }
+
+    .nav-dropdown-btn i {
+      font-size: 16px;
+      flex-shrink: 0
+    }
+
+    .nav-dropdown-btn .chevron {
+      margin-left: auto;
+      font-size: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-dropdown-btn[aria-expanded="true"] .chevron {
+      transform: rotate(180deg);
+    }
+
+    .nav-dropdown-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-left: 28px;
+      overflow: hidden;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .nav-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #6b7280;
+      transition: all 0.1s;
+      text-decoration: none;
+    }
+
+    .nav-dropdown-item:hover {
+      background: #f1f5f9;
+      color: #111827;
+    }
+
+    .nav-dropdown-item.active {
+      color: #1D4ED8;
+      font-weight: 500;
+      background: #EFF6FF;
+    }
+
     .sidebar-footer {
       margin-top: auto;
       padding: 12px;
@@ -445,64 +525,88 @@
       color: #fff;
       border-color: #2563eb
     }
+
+    /* Table responsiveness & formatting */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-responsive table {
+      width: 100%;
+    }
+    .table-responsive table th,
+    .table-responsive table td {
+      white-space: nowrap;
+      text-align: center !important;
+    }
+    .table-responsive .master-table {
+      min-width: 1000px;
+    }
+    .master-table th,
+    .master-table td {
+      text-align: center !important;
+    }
   </style>
   @stack('styles')
 </head>
 
 <body>
 
-  <div class="wrap">
+  <div class="wrap" x-data="{ activeModule: localStorage.getItem('activeModule') || 'kas' }">
     <div class="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon"><i class="ti ti-building-bank" aria-hidden="true"></i></div>
-        <div class="logo-text">OFA-UHB</div>
+        <div style="width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.05); flex-shrink:0;">
+            <img src="{{ asset('images/logo-uhb.png') }}" alt="Logo UHB" style="width:100%; height:100%; object-fit:contain; padding:4px;">
+        </div>
+        <div class="logo-text" style="font-family:'Syne', sans-serif; font-weight:700; letter-spacing:0.02em; margin-left:4px;">OFA-UHB</div>
       </div>
       <div class="nav-section">Platform</div>
       <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" style="text-decoration:none;">
           <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard
       </a>
-      <a href="{{ route('notifikasi.index') }}" class="nav-item {{ request()->routeIs('notifikasi.*') ? 'active' : '' }}">
-          <i class="ti ti-bell" aria-hidden="true"></i>Notifikasi
-          @php $unreadCount = \App\Models\Notifikasi::where('user_id', auth()->id())->where('dibaca', false)->count(); @endphp
-          <span id="sidebar-notif-badge"
-                class="badge"
-                style="background:#fee2e2;color:#dc2626;{{ $unreadCount > 0 ? '' : 'display:none;' }}">
-            {{ $unreadCount }}
-          </span>
-      </a>
+
 
       @php $sidebarUser = auth()->user(); @endphp
 
-      {{-- MENU KAS: sembunyikan untuk admin_notulensi dan dosen --}}
-      @if(!in_array($sidebarUser->role, ['admin_notulensi_fst', 'admin_notulensi_fis', 'dosen']))
-      <div class="nav-section">Manajemen Kas</div>
-      <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}"><i class="ti ti-cash" aria-hidden="true"></i>Data Kas Masuk</a>
-      <a href="{{ route('kas.keluar') }}" class="nav-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
-      <a href="{{ route('kas.tagihan') }}" class="nav-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
-      <a href="{{ route('kas.laporan') }}" class="nav-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
+      {{-- MANAJEMEN FAKULTAS (KAS & NOTULENSI) --}}
+      @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit']))
+      <div x-show="activeModule === 'kas'" x-cloak>
+        <div class="nav-section">Manajemen Kas</div>
+        <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}"><i class="ti ti-cash" aria-hidden="true"></i>Kas Masuk</a>
+        <a href="{{ route('kas.keluar') }}" class="nav-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
+        <a href="{{ route('kas.tagihan') }}" class="nav-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
+        <a href="{{ route('kas.laporan') }}" class="nav-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
+      </div>
+
+      <div x-show="activeModule === 'notulensi'" x-cloak>
+        <div class="nav-section">Notulensi Rapat</div>
+        <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
+          <i class="ti ti-notes" aria-hidden="true"></i>Data Notulensi
+          <span class="badge" style="margin-left:auto;">{{ \App\Models\Notulensi::count() }}</span>
+        </a>
+      </div>
       @endif
 
-      {{-- MENU NOTULENSI: sembunyikan untuk admin_kas --}}
-      @if(!in_array($sidebarUser->role, ['admin_kas_fst', 'admin_kas_fis', 'dosen']))
-      <div class="nav-section">Notulensi Rapat</div>
+      {{-- MENU DOSEN --}}
+      @if($sidebarUser->role === 'dosen')
+      <div class="nav-section">Modul Dosen</div>
+      <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.*') ? 'active' : '' }}"><i class="ti ti-history" aria-hidden="true"></i>Riwayat Kas Saya</a>
       <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
-        <i class="ti ti-notes" aria-hidden="true"></i>Data Notulensi
-        <span class="badge">{{ \App\Models\Notulensi::count() }}</span>
-      </a>
-      <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
-        <i class="ti ti-users" aria-hidden="true"></i>Peserta Rapat
-      </a>
-      <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
-        <i class="ti ti-file-export" aria-hidden="true"></i>Export BAP
+        <i class="ti ti-notes" aria-hidden="true"></i>Manajemen Rapat
       </a>
       @endif
 
       {{-- MENU MASTER DATA: hanya super_admin --}}
       @if($sidebarUser->role === 'super_admin')
       <div class="nav-section">Master Data</div>
-      <a href="{{ route('master.users.index') }}" class="nav-item {{ request()->routeIs('master.users.*') ? 'active' : '' }}">
+      <a href="{{ route('master.users.index') }}" class="nav-item {{ request()->routeIs('master.users.index') ? 'active' : '' }}">
         <i class="ti ti-user-cog" aria-hidden="true"></i>Manajemen User
-        <span class="badge">{{ \App\Models\User::count() }}</span>
+        <span class="badge">{{ \App\Models\User::where('status', 'aktif')->count() }}</span>
+      </a>
+      <a href="{{ route('master.users.arsip') }}" class="nav-item {{ request()->routeIs('master.users.arsip') ? 'active' : '' }}">
+        <i class="ti ti-archive" aria-hidden="true"></i>Arsip User
+        <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ \App\Models\User::where('status', 'arsip')->count() }}</span>
       </a>
       <a href="{{ route('master.fakultas.index') }}" class="nav-item {{ request()->routeIs('master.fakultas.*') ? 'active' : '' }}">
         <i class="ti ti-school" aria-hidden="true"></i>Fakultas & Prodi
@@ -512,30 +616,58 @@
       </a>
       @endif
 
-      <div class="sidebar-footer">
-        <div class="user-row">
-          <div class="avatar">{{ substr(Auth::user()->name ?? 'SA', 0, 2) }}</div>
-          <div class="user-info">{{ Auth::user()->name ?? 'User' }}<span>{{ Auth::user()->role_label ?? 'Administrator' }}</span></div>
+      <div class="sidebar-footer" x-data="{ openProfileMenu: false }" style="position:relative; padding:12px;">
+        
+        <!-- Popover Menu -->
+        <div x-show="openProfileMenu" @click.outside="openProfileMenu = false" x-cloak x-transition.opacity.duration.200ms
+             style="position:absolute; bottom:calc(100% + 5px); left:12px; width:calc(100% - 24px); 
+                    background:#2e364f; color:#f8fafc; border-radius:12px; padding:8px; 
+                    box-shadow:0 10px 25px rgba(0,0,0,0.25); z-index:50; border: 1px solid #475569;">
+           
+           @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit']))
+           <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; padding:4px 8px; margin-bottom:4px;">Ganti Modul</div>
+           <a href="#" @click.prevent="activeModule = 'kas'; localStorage.setItem('activeModule', 'kas'); openProfileMenu = false" 
+              style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;"
+              onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+              <i class="ti ti-cash-register"></i> Manajemen Kas
+              <i class="ti ti-check" style="margin-left:auto; font-size:14px;" x-show="activeModule === 'kas'"></i>
+           </a>
+           <a href="#" @click.prevent="activeModule = 'notulensi'; localStorage.setItem('activeModule', 'notulensi'); openProfileMenu = false"
+              style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px; margin-bottom:8px;"
+              onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+              <i class="ti ti-clipboard-list"></i> Notulensi Rapat
+              <i class="ti ti-check" style="margin-left:auto; font-size:14px;" x-show="activeModule === 'notulensi'"></i>
+           </a>
+           <div style="height:1px; background:#475569; margin:4px 0 8px 0;"></div>
+           @endif
 
-          <!-- Logout Form & Icon -->
+           <a href="{{ route('pengaturan.profil') }}" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+             <i class="ti ti-user-circle"></i> Profile
+           </a>
+           <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#fca5a5; text-decoration:none; font-size:13px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+             <i class="ti ti-logout"></i> Log Out
+           </a>
+        </div>
+
+        <div class="user-row" @click="openProfileMenu = !openProfileMenu" style="cursor:pointer; padding: 10px; border-radius: 10px; transition: background 0.2s; background: #2e364f; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='#2e364f'">
+          <div class="avatar" style="background:#3b82f6; color:#fff; border: 1px solid #60a5fa; flex-shrink:0; display:flex; align-items:center; justify-content:center;">{{ substr(Auth::user()->name ?? 'SA', 0, 2) }}</div>
+          <div class="user-info" style="color:#f8fafc; flex:1; min-width:0;">
+             <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Auth::user()->name ?? 'User' }}</div>
+             <div style="font-size:10px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;">{{ Auth::user()->email ?? 'Administrator' }}</div>
+          </div>
+          <i class="ti ti-chevron-right" style="flex-shrink:0; margin-left:auto;font-size:14px;color:#64748b;" :style="openProfileMenu ? 'transform: rotate(-90deg); transition: transform 0.2s;' : 'transition: transform 0.2s;'"></i>
+
           <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
             @csrf
           </form>
-          <i class="ti ti-logout" style="margin-left:auto;font-size:16px;color:#9ca3af;cursor:pointer"
-            aria-hidden="true" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-            title="Logout"></i>
         </div>
       </div>
     </div>
 
     <div class="main">
       <div class="topbar">
-        <div>
-          <div class="topbar-title">@yield('title', 'Dashboard')</div>
-          <div style="font-size:11px;color:#6b7280">{{ now()->translatedFormat('l, d F Y') }}</div>
-        </div>
+        <div></div>
         <div class="topbar-actions">
-          <span id="rbadge" class="role-badge" style="background:{{ auth()->user()->role_badge_color['bg'] }};color:{{ auth()->user()->role_badge_color['text'] }}">{{ auth()->user()->role_label }}</span>
 
           {{-- Notifikasi Dropdown --}}
           <div style="position:relative" x-data="{ open: false }">
@@ -552,7 +684,7 @@
             <div x-show="open"
                  x-cloak
                  @click.outside="open = false"
-                 style="position:absolute;right:0;top:44px;width:320px;background:#fff;
+                 style="position:absolute;right:0;top:44px;width:380px;background:#fff;
                         border:1px solid #e2e8f0;border-radius:12px;
                         box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:999;">
 
@@ -565,7 +697,7 @@
                 </span>
               </div>
 
-              <div id="notif-list" style="max-height:300px;overflow-y:auto;"></div>
+              <div id="notif-list" style="max-height:360px;overflow-y:auto;"></div>
 
               <div style="padding:10px 16px;border-top:1px solid #f1f5f9;text-align:center;">
                 <a href="{{ route('notifikasi.index') }}"
@@ -584,6 +716,29 @@
       </div>
 
       <div class="content">
+          <!-- Page Header -->
+          @if(View::hasSection('title'))
+          <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 8px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0; font-family: var(--font-sans);">@yield('title')</h1>
+                @if (trim($__env->yieldContent('title_addon')))
+                  <span style="font-size: 12px; font-weight: 600; color: #1d4ed8; background: #eff6ff; padding: 2px 8px; border-radius: 20px; border: 0.5px solid #bfdbfe;">@yield('title_addon')</span>
+                @endif
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <i class="ti ti-calendar" style="font-size: 14px;"></i>
+                <span>@yield('subtitle', now()->translatedFormat('l, d F Y'))</span>
+              </div>
+            </div>
+            @if (trim($__env->yieldContent('topbar_actions')))
+            <div style="display: flex; align-items: center; gap: 8px;">
+              @yield('topbar_actions')
+            </div>
+            @endif
+          </div>
+          @endif
+
           @yield('content')
       </div>
     </div>
@@ -626,25 +781,50 @@
             return;
           }
 
-          list.innerHTML = data.data.map(n => `
+          list.innerHTML = data.data.map(n => {
+            const emojiRegex = /[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FAFF}\u{1F1E0}-\u{1F1FF}]/gu;
+            let cleanJudul = n.judul.replace(/📋|✏️|🗑️|💰|📤|🧾|✅/g, '').replace(emojiRegex, '').trim();
+            let cleanPesan = n.pesan.replace(/📋|✏️|🗑️|💰|📤|🧾|✅/g, '').replace(emojiRegex, '').trim();
+
+            let iconName = 'ti-info-circle', iconBg = '#f1f5f9', iconColor = '#6b7280';
+            let badgeBg = '#f1f5f9', badgeColor = '#6b7280';
+            
+            if (n.tipe === 'notulensi') {
+                iconName = 'ti-notes';
+                iconBg = '#ccfbf1'; iconColor = '#0f766e';
+                badgeBg = '#ccfbf1'; badgeColor = '#0f766e';
+            } else if (n.tipe === 'kas') {
+                iconName = 'ti-cash';
+                iconBg = '#dbeafe'; iconColor = '#1d4ed8';
+                badgeBg = '#dbeafe'; badgeColor = '#1d4ed8';
+            }
+            
+            const badgeText = n.tipe ? (n.tipe.charAt(0).toUpperCase() + n.tipe.slice(1)) : 'Sistem';
+
+            return `
             <div onclick="readNotif(${n.id}, '${n.url || ''}')"
-                 style="padding:12px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;
-                        background:${!n.dibaca ? '#eff6ff' : '#fff'};"
-                 onmouseover="this.style.background='#f1f5f9'"
-                 onmouseout="this.style.background='${!n.dibaca ? '#eff6ff' : '#fff'}'">
-              <div style="display:flex;gap:10px;align-items:flex-start;">
-                <div style="width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;
-                            background:${n.tipe === 'notulensi' ? '#14b8a6' : '#9ca3af'};"></div>
-                <div style="flex:1;min-width:0;">
-                  <p style="font-size:12px;font-weight:${!n.dibaca ? '600' : '500'};
-                             color:#111827;margin:0;white-space:nowrap;
-                             overflow:hidden;text-overflow:ellipsis;">${n.judul}</p>
-                  <p style="font-size:11px;color:#6b7280;margin:2px 0 0;
-                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.pesan}</p>
+                 style="padding:16px 20px;border-bottom:1px solid #f1f5f9;cursor:pointer;
+                        background:${!n.dibaca ? '#f0f7ff' : '#fff'}; display:flex; gap:16px; align-items:flex-start;"
+                 onmouseover="this.style.background='#f8fafc'"
+                 onmouseout="this.style.background='${!n.dibaca ? '#f0f7ff' : '#fff'}'">
+              
+              <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; padding-top:2px;">
+                  <div style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; background:${iconBg}; color:${iconColor};">
+                      <i class="ti ${iconName}"></i>
+                  </div>
+                  ${!n.dibaca ? `<div style="width:7px; height:7px; border-radius:50%; background:#3b82f6; flex-shrink:0;"></div>` : ''}
+              </div>
+
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+                  <span style="font-size:13px; font-weight:${!n.dibaca ? '700' : '500'}; color:#111827; line-height:1.4;">${cleanJudul}</span>
+                  <span style="font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600; flex-shrink:0; background:${badgeBg}; color:${badgeColor};">${badgeText}</span>
                 </div>
+                <p style="font-size:12px; color:#6b7280; line-height:1.6; margin:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${cleanPesan}</p>
               </div>
             </div>
-          `).join('');
+            `;
+          }).join('');
         });
     }
 

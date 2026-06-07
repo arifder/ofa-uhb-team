@@ -20,59 +20,61 @@ class NotulensiPolicy
     }
 
     /**
-     * kepala_unit, admin_notulensi_fst, admin_notulensi_fis boleh melihat daftar.
+     * kepala_unit, admin_fst, admin_fis, dosen boleh melihat daftar.
      */
     public function viewAny(User $user): bool
     {
         return in_array($user->role, [
             'kepala_unit',
-            'admin_notulensi_fst',
-            'admin_notulensi_fis',
+            'admin_fst',
+            'admin_fis',
+            'dosen',
         ]);
     }
 
     /**
-     * kepala_unit, admin_notulensi_fst, admin_notulensi_fis boleh melihat detail.
+     * kepala_unit, admin_fst, admin_fis, dosen boleh melihat detail.
      */
     public function view(User $user, Notulensi $notulensi): bool
     {
         return in_array($user->role, [
             'kepala_unit',
-            'admin_notulensi_fst',
-            'admin_notulensi_fis',
+            'admin_fst',
+            'admin_fis',
+            'dosen',
         ]);
     }
 
     /**
-     * Hanya admin notulensi yang boleh membuat — kepala_unit TIDAK boleh.
+     * Hanya admin fst/fis yang boleh membuat — kepala_unit TIDAK boleh.
      */
     public function create(User $user): bool
     {
         return in_array($user->role, [
-            'admin_notulensi_fst',
-            'admin_notulensi_fis',
+            'admin_fst',
+            'admin_fis',
         ]);
     }
 
     /**
-     * Hanya admin notulensi yang boleh mengubah — kepala_unit TIDAK boleh.
+     * Hanya admin fst/fis yang boleh mengubah — kepala_unit TIDAK boleh.
      */
     public function update(User $user, Notulensi $notulensi): bool
     {
         return in_array($user->role, [
-            'admin_notulensi_fst',
-            'admin_notulensi_fis',
+            'admin_fst',
+            'admin_fis',
         ]);
     }
 
     /**
-     * Hanya admin notulensi yang boleh menghapus — kepala_unit TIDAK boleh.
+     * Hanya admin fst/fis yang boleh menghapus — kepala_unit TIDAK boleh.
      */
     public function delete(User $user, Notulensi $notulensi): bool
     {
         return in_array($user->role, [
-            'admin_notulensi_fst',
-            'admin_notulensi_fis',
+            'admin_fst',
+            'admin_fis',
         ]);
     }
 }

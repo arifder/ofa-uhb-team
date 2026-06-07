@@ -1,5 +1,13 @@
 @extends('layouts.dashboard')
 @section('title', 'Manajemen User')
+@section('title_addon', 'Total: ' . $users->total())
+@section('subtitle', 'Kelola akun pengguna dan hak akses')
+
+@section('topbar_actions')
+    <button class="btn-primary" onclick="window.dispatchEvent(new CustomEvent('open-user-modal'))">
+        <i class="ti ti-plus"></i> Tambah User
+    </button>
+@endsection
 
 @push('styles')
     <style>
@@ -42,14 +50,7 @@
 @endpush
 
 @section('content')
-    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 18px; font-weight: 600; color: #1e293b;">
-            Daftar User <span style="font-size: 13px; font-weight: 400; color: #64748b; margin-left: 8px;">Total: {{ $users->total() }}</span>
-        </h2>
-        <button class="btn-primary" onclick="openModal()">
-            <i class="ti ti-plus"></i> Tambah User
-        </button>
-    </div>
+
 
     <div id="toast-container"></div>
 
@@ -59,10 +60,8 @@
                 <select name="role" class="filter-control w-48" onchange="this.form.submit()">
                     <option value="">Semua Role</option>
                     <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>Super Admin</option>
-                    <option value="admin_kas_fst" {{ request('role') == 'admin_kas_fst' ? 'selected' : '' }}>Admin Kas FST</option>
-                    <option value="admin_notulensi_fst" {{ request('role') == 'admin_notulensi_fst' ? 'selected' : '' }}>Admin Notulensi FST</option>
-                    <option value="admin_kas_fis" {{ request('role') == 'admin_kas_fis' ? 'selected' : '' }}>Admin Kas FIS</option>
-                    <option value="admin_notulensi_fis" {{ request('role') == 'admin_notulensi_fis' ? 'selected' : '' }}>Admin Notulensi FIS</option>
+                    <option value="admin_fst" {{ request('role') == 'admin_fst' ? 'selected' : '' }}>Admin FST</option>
+                    <option value="admin_fis" {{ request('role') == 'admin_fis' ? 'selected' : '' }}>Admin FIS</option>
                     <option value="kepala_unit" {{ request('role') == 'kepala_unit' ? 'selected' : '' }}>Kepala Unit</option>
                     <option value="dosen" {{ request('role') == 'dosen' ? 'selected' : '' }}>Dosen</option>
                 </select>
@@ -71,51 +70,64 @@
             </form>
 
             <div class="master-card">
-                <table class="master-table">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Nama</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Fakultas</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($users as $index => $user)
-                        <tr>
-                            <td>{{ $users->firstItem() + $index }}</td>
-                            <td>{{ $user->name }}</td>
-                            <td>{{ $user->username }}</td>
-                            <td>{{ $user->email }}</td>
-                            <td>
-                                <span style="
-                                  background:{{ $user->role_badge_color['bg'] }};
-                                  color:{{ $user->role_badge_color['text'] }};
-                                  padding:2px 10px;
-                                  border-radius:99px;
-                                  font-size:11px;
-                                  font-weight:600">
-                                  {{ $user->role_label }}
-                                </span>
-                            </td>
-                            <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
-                            <td>
-                                @if($user->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
-                                @else <span class="master-badge badge-nonaktif">Nonaktif</span>
-                                @endif
-                            </td>
-                            <td>
-                                <button class="icon-btn" onclick='editUser(@json($user))'><i class="ti ti-pencil"></i></button>
-                                <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})"><i class="ti ti-trash"></i></button>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Fakultas</th>
+                                <th>Prodi</th>
+                                <th>Jabatan</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($users as $index => $user)
+                            <tr>
+                                <td>{{ $users->firstItem() + $index }}</td>
+                                <td>{{ $user->name }}</td>
+                                <td>{{ $user->username }}</td>
+                                <td>{{ $user->email }}</td>
+                                <td>
+                                    <span style="
+                                      background:{{ $user->role_badge_color['bg'] }};
+                                      color:{{ $user->role_badge_color['text'] }};
+                                      padding:2px 10px;
+                                      border-radius:99px;
+                                      font-size:11px;
+                                      font-weight:600">
+                                      {{ $user->role_label }}
+                                    </span>
+                                </td>
+                                <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
+                                <td>{{ $user->prodi ? $user->prodi->nama_prodi : '-' }}</td>
+                                <td>
+                                    @if($user->jabatan_struktural)
+                                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">{{ $user->jabatan_struktural }}</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($user->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
+                                    @else <span class="master-badge badge-nonaktif">Arsip</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <button class="icon-btn edit-user-btn" data-user="{{ json_encode($user) }}" title="Edit User"><i class="ti ti-pencil"></i></button>
+                                    <button class="icon-btn" style="color:#d97706" onclick="toggleStatus({{ $user->id }})" title="Arsipkan User"><i class="ti ti-archive"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})" title="Hapus Permanen"><i class="ti ti-trash"></i></button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
                 <div class="p-4 border-t border-gray-200 pagination-container">
                     {{ $users->withQueryString()->links() }}
                 </div>
@@ -202,162 +214,123 @@
 
     <!-- Modal Alpine.js -->
     <div class="custom-modal" id="userModal" x-data="{ 
-        role: 'dosen', 
+        isOpen: false,
         userId: '',
+        name: '',
+        username: '',
+        email: '',
+        password: '',
+        role: 'dosen',
+        status: 'aktif',
+        jabatanStruktural: '',
+        fakultasId: '',
+        prodiId: '',
+        prodis: [],
+
         get showFakultas() {
-            return this.role.includes('fst') || this.role.includes('fis');
+            return this.role === 'admin_fst' || 
+                   this.role === 'admin_fis' || 
+                   this.role === 'dosen';
+        },
+        get showProdi() {
+            return this.role === 'dosen';
+        },
+        async fetchProdi() {
+            if (!this.fakultasId) {
+                this.prodis = [];
+                this.prodiId = '';
+                return;
+            }
+            try {
+                const res = await fetch(`/master/prodi/by-fakultas/${this.fakultasId}`);
+                this.prodis = await res.json();
+                if (this.prodiId && !this.prodis.some(p => p.id == this.prodiId)) {
+                    this.prodiId = '';
+                }
+            } catch(e) {
+                console.error(e);
+            }
         },
         get autoFakultas() {
             if (this.role.includes('fst')) return '{{ $fstId }}';
             if (this.role.includes('fis')) return '{{ $fisId }}';
             return '';
-        }
-    }">
-        <div class="custom-modal-content">
-            <div class="custom-modal-header">
-                <span id="modalTitle">Tambah User</span>
-                <button class="icon-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
-            </div>
-            <form id="userForm" onsubmit="saveUser(event)">
-                <div class="custom-modal-body">
-                    <input type="hidden" id="user_id">
-                    <div class="form-group">
-                        <label>Nama Lengkap</label>
-                        <input type="text" id="name" class="filter-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="username" class="filter-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="email" class="filter-control" :required="role !== 'dosen'" placeholder="Kosongkan untuk dosen (otomatis: namadosen@ofa.com)">
-                        <div x-show="role === 'dosen'" class="text-xs text-blue-500 mt-1" style="font-size: 11px; color: #3b82f6; margin-top: 4px;">Jika role Dosen dan email dikosongkan, email otomatis: namadosen@ofa.com</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="password" class="filter-control" :required="role !== 'dosen' && !userId" placeholder="Kosongkan jika tidak diubah">
-                        <div x-show="role === 'dosen'" class="text-xs text-blue-500 mt-1" style="font-size: 11px; color: #3b82f6; margin-top: 4px;">Jika role Dosen dan password dikosongkan, password otomatis: namadosen123</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select id="roleSelect" class="filter-control" required x-model="role" @change="if(showFakultas) $nextTick(() => { document.getElementById('fakultas_id').value = autoFakultas })">
-                            <option value="super_admin">Super Admin</option>
-                            <option value="admin_kas_fst">Admin Kas FST</option>
-                            <option value="admin_notulensi_fst">Admin Notulensi FST</option>
-                            <option value="admin_kas_fis">Admin Kas FIS</option>
-                            <option value="admin_notulensi_fis">Admin Notulensi FIS</option>
-                            <option value="kepala_unit">Kepala Unit</option>
-                            <option value="dosen">Dosen</option>
-                        </select>
-                    </div>
-                    <div class="form-group" x-show="showFakultas" x-cloak>
-                        <label>Fakultas</label>
-                        <select id="fakultas_id" class="filter-control" :value="autoFakultas">
-                            <option value="">Pilih Fakultas</option>
-                            @foreach($fakultasList as $fak)
-                                <option value="{{ $fak->id }}">{{ $fak->nama_fakultas }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select id="status" class="filter-control" required>
-                            <option value="aktif">Aktif</option>
-                            <option value="nonaktif">Nonaktif</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="custom-modal-footer">
-                    <button type="button" class="btn-outline" onclick="closeModal()">Batal</button>
-                    <button type="submit" class="btn-primary">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
+        },
+        init() {
+            this.$watch('role', (newRole) => {
+                if (newRole.includes('fst') || newRole.includes('fis')) {
+                    this.fakultasId = this.autoFakultas;
+                    this.fetchProdi();
+                } else if (newRole !== 'dosen') {
+                    this.fakultasId = '';
+                    this.prodiId = '';
+                    this.prodis = [];
+                }
+            });
 
-@endsection
+            this.$watch('fakultasId', () => {
+                this.fetchProdi();
+            });
 
-@push('scripts')
-    <script>
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-        function showToast(msg, type = 'success') {
-            const t = document.createElement('div');
-            t.className = `custom-toast ${type}`;
-            t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
-            document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 3000);
-        }
-
-        function openModal() {
-            document.getElementById('userForm').reset();
-            const userIdInput = document.getElementById('user_id');
-            userIdInput.value = '';
-            
-            // Sync with Alpine
-            const modal = document.getElementById('userModal');
-            if (modal.__x) {
-                modal.__x.$data.userId = '';
-                modal.__x.$data.role = 'dosen';
-            }
-
-            document.getElementById('modalTitle').textContent = 'Tambah User';
-            
-            document.getElementById('roleSelect').dispatchEvent(new Event('change'));
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('userModal').classList.remove('active');
-        }
-
-        function editUser(user) {
-            document.getElementById('modalTitle').textContent = 'Edit User';
-            document.getElementById('user_id').value = user.id;
-            
-            // Sync with Alpine
-            const modal = document.getElementById('userModal');
-            if (modal.__x) {
-                modal.__x.$data.userId = user.id;
-                modal.__x.$data.role = user.role;
-            }
-
-            document.getElementById('name').value = user.name;
-            document.getElementById('username').value = user.username;
-            document.getElementById('email').value = user.email;
-            
-            const roleSelect = document.getElementById('roleSelect');
-            roleSelect.value = user.role;
-            roleSelect.dispatchEvent(new Event('input')); // trigger alpine
-            
-            document.getElementById('fakultas_id').value = user.fakultas_id || '';
-            document.getElementById('status').value = user.status;
-            
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        async function saveUser(e) {
+            window.addEventListener('open-user-modal', (e) => {
+                const user = e.detail;
+                if (user) {
+                    this.userId = user.id;
+                    this.name = user.name;
+                    this.username = user.username;
+                    this.email = user.email;
+                    this.password = '';
+                    this.role = user.role;
+                    this.status = user.status;
+                    this.jabatanStruktural = user.jabatan_struktural || '';
+                    this.fakultasId = user.fakultas_id || '';
+                    this.prodiId = user.prodi_id || '';
+                    this.fetchProdi().then(() => {
+                        this.prodiId = user.prodi_id || '';
+                    });
+                    document.getElementById('modalTitle').textContent = 'Edit User';
+                } else {
+                    this.userId = '';
+                    this.name = '';
+                    this.username = '';
+                    this.email = '';
+                    this.password = '';
+                    this.role = 'dosen';
+                    this.status = 'aktif';
+                    this.jabatanStruktural = '';
+                    this.fakultasId = '';
+                    this.prodiId = '';
+                    this.prodis = [];
+                    document.getElementById('modalTitle').textContent = 'Tambah User';
+                }
+                this.isOpen = true;
+            });
+        },
+        closeModal() {
+            this.isOpen = false;
+        },
+        async saveUser(e) {
             e.preventDefault();
-            const id = document.getElementById('user_id').value;
-            const url = id ? `/master/users/${id}` : `/master/users`;
-            const roleVal = document.getElementById('roleSelect').value;
-            
+            const url = this.userId ? `/master/users/${this.userId}` : `/master/users`;
             const body = {
-                name: document.getElementById('name').value,
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                role: roleVal,
-                status: document.getElementById('status').value,
+                name: this.name,
+                username: this.username,
+                email: this.email,
+                password: this.password,
+                role: this.role,
+                status: this.status,
+                jabatan_struktural: this.jabatanStruktural,
             };
 
-            if (id) {
+            if (this.userId) {
                 body._method = 'PUT';
             }
 
-            if (roleVal.includes('fst') || roleVal.includes('fis')) {
-                body.fakultas_id = document.getElementById('fakultas_id').value;
+            if (this.showFakultas) {
+                body.fakultas_id = this.fakultasId;
+            }
+            if (this.showProdi) {
+                body.prodi_id = this.prodiId;
             }
 
             try {
@@ -374,6 +347,7 @@
                 const data = await res.json();
                 if (res.ok && data.success) {
                     showToast(data.message, 'success');
+                    this.closeModal();
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     showToast(data.message || 'Terjadi kesalahan validasi', 'error');
@@ -382,9 +356,115 @@
                 showToast('Koneksi gagal', 'error');
             }
         }
+    }" :class="{ active: isOpen }">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <span id="modalTitle">Tambah User</span>
+                <button type="button" class="icon-btn" @click="closeModal()"><i class="ti ti-x"></i></button>
+            </div>
+            <form id="userForm" @submit="saveUser($event)">
+                <div class="custom-modal-body">
+                    <div class="form-group">
+                        <label>Nama Lengkap</label>
+                        <input type="text" class="filter-control" required x-model="name">
+                    </div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" class="filter-control" required x-model="username">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="filter-control" :required="role !== 'dosen'" placeholder="Kosongkan untuk dosen (otomatis: namadosen@ofa.com)" x-model="email">
+                        <div x-show="role === 'dosen'" class="text-xs text-blue-500 mt-1" style="font-size: 11px; color: #3b82f6; margin-top: 4px;">Jika role Dosen dan email dikosongkan, email otomatis: namadosen@ofa.com</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" class="filter-control" :required="role !== 'dosen' && !userId" placeholder="Kosongkan jika tidak diubah" x-model="password">
+                        <div x-show="role === 'dosen'" class="text-xs text-blue-500 mt-1" style="font-size: 11px; color: #3b82f6; margin-top: 4px;">Jika role Dosen dan password dikosongkan, password otomatis: namadosen123</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select class="filter-control" required x-model="role">
+                            <option value="super_admin">Super Admin</option>
+                            <option value="admin_fst">Admin FST</option>
+                            <option value="admin_fis">Admin FIS</option>
+                            <option value="kepala_unit">Kepala Unit</option>
+                            <option value="dosen">Dosen</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jabatan Struktural <span style="color:#94a3b8; font-weight:400;">(opsional)</span></label>
+                        <select class="filter-control" x-model="jabatanStruktural">
+                            <option value="">-- Tidak Ada --</option>
+                            <option value="Super Admin">Super Admin</option>
+                            <option value="Dekan">Dekan</option>
+                            <option value="Kaprodi">Kaprodi</option>
+                            <option value="BAAK">BAAK</option>
+                            <option value="Kemahasiswaan">Kemahasiswaan</option>
+                            <option value="LPPM">LPPM</option>
+                            <option value="Dosen">Dosen</option>
+                            <option value="Kepala Unit">Kepala Unit</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        <div class="text-xs text-gray-500 mt-1" style="font-size: 11px; margin-top: 4px;">Digunakan untuk fitur penandatangan BAP Notulensi.</div>
+                    </div>
+                    <div class="form-group" x-show="showFakultas" x-cloak>
+                        <label>Fakultas</label>
+                        <select class="filter-control" x-model="fakultasId">
+                            <option value="">Pilih Fakultas</option>
+                            @foreach($fakultasList as $fak)
+                                <option value="{{ $fak->id }}">{{ $fak->nama_fakultas }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group" x-show="showProdi" x-cloak>
+                        <label>Program Studi</label>
+                        <select class="filter-control" x-model="prodiId">
+                            <option value="">Pilih Program Studi</option>
+                            <template x-for="p in prodis" :key="p.id">
+                                <option :value="p.id" x-text="p.nama_prodi" :selected="p.id == prodiId"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="filter-control" required x-model="status">
+                            <option value="aktif">Aktif</option>
+                            <option value="arsip">Arsip (Nonaktif)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="custom-modal-footer">
+                    <button type="button" class="btn-outline" @click="closeModal()">Batal</button>
+                    <button type="submit" class="btn-primary" x-text="userId ? 'Selesai' : 'Simpan'">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+@endsection
+
+@push('scripts')
+    <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        document.querySelectorAll('.edit-user-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const user = JSON.parse(this.dataset.user);
+                window.dispatchEvent(new CustomEvent('open-user-modal', { detail: user }));
+            });
+        });
+
+        function showToast(msg, type = 'success') {
+            const t = document.createElement('div');
+            t.className = `custom-toast ${type}`;
+            t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
 
         async function deleteUser(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
+            if (!confirm('Apakah Anda yakin ingin menghapus user ini secara permanen?')) return;
             try {
                 const res = await fetch(`/master/users/${id}`, {
                     method: 'POST',
@@ -394,6 +474,30 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ _method: 'DELETE' })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message || 'Terjadi kesalahan', 'error');
+                }
+            } catch (err) {
+                showToast('Koneksi gagal', 'error');
+            }
+        }
+
+        async function toggleStatus(id) {
+            if (!confirm('Apakah Anda yakin ingin mengarsipkan user ini? User yang diarsipkan tidak bisa login.')) return;
+            try {
+                const res = await fetch(`/master/users/${id}/toggle-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
                 });
 
                 const data = await res.json();

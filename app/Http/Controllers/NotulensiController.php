@@ -14,19 +14,14 @@ use App\Helpers\NotifikasiHelper;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
-
 class NotulensiController extends Controller
 {
-    use AuthorizesRequests;
-
     use AuthorizesRequests;
 
     // ── INDEX ───────────────────────────────────────────
 
     public function index(Request $request)
     {
-        $this->authorize('viewAny', Notulensi::class);
-
         $this->authorize('viewAny', Notulensi::class);
 
         $user  = auth()->user();
@@ -70,41 +65,17 @@ class NotulensiController extends Controller
 
         $fakultasList = Fakultas::all();
 
-        // Pejabat list from users with jabatan_struktural
         $pejabatList = \App\Models\User::whereNotNull('jabatan_struktural')
                             ->where('status', 'aktif')
                             ->get(['id', 'name', 'jabatan_struktural', 'fakultas_id', 'prodi_id']);
 
-        // Pejabat dari tabel fakultas (nama_dekan) dan prodi (nama_kaprodi)
-        $pejabatFakultas = [];
-        foreach ($fakultasList as $fak) {
-            if ($fak->nama_dekan) {
-                $pejabatFakultas[$fak->id] = [
-                    'jabatan' => 'Dekan',
-                    'nama' => $fak->nama_dekan
-                ];
-            }
-        }
-
-        $pejabatProdi = [];
-        foreach (\App\Models\Prodi::whereNotNull('nama_kaprodi')->get() as $prodi) {
-            if ($prodi->nama_kaprodi) {
-                $pejabatProdi[$prodi->id] = [
-                    'jabatan' => 'Kaprodi',
-                    'nama' => $prodi->nama_kaprodi
-                ];
-            }
-        }
-
-        return view('notulensi.index', compact('notulensiList', 'dosenList', 'fakultasList', 'pejabatList', 'pejabatFakultas', 'pejabatProdi'));
+        return view('notulensi.index', compact('notulensiList', 'dosenList', 'fakultasList', 'pejabatList'));
     }
 
     // ── STORE ───────────────────────────────────────────
 
     public function store(Request $request)
     {
-        $this->authorize('create', Notulensi::class);
-
         $this->authorize('create', Notulensi::class);
 
         $user = auth()->user();
@@ -171,7 +142,6 @@ class NotulensiController extends Controller
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
             '📌 Anda Terdaftar sebagai Peserta Rapat',
-            '📌 Anda Terdaftar sebagai Peserta Rapat',
             'Anda terdaftar dalam rapat "' . $notulensi->judul . '" pada ' . $notulensi->tanggal->format('d/m/Y') . '.',
             $notifUrl
         );
@@ -198,8 +168,6 @@ class NotulensiController extends Controller
 
         $this->authorize('view', $notulensi);
 
-        $this->authorize('view', $notulensi);
-
         return response()->json($notulensi);
     }
 
@@ -207,8 +175,6 @@ class NotulensiController extends Controller
 
     public function update(Request $request, $id)
     {
-        $this->authorize('update', Notulensi::findOrFail($id));
-
         $this->authorize('update', Notulensi::findOrFail($id));
 
         $user = auth()->user();
@@ -281,7 +247,6 @@ class NotulensiController extends Controller
         // Notif ke dosen peserta (yang terdaftar setelah update)
         NotifikasiHelper::notifDosenPeserta(
             $request->peserta,
-            '✏️ Data Rapat Diperbarui',
             '✏️ Data Rapat Diperbarui',
             'Data rapat "' . $notulensi->judul . '" yang Anda ikuti telah diperbarui.',
             $notifUrl
@@ -384,4 +349,3 @@ class NotulensiController extends Controller
         return $pdf->download($filename);
     }
 }
-

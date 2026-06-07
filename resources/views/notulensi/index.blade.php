@@ -1,5 +1,3 @@
-
-
 @extends('layouts.dashboard')
 @section('title', 'Notulensi Rapat')
 
@@ -365,21 +363,21 @@
                         Jenis Rapat / Pihak Mengetahui
                         <select id="export_jabatan" class="filter-control" style="width:100%; margin-top:4px;" onchange="handleJabatanChange()">
                             <option value="">-- Pilih --</option>
-                            <option value="BAAK">Universitas (BAAK)</option>
-                            <option value="Dekan">Fakultas (Dekan)</option>
-                            <option value="Kaprodi">Program Studi (Kaprodi)</option>
+                            <option value="Universitas (BAAK)">Universitas (BAAK)</option>
+                            <option value="Fakultas (Dekan)">Fakultas (Dekan)</option>
+                            <option value="Program Studi (Kaprodi)">Program Studi (Kaprodi)</option>
                             <option value="Kemahasiswaan">Kemahasiswaan</option>
                             <option value="LPPM">LPPM</option>
-                            <option value="Lainnya">Lainnya (Manual)</option>
+                            <option value="Lainnya">Lainnya</option>
                         </select>
                     </label>
-                    <div id="export_nama_container" style="display:none;">
-                        <label id="export_nama_label">Nama Pejabat</label>
+                    <label id="export_nama_container" style="display:none;">
+                        Nama Pejabat
                         <input type="text" id="export_nama" class="filter-control" placeholder="Nama Pejabat..." style="width:100%; margin-top:4px;" />
                         <div id="export_nama_info" style="font-size:11px; color:#10b981; margin-top:4px; display:none;">
-                            <i class="ti ti-check"></i> Diambil otomatis dari data pejabat aktif
+                            <i class="ti ti-check"></i> Diambil otomatis dari data user aktif
                         </div>
-                    </div>
+                    </label>
                 </div>
             </div>
             <div class="custom-modal-footer">
@@ -437,8 +435,6 @@
     }
 
     const pejabatList = @json($pejabatList ?? []);
-    const pejabatFakultas = @json($pejabatFakultas ?? []);
-    const pejabatProdi = @json($pejabatProdi ?? []);
 
     /* ── Export Modal ──────────────────────────────── */
     function openExportModal(id, fakultasId = null, prodiId = null) {
@@ -470,7 +466,6 @@
         const jabatan = document.getElementById('export_jabatan').value;
         const container = document.getElementById('export_nama_container');
         const input = document.getElementById('export_nama');
-        const label = document.getElementById('export_nama_label');
         const info = document.getElementById('export_nama_info');
         const fakultasId = document.getElementById('export_fakultas_id').value;
         const prodiId = document.getElementById('export_prodi_id').value;
@@ -485,64 +480,32 @@
         info.style.display = 'none';
         input.readOnly = false;
         input.value = '';
-        input.placeholder = 'Ketik nama pejabat...';
 
         if (jabatan === 'Lainnya') {
-            label.textContent = 'Nama Pejabat';
             input.placeholder = 'Ketik nama pejabat...';
-            input.readOnly = false;
             return;
         }
 
-        // Set label sesuai jabatan
-        const labelMap = {
-            'BAAK': 'Nama Kepala BAAK',
-            'Dekan': 'Nama Dekan',
-            'Kaprodi': 'Nama Kaprodi',
-            'Kemahasiswaan': 'Nama Kepala Kemahasiswaan',
-            'LPPM': 'Nama Ketua LPPM'
-        };
-        label.textContent = labelMap[jabatan] || 'Nama Pejabat';
-
         let targetPejabat = null;
-        let autoFilled = false;
 
-        // 1. Cari dari pejabatList (User dengan jabatan_struktural aktif)
-        if (jabatan === 'BAAK') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'BAAK' && p.status === 'aktif');
-        } else if (jabatan === 'Dekan') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Dekan' && p.fakultas_id == fakultasId && p.status === 'aktif');
-        } else if (jabatan === 'Kaprodi') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kaprodi' && p.prodi_id == prodiId && p.status === 'aktif');
+        if (jabatan === 'Universitas (BAAK)') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'BAAK');
+        } else if (jabatan === 'Fakultas (Dekan)') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Dekan' && p.fakultas_id == fakultasId);
+        } else if (jabatan === 'Program Studi (Kaprodi)') {
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kaprodi' && p.prodi_id == prodiId);
         } else if (jabatan === 'Kemahasiswaan') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kemahasiswaan' && p.status === 'aktif');
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kemahasiswaan');
         } else if (jabatan === 'LPPM') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'LPPM' && p.status === 'aktif');
-        }
-
-        // 2. Jika tidak ditemukan, cari dari pejabatFakultas (nama_dekan di tabel fakultas)
-        if (!targetPejabat && jabatan === 'Dekan' && fakultasId && pejabatFakultas[fakultasId]) {
-            input.value = pejabatFakultas[fakultasId].nama;
-            input.readOnly = true;
-            info.style.display = 'block';
-            autoFilled = true;
-        }
-
-        // 3. Jika tidak ditemukan, cari dari pejabatProdi (nama_kaprodi di tabel prodi)
-        if (!targetPejabat && !autoFilled && jabatan === 'Kaprodi' && prodiId && pejabatProdi[prodiId]) {
-            input.value = pejabatProdi[prodiId].nama;
-            input.readOnly = true;
-            info.style.display = 'block';
-            autoFilled = true;
+            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'LPPM');
         }
 
         if (targetPejabat) {
             input.value = targetPejabat.name;
             input.readOnly = true;
             info.style.display = 'block';
-        } else if (!autoFilled) {
+        } else {
             input.placeholder = 'Data belum diset, ketik manual...';
-            input.readOnly = false;
         }
     }
 
@@ -556,20 +519,16 @@
         const showTtd = document.getElementById('export_show_ttd').checked ? 1 : 0;
         const jabatan = document.getElementById('export_jabatan').value;
         const nama = document.getElementById('export_nama').value;
-
+        
         closeExportModal();
         let url = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
         if (showTtd) {
             const params = new URLSearchParams();
-            let labelJabatan = '';
-
-            if (jabatan === 'BAAK') labelJabatan = 'Kepala BAAK';
-            else if (jabatan === 'Dekan') labelJabatan = 'Dekan';
-            else if (jabatan === 'Kaprodi') labelJabatan = 'Ketua Program Studi';
-            else if (jabatan === 'Kemahasiswaan') labelJabatan = 'Kepala Kemahasiswaan';
-            else if (jabatan === 'LPPM') labelJabatan = 'Ketua LPPM';
-            else if (jabatan === 'Lainnya') labelJabatan = 'Pejabat';
-
+            let labelJabatan = jabatan;
+            if (jabatan === 'Universitas (BAAK)') labelJabatan = 'Kepala BAAK';
+            if (jabatan === 'Fakultas (Dekan)') labelJabatan = 'Dekan';
+            if (jabatan === 'Program Studi (Kaprodi)') labelJabatan = 'Ketua Program Studi';
+            
             if (labelJabatan) params.append('jabatan_mengetahui', labelJabatan);
             if (nama) params.append('nama_mengetahui', nama);
             const query = params.toString();
@@ -882,4 +841,3 @@
     });
 </script>
 @endpush
-

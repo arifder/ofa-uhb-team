@@ -1,5 +1,6 @@
 @extends('layouts.dashboard')
 @section('title', 'Pengaturan Profil')
+@section('subtitle', 'Kelola informasi akun dan keamanan Anda')
 
 @push('styles')
 <style>
@@ -185,14 +186,6 @@
 
 {{-- Toast container --}}
 <div class="toast-container" id="toast-container"></div>
-
-<div style="margin-bottom:16px;">
-  <div style="font-size:15px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;">
-    <i class="ti ti-user-circle" style="font-size:18px;color:#3b82f6;"></i>
-    Pengaturan Profil
-  </div>
-  <div style="font-size:12px;color:#6b7280;margin-top:3px;">Kelola informasi akun dan keamanan Anda.</div>
-</div>
 
 <div class="profil-grid">
 

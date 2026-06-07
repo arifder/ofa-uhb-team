@@ -22,35 +22,37 @@ Route::middleware([
 ])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
-
 // Route Kas
-Route::middleware(['auth', 'checkRole:super_admin,admin_kas_fst,admin_kas_fis,kepala_unit,dosen'])
+Route::middleware(['auth', 'checkRole:super_admin,admin_fst,admin_fis,kepala_unit,dosen'])
+    ->prefix('kas')
     ->name('kas.')
     ->group(function () {
-        Route::get('kas/laporan', [KasController::class, 'laporan'])->name('laporan');
-        Route::get('kas/masuk', [KasController::class, 'index'])->name('masuk');
-        Route::get('kas/keluar', [KasController::class, 'index'])->name('keluar');
-
-        Route::get('kas/tagihan', [KasController::class, 'tagihan'])->name('tagihan');
-        Route::get('kas/tagihan/{id}', [KasController::class, 'showTagihan'])->name('tagihan.show');
-        Route::post('kas/tagihan/{id}/bayar', [KasController::class, 'bayarTagihan'])->name('tagihan.bayar');
-        Route::post('kas/tagihan', [KasController::class, 'storeTagihan'])->name('tagihan.store');
-        Route::delete('kas/tagihan/{id}', [KasController::class, 'destroyTagihan'])->name('tagihan.destroy');
-
-        Route::get('kas/transaksi/{id}', [KasController::class, 'show'])->name('transaksi.show');
-        Route::post('kas/transaksi', [KasController::class, 'store'])->name('transaksi.store');
-        Route::put('kas/transaksi/{id}', [KasController::class, 'update'])->name('transaksi.update');
-        Route::delete('kas/transaksi/{id}', [KasController::class, 'destroy'])->name('transaksi.destroy');
+        Route::get('laporan', [KasController::class, 'laporan'])->name('laporan');
+        Route::get('laporan/export-pdf', [KasController::class, 'exportPdf'])->name('laporan.exportPdf');
+        Route::get('masuk', [KasController::class, 'index'])->defaults('jenis', 'masuk')->name('masuk');
+        Route::get('keluar', [KasController::class, 'index'])->defaults('jenis', 'keluar')->name('keluar');
+        Route::get('tagihan', [KasController::class, 'tagihan'])->name('tagihan');
+        Route::get('tagihan/export-pdf', [KasController::class, 'exportPdfTagihan'])->name('tagihan.exportPdf');
+        Route::post('tagihan/generate-otomatis', [KasController::class, 'generateOtomatisTagihan'])->name('tagihan.generateOtomatis');
+        Route::get('tagihan/{id}', [KasController::class, 'showTagihan'])->name('tagihan.show');
+        Route::post('tagihan/{id}/bayar', [KasController::class, 'bayarTagihan'])->name('tagihan.bayar');
+        Route::post('tagihan', [KasController::class, 'storeTagihan'])->name('tagihan.store');
+        Route::delete('tagihan/{id}', [KasController::class, 'destroyTagihan'])->name('tagihan.destroy');
+        Route::get('transaksi/{id}', [KasController::class, 'show'])->name('transaksi.show');
+        Route::post('transaksi', [KasController::class, 'store'])->name('transaksi.store');
+        Route::put('transaksi/{id}', [KasController::class, 'update'])->name('transaksi.update');
+        Route::delete('transaksi/{id}', [KasController::class, 'destroy'])->name('transaksi.destroy');
     });
 
 // Route Notulensi
-Route::middleware(['auth', 'checkRole:super_admin,admin_notulensi_fst,admin_notulensi_fis,kepala_unit,dosen'])
+Route::middleware(['auth', 'checkRole:super_admin,admin_fst,admin_fis,kepala_unit,dosen'])
     ->group(function () {
         // Specific routes BEFORE resource to avoid {notulensi} conflicts
         Route::get('notulensi/dosen/{id}', [NotulensiController::class, 'getByDosen'])
             ->name('notulensi.byDosen');
         Route::get('notulensi/{id}/export-bap', [NotulensiController::class, 'exportBap'])
             ->name('notulensi.exportBap');
+        Route::get('notulensi/{id}/export-pdf', [NotulensiController::class, 'exportPdf'])->name('notulensi.exportPdf');
         Route::resource('notulensi', NotulensiController::class)
             ->except(['create', 'edit']);
     });
@@ -60,6 +62,8 @@ Route::middleware(['auth', 'checkRole:super_admin'])
     ->prefix('master')
     ->name('master.')
     ->group(function () {
+        Route::get('users/arsip', [UserController::class, 'arsipIndex'])->name('users.arsip');
+        Route::post('users/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
         Route::resource('users', UserController::class)
             ->except(['show', 'create', 'edit']);
 
@@ -74,6 +78,9 @@ Route::middleware(['auth', 'checkRole:super_admin'])
 
         Route::resource('dosen', DosenController::class)
             ->except(['show', 'create', 'edit']);
+
+        Route::patch('dosen/{id}/nominal', [DosenController::class, 'updateNominal'])
+            ->name('master.dosen.updateNominal');
     });
 
 // Route Notifikasi

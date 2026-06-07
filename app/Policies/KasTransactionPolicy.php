@@ -15,23 +15,23 @@ class KasTransactionPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin_kas_fst', 'admin_kas_fis', 'kepala_unit', 'dosen']);
+        return $user->hasRole(['admin_fst', 'admin_fis', 'kepala_unit', 'dosen']);
     }
 
     public function view(User $user, KasTransaction $kas): bool
     {
-        return $user->hasRole(['admin_kas_fst', 'admin_kas_fis', 'kepala_unit', 'dosen']);
+        return $user->hasRole(['admin_fst', 'admin_fis', 'kepala_unit', 'dosen']);
     }
 
     public function create(User $user): bool
     {
-        return $user->hasRole(['admin_kas_fst', 'admin_kas_fis']);
+        return $user->hasRole(['admin_fst', 'admin_fis']);
         // kepala_unit & dosen TIDAK bisa
     }
 
     public function update(User $user, KasTransaction $kas): bool
     {
-        if ($user->hasRole(['admin_kas_fst', 'admin_kas_fis'])) {
+        if ($user->hasRole(['admin_fst', 'admin_fis'])) {
             return $kas->fakultas_id == $user->fakultas_id;
         }
         return false;
@@ -39,7 +39,7 @@ class KasTransactionPolicy
 
     public function delete(User $user, KasTransaction $kas): bool
     {
-        if ($user->hasRole(['admin_kas_fst', 'admin_kas_fis'])) {
+        if ($user->hasRole(['admin_fst', 'admin_fis'])) {
             return $kas->fakultas_id == $user->fakultas_id;
         }
         return false;

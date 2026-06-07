@@ -1,5 +1,3 @@
-
-
 @extends('layouts.dashboard')
 @section('title', 'Fakultas & Prodi')
 @section('subtitle', 'Kelola data fakultas dan program studi')
@@ -87,11 +85,6 @@
             <div>
                 <div class="fakultas-title">{{ $fak->nama_fakultas }}</div>
                 <div class="fakultas-meta">{{ count($fak->prodis) }} Program Studi</div>
-                @if($fak->nama_dekan)
-                <div style="margin-top:4px; font-size:12px; color:#64748b;">
-                    <i class="ti ti-user" style="font-size:11px;"></i> Dekan: <strong>{{ $fak->nama_dekan }}</strong>
-                </div>
-                @endif
             </div>
             <div style="display: flex; gap: 8px;">
                 <button class="btn-outline" onclick='editFakultas(@json($fak))'><i class="ti ti-pencil"></i> Edit</button>
@@ -113,7 +106,6 @@
                     <tr>
                         <th style="width: 50px">No</th>
                         <th>Nama Prodi</th>
-                        <th>Kaprodi</th>
                         <th style="width: 100px">Aksi</th>
                     </tr>
                 </thead>
@@ -151,12 +143,6 @@
                     <label>Nama Fakultas <span style="color:#ef4444">*</span></label>
                     <input type="text" id="nama_fakultas" class="filter-control" placeholder="Contoh: Sains & Teknologi" required>
                     <div id="err_nama_fakultas" style="color:#ef4444; font-size:11px; margin-top:4px; display:none;"></div>
-                </div>
-                <div class="form-group">
-                    <label>Nama Dekan <span style="color:#94a3b8; font-weight:400;">(opsional)</span></label>
-                    <input type="text" id="nama_dekan" class="filter-control" placeholder="Contoh: Dr. John Doe, M.Kom">
-                    <div style="font-size:11px; color:#94a3b8; margin-top:4px;">Digunakan untuk penandatangan BAP Notulensi.</div>
-                    <div id="err_nama_dekan" style="color:#ef4444; font-size:11px; margin-top:4px; display:none;"></div>
                 </div>
             </div>
             <div class="custom-modal-footer">
@@ -233,23 +219,21 @@
             document.getElementById('fakultasModalTitle').textContent = 'Edit Fakultas';
             document.getElementById('fakultas_id_edit').value = fak.id;
             document.getElementById('nama_fakultas').value = fak.nama_fakultas;
-            document.getElementById('nama_dekan').value = fak.nama_dekan || '';
-            clearErrors('err_nama_fakultas', 'err_nama_dekan');
+            clearErrors('err_nama_fakultas');
             document.getElementById('fakultasModal').classList.add('active');
         }
 
         async function saveFakultas(e) {
             e.preventDefault();
-            clearErrors('err_nama_fakultas', 'err_nama_dekan');
+            clearErrors('err_nama_fakultas');
 
             const id = document.getElementById('fakultas_id_edit').value;
             const nama = document.getElementById('nama_fakultas').value.trim();
-            const namaDekan = document.getElementById('nama_dekan').value.trim();
 
             if (!nama) { showError('err_nama_fakultas', 'Nama fakultas tidak boleh kosong.'); return; }
 
             const url = id ? `/master/fakultas/${id}` : `/master/fakultas`;
-            const body = { nama_fakultas: nama, nama_dekan: namaDekan };
+            const body = { nama_fakultas: nama };
             if (id) body._method = 'PUT';
 
             try {
@@ -357,4 +341,3 @@
         }
     </script>
 @endpush
-

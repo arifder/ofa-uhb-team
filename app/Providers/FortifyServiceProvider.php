@@ -35,6 +35,23 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
+        Fortify::authenticateUsing(function (Request $request) {
+            $loginInput = $request->input(Fortify::username());
+
+            $user = \App\Models\User::where('username', $loginInput)
+                ->orWhere('email', $loginInput)
+                ->first();
+
+            if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                if ($user->status === 'arsip') {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        Fortify::username() => 'Akun Anda telah diarsipkan dan tidak dapat digunakan.',
+                    ]);
+                }
+                return $user;
+            }
+        });
+
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
