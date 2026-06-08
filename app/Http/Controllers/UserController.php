@@ -10,7 +10,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with(['fakultas', 'prodi'])->where('status', 'aktif');
+        $query = User::with(['fakultas', 'prodi', 'dosen'])->where('status', 'aktif');
 
         if ($request->filled('role')) {
             $query->where('role', $request->role);
@@ -27,7 +27,10 @@ class UserController extends Controller
 
         $users = $query->paginate(10);
         $fakultasList = \App\Models\Fakultas::all();
-        return view('master.users.index', compact('users', 'fakultasList'));
+        $fstId = $fakultasList->first(fn ($fakultas) => str_contains(strtolower($fakultas->nama_fakultas), 'sains'))?->id;
+        $fisId = $fakultasList->first(fn ($fakultas) => str_contains(strtolower($fakultas->nama_fakultas), 'sosial'))?->id;
+
+        return view('master.users.index', compact('users', 'fakultasList', 'fstId', 'fisId'));
     }
 
     public function arsipIndex(Request $request)
@@ -65,6 +68,7 @@ class UserController extends Controller
             $rules['email'] = 'nullable|email|unique:users,email';
             $rules['password'] = 'nullable|min:6';
             $rules['prodi_id'] = 'required|exists:prodis,id';
+            $rules['nominal_tagihan'] = 'required|integer|min:0';
         } else {
             $rules['username'] = 'required|unique:users,username';
             $rules['email'] = 'required|email|unique:users,email';
@@ -119,6 +123,7 @@ class UserController extends Controller
                     'nidn' => $request->username,
                     'nama_lengkap' => $request->name,
                     'status' => $request->status === 'aktif' ? 'aktif' : 'nonaktif',
+                    'nominal_tagihan' => $request->nominal_tagihan,
                 ]);
             }
         });
@@ -144,6 +149,7 @@ class UserController extends Controller
             $rules['email'] = 'required|email|unique:users,email,' . $user->id;
             $rules['password'] = 'nullable|min:6';
             $rules['prodi_id'] = 'required|exists:prodis,id';
+            $rules['nominal_tagihan'] = 'required|integer|min:0';
         } else {
             $rules['username'] = 'required|unique:users,username,' . $user->id;
             $rules['email'] = 'required|email|unique:users,email,' . $user->id;
@@ -153,7 +159,7 @@ class UserController extends Controller
 
         $request->validate($rules);
 
-        $data = $request->except('password');
+        $data = $request->except('password', 'nominal_tagihan');
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }
@@ -178,6 +184,7 @@ class UserController extends Controller
                         'nidn' => $request->username,
                         'nama_lengkap' => $request->name,
                         'status' => $request->status === 'aktif' ? 'aktif' : 'nonaktif',
+                        'nominal_tagihan' => $request->nominal_tagihan,
                     ]
                 );
             } else {

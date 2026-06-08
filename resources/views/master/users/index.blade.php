@@ -32,14 +32,22 @@
         .filter-control { border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; width: 100%; }
         .filter-control:focus { border-color: #2563eb; }
         
-        .custom-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); align-items: center; justify-content: center; z-index: 50; }
+        .custom-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); align-items: center; justify-content: center; z-index: 50; padding: 24px 16px; }
         .custom-modal.active { display: flex; }
-        .custom-modal-content { background: #ffffff; width: 450px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-family: 'Plus Jakarta Sans', sans-serif;}
-        .custom-modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        .custom-modal-content { background: #ffffff; width: min(560px, 100%); max-height: calc(100vh - 48px); border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column; overflow: hidden;}
+        .custom-modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; font-size: 16px; flex-shrink: 0; background: #fff; }
         .custom-modal-body { padding: 20px; font-size: 13px; }
-        .custom-modal-footer { padding: 16px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; border-radius: 0 0 12px 12px; }
+        .custom-modal-content form { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+        .custom-modal-content form .custom-modal-body { overflow-y: auto; min-height: 0; }
+        .custom-modal-footer { padding: 16px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; border-radius: 0 0 12px 12px; flex-shrink: 0; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px; color: #475569;}
+        .nominal-wrap { display: flex; align-items: center; gap: 6px; justify-content: center; min-width: 190px; }
+        .nominal-input { border: 1px solid #e2e8f0; padding: 6px 8px; border-radius: 8px; font-size: 12px; width: 110px; outline: none; }
+        .nominal-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+        .btn-save-nominal { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-save-nominal:disabled { background: #93c5fd; cursor: not-allowed; }
+        .saved-badge { color: #166534; font-size: 10px; font-weight: 600; display: none; }
         
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .custom-toast { min-width: 250px; background: #fff; border-left: 4px solid #10b981; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease forwards; font-family: 'Plus Jakarta Sans', sans-serif;}
@@ -82,6 +90,7 @@
                                 <th>Fakultas</th>
                                 <th>Prodi</th>
                                 <th>Jabatan</th>
+                                <th>Nominal</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
@@ -109,6 +118,22 @@
                                 <td>
                                     @if($user->jabatan_struktural)
                                         <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">{{ $user->jabatan_struktural }}</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($user->role === 'dosen' && $user->dosen)
+                                        <div class="nominal-wrap">
+                                            <input type="number" class="nominal-input" id="user_nominal_input_{{ $user->dosen->id }}"
+                                                value="{{ $user->dosen->nominal_tagihan ?? 0 }}" min="0" step="1" inputmode="numeric"
+                                                oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                            <button type="button" class="btn-save-nominal" id="user_nominal_btn_{{ $user->dosen->id }}"
+                                                onclick="saveUserNominal({{ $user->dosen->id }})">
+                                                <i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan
+                                            </button>
+                                            <span class="saved-badge" id="user_nominal_saved_{{ $user->dosen->id }}">Tersimpan</span>
+                                        </div>
                                     @else
                                         -
                                     @endif
@@ -225,6 +250,7 @@
         jabatanStruktural: '',
         fakultasId: '',
         prodiId: '',
+        nominalTagihan: 0,
         prodis: [],
 
         get showFakultas() {
@@ -285,6 +311,7 @@
                     this.jabatanStruktural = user.jabatan_struktural || '';
                     this.fakultasId = user.fakultas_id || '';
                     this.prodiId = user.prodi_id || '';
+                    this.nominalTagihan = user.dosen && user.dosen.nominal_tagihan !== null ? user.dosen.nominal_tagihan : 0;
                     this.fetchProdi().then(() => {
                         this.prodiId = user.prodi_id || '';
                     });
@@ -300,6 +327,7 @@
                     this.jabatanStruktural = '';
                     this.fakultasId = '';
                     this.prodiId = '';
+                    this.nominalTagihan = 0;
                     this.prodis = [];
                     document.getElementById('modalTitle').textContent = 'Tambah User';
                 }
@@ -331,6 +359,7 @@
             }
             if (this.showProdi) {
                 body.prodi_id = this.prodiId;
+                body.nominal_tagihan = this.nominalTagihan || 0;
             }
 
             try {
@@ -426,6 +455,12 @@
                             </template>
                         </select>
                     </div>
+                    <div class="form-group" x-show="showProdi" x-cloak>
+                        <label>Nominal tagihan bulanan</label>
+                        <input type="number" class="filter-control" min="0" step="1" inputmode="numeric" required
+                            placeholder="Contoh: 150000" x-model.number="nominalTagihan"
+                            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                    </div>
                     <div class="form-group">
                         <label>Status</label>
                         <select class="filter-control" required x-model="status">
@@ -461,6 +496,47 @@
             t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
             document.getElementById('toast-container').appendChild(t);
             setTimeout(() => t.remove(), 3000);
+        }
+
+        async function saveUserNominal(dosenId) {
+            const input = document.getElementById('user_nominal_input_' + dosenId);
+            const btn = document.getElementById('user_nominal_btn_' + dosenId);
+            const badge = document.getElementById('user_nominal_saved_' + dosenId);
+            const nominal = parseInt(input.value || '0', 10);
+
+            if (isNaN(nominal) || nominal < 0) {
+                showToast('Nominal harus berupa angka minimum 0.', 'error');
+                input.focus();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ti ti-loader ti-spin" style="font-size:12px;"></i>';
+
+            try {
+                const res = await fetch(`/master/dosen/${dosenId}/nominal`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ _method: 'PATCH', nominal_tagihan: nominal })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    badge.style.display = 'inline';
+                    setTimeout(() => badge.style.display = 'none', 2500);
+                } else {
+                    showToast(data.message || 'Gagal menyimpan nominal.', 'error');
+                }
+            } catch (err) {
+                showToast('Koneksi gagal.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan';
+            }
         }
 
         async function deleteUser(id) {

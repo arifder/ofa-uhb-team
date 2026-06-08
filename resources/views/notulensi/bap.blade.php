@@ -116,18 +116,20 @@
 
         <!-- TTD -->
         @if($showTtd)
+            @php
+                $pembuatBap = $notulensi->user->name ?? '_________________________';
+                if (($notulensi->user->role ?? null) === 'admin_fis') {
+                    $pembuatBap = 'Admin Fakultas Ilmu Sosial';
+                } elseif (($notulensi->user->role ?? null) === 'admin_fst') {
+                    $pembuatBap = 'Admin Fakultas Sains & Teknologi';
+                }
+            @endphp
             <div style="margin-top:40px; width: 100%; font-size:12px;">
                 <table style="width: 100%; border: none;">
                     <tr>
                         <td style="text-align:center; width:50%; vertical-align: bottom;">
                             <p style="margin: 0;">Mengetahui,</p>
-                            <p style="margin: 0; margin-bottom: 60px;">{{ $jabatanMengetahui ?? 'Pejabat' }}
-                                @if(str_contains(strtolower($jabatanMengetahui ?? ''), 'dekan'))
-                                    {{ $notulensi->fakultas->nama_fakultas ?? '' }}
-                                @elseif(str_contains(strtolower($jabatanMengetahui ?? ''), 'program studi'))
-                                    {{ $notulensi->dosens->first()->prodi->nama_prodi ?? '' }}
-                                @endif
-                            </p>
+                            <p style="margin: 0; margin-bottom: 60px;">{{ $jabatanMengetahui ?? 'Pejabat' }}</p>
                             <p
                                 style="border-top:1px solid #000; padding-top:4px; display:inline-block; width: 200px; margin: 0;">
                                 {{ $namaMengetahui ?? '_________________________' }}
@@ -137,7 +139,7 @@
                             <p style="margin: 0; margin-bottom: 60px;">Pembuat BAP,</p>
                             <p
                                 style="border-top:1px solid #000; padding-top:4px; display:inline-block; width: 200px; margin: 0;">
-                                {{ $notulensi->user->name ?? '_________________________' }}
+                                {{ $pembuatBap }}
                             </p>
                         </td>
                     </tr>

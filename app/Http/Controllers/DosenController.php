@@ -41,10 +41,11 @@ class DosenController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_lengkap' => 'required',
-            'nidn' => 'required|unique:dosens,nidn|digits:10',
-            'prodi_id' => 'required|exists:prodis,id',
-            'status' => 'required|in:aktif,nonaktif',
+            'nama_lengkap'    => 'required',
+            'nidn'            => 'required|unique:dosens,nidn|digits:10',
+            'prodi_id'        => 'required|exists:prodis,id',
+            'status'          => 'required|in:aktif,nonaktif',
+            'nominal_tagihan' => 'required|integer|min:0',
         ]);
 
         $prodi = Prodi::findOrFail($request->prodi_id);
@@ -67,6 +68,7 @@ class DosenController extends Controller
                 'nidn' => $request->nidn,
                 'nama_lengkap' => $request->nama_lengkap,
                 'status' => $request->status,
+                'nominal_tagihan' => $request->nominal_tagihan,
             ]);
         });
 
@@ -82,7 +84,7 @@ class DosenController extends Controller
             'nidn'            => 'required|unique:dosens,nidn,' . $dosen->id . '|digits:10',
             'prodi_id'        => 'required|exists:prodis,id',
             'status'          => 'required|in:aktif,nonaktif',
-            'nominal_tagihan' => 'nullable|integer|min:0',
+            'nominal_tagihan' => 'required|integer|min:0',
         ]);
 
         $prodi = Prodi::findOrFail($request->prodi_id);
@@ -93,7 +95,7 @@ class DosenController extends Controller
                 'nidn'            => $request->nidn,
                 'nama_lengkap'    => $request->nama_lengkap,
                 'status'          => $request->status,
-                'nominal_tagihan' => $request->input('nominal_tagihan', 0),
+                'nominal_tagihan' => $request->nominal_tagihan,
             ]);
 
             if ($dosen->user) {

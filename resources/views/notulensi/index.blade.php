@@ -363,11 +363,30 @@
                         Jenis Rapat / Pihak Mengetahui
                         <select id="export_jabatan" class="filter-control" style="width:100%; margin-top:4px;" onchange="handleJabatanChange()">
                             <option value="">-- Pilih --</option>
-                            <option value="Universitas (BAAK)">Universitas (BAAK)</option>
-                            <option value="Fakultas (Dekan)">Fakultas (Dekan)</option>
-                            <option value="Program Studi (Kaprodi)">Program Studi (Kaprodi)</option>
-                            <option value="Kemahasiswaan">Kemahasiswaan</option>
-                            <option value="LPPM">LPPM</option>
+                            <optgroup label="Pimpinan Universitas">
+                                <option value="rektor">Rektor - Assoc. Prof. Dr. Yuris Tri Naili, S.H., K.N., M.H.</option>
+                            </optgroup>
+                            <optgroup label="Dekan Fakultas">
+                                <option value="dekan_fis">Dekan Fakultas Ilmu Sosial - Dr. Alfizi, S.E., M.M.</option>
+                                <option value="dekan_fst">Dekan Fakultas Sains &amp; Teknologi - Anggit Wirasto, S.Si., M.Eng.</option>
+                            </optgroup>
+                            <optgroup label="Kepala Program Studi - Fakultas Sains &amp; Teknologi">
+                                <option value="kaprodi_informatika">Kepala Program Studi S1 Informatika - Dr. Imam Ahmad Ashari, S.Kom., M.Kom</option>
+                                <option value="kaprodi_sistem_informasi">Kepala Program Studi S1 Sistem Informasi - Retno Agus Setiawan, S.Kom., M.T.</option>
+                            </optgroup>
+                            <optgroup label="Kepala Program Studi - Fakultas Ilmu Sosial">
+                                <option value="kaprodi_manajemen">Kepala Program Studi S1 Manajemen - Faizal Rizky Y., S.E., M.M.</option>
+                                <option value="kaprodi_akuntansi">Kepala Program Studi S1 Akuntansi - Giovanny Bangun Kristianto, S.E., M.Ak., Ak., ACPA</option>
+                                <option value="kaprodi_pbi">Kepala Program Studi S1 Pendidikan Bahasa Inggris - Tri Pujiani, S.Pd., M.Pd</option>
+                                <option value="kaprodi_hukum">Kepala Program Studi S1 Hukum - Maya Ruhtiani, S.H, M.H, LLM</option>
+                            </optgroup>
+                            <optgroup label="Unit dan Biro">
+                                <option value="kepala_lppm">Kepala Lembaga Penelitian dan Pengabdian kepada Masyarakat - Etika Dewi Cahyaningrum, SST, S.Kep, Ns., M.Kes</option>
+                                <option value="kepala_baauk">Kepala Biro Administrasi Akademik Umum dan Keuangan - Hadi Jayusman, S.Kom, MT</option>
+                                <option value="kepala_kemahasiswaan">Kepala Kemahasiswaan - Linda Yanti, S.ST., M.Keb</option>
+                                <option value="kepala_bsdm_legal">Kepala Biro Sumber Daya Manusia dan Legal - Marlia Hafny Afrilies, S.H., M.H</option>
+                                <option value="kepala_dtsi">Kepala Departemen Teknologi &amp; Sistem Informasi - Anggit Wirasto, S.Si., M.Eng.</option>
+                            </optgroup>
                             <option value="Lainnya">Lainnya</option>
                         </select>
                     </label>
@@ -375,7 +394,7 @@
                         Nama Pejabat
                         <input type="text" id="export_nama" class="filter-control" placeholder="Nama Pejabat..." style="width:100%; margin-top:4px;" />
                         <div id="export_nama_info" style="font-size:11px; color:#10b981; margin-top:4px; display:none;">
-                            <i class="ti ti-check"></i> Diambil otomatis dari data user aktif
+                            <i class="ti ti-check"></i> Diambil otomatis dari daftar pejabat
                         </div>
                     </label>
                 </div>
@@ -434,7 +453,64 @@
         document.getElementById('detailModal').classList.remove('active');
     }
 
-    const pejabatList = @json($pejabatList ?? []);
+    const pejabatSignatureList = {
+        rektor: {
+            jabatan: 'Rektor',
+            nama: 'Assoc. Prof. Dr. Yuris Tri Naili, S.H., K.N., M.H.'
+        },
+        dekan_fis: {
+            jabatan: 'Dekan Fakultas Ilmu Sosial',
+            nama: 'Dr. Alfizi, S.E., M.M.'
+        },
+        dekan_fst: {
+            jabatan: 'Dekan Fakultas Sains & Teknologi',
+            nama: 'Anggit Wirasto, S.Si., M.Eng.'
+        },
+        kaprodi_informatika: {
+            jabatan: 'Kepala Program Studi S1 Informatika',
+            nama: 'Dr. Imam Ahmad Ashari, S.Kom., M.Kom'
+        },
+        kaprodi_sistem_informasi: {
+            jabatan: 'Kepala Program Studi S1 Sistem Informasi',
+            nama: 'Retno Agus Setiawan, S.Kom., M.T.'
+        },
+        kaprodi_manajemen: {
+            jabatan: 'Kepala Program Studi S1 Manajemen',
+            nama: 'Faizal Rizky Y., S.E., M.M.'
+        },
+        kaprodi_akuntansi: {
+            jabatan: 'Kepala Program Studi S1 Akuntansi',
+            nama: 'Giovanny Bangun Kristianto, S.E., M.Ak., Ak., ACPA'
+        },
+        kaprodi_pbi: {
+            jabatan: 'Kepala Program Studi S1 Pendidikan Bahasa Inggris',
+            nama: 'Tri Pujiani, S.Pd., M.Pd'
+        },
+        kaprodi_hukum: {
+            jabatan: 'Kepala Program Studi S1 Hukum',
+            nama: 'Maya Ruhtiani, S.H, M.H, LLM'
+        },
+        kepala_lppm: {
+            jabatan: 'Kepala Lembaga Penelitian dan Pengabdian kepada Masyarakat',
+            nama: 'Etika Dewi Cahyaningrum, SST, S.Kep, Ns., M.Kes'
+        },
+        kepala_baauk: {
+            jabatan: 'Kepala Biro Administrasi Akademik Umum dan Keuangan',
+            nama: 'Hadi Jayusman, S.Kom, MT'
+        },
+        kepala_kemahasiswaan: {
+            jabatan: 'Kepala Kemahasiswaan',
+            nama: 'Linda Yanti, S.ST., M.Keb'
+        },
+        kepala_bsdm_legal: {
+            jabatan: 'Kepala Biro Sumber Daya Manusia dan Legal',
+            nama: 'Marlia Hafny Afrilies, S.H., M.H'
+        },
+        kepala_dtsi: {
+            jabatan: 'Kepala Departemen Teknologi & Sistem Informasi',
+            nama: 'Anggit Wirasto, S.Si., M.Eng.'
+        }
+    };
 
     /* ── Export Modal ──────────────────────────────── */
     function openExportModal(id, fakultasId = null, prodiId = null) {
@@ -445,7 +521,7 @@
         showTtdCheckbox.checked = true;
         document.getElementById('export_jabatan').value = '';
         document.getElementById('export_nama').value = '';
-        document.getElementById('export_nama').readOnly = false;
+        document.getElementById('export_nama').readOnly = true;
         toggleExportNames(showTtdCheckbox);
         document.getElementById('exportModal').classList.add('active');
     }
@@ -459,6 +535,7 @@
             document.getElementById('export_jabatan').value = '';
             document.getElementById('export_nama').value = '';
             document.getElementById('export_nama_container').style.display = 'none';
+            document.getElementById('export_nama_info').style.display = 'none';
         }
     }
 
@@ -467,8 +544,6 @@
         const container = document.getElementById('export_nama_container');
         const input = document.getElementById('export_nama');
         const info = document.getElementById('export_nama_info');
-        const fakultasId = document.getElementById('export_fakultas_id').value;
-        const prodiId = document.getElementById('export_prodi_id').value;
 
         if (!jabatan) {
             container.style.display = 'none';
@@ -478,34 +553,22 @@
 
         container.style.display = 'block';
         info.style.display = 'none';
-        input.readOnly = false;
+        input.readOnly = true;
         input.value = '';
 
         if (jabatan === 'Lainnya') {
+            input.readOnly = false;
             input.placeholder = 'Ketik nama pejabat...';
             return;
         }
 
-        let targetPejabat = null;
-
-        if (jabatan === 'Universitas (BAAK)') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'BAAK');
-        } else if (jabatan === 'Fakultas (Dekan)') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Dekan' && p.fakultas_id == fakultasId);
-        } else if (jabatan === 'Program Studi (Kaprodi)') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kaprodi' && p.prodi_id == prodiId);
-        } else if (jabatan === 'Kemahasiswaan') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'Kemahasiswaan');
-        } else if (jabatan === 'LPPM') {
-            targetPejabat = pejabatList.find(p => p.jabatan_struktural === 'LPPM');
-        }
+        const targetPejabat = pejabatSignatureList[jabatan];
 
         if (targetPejabat) {
-            input.value = targetPejabat.name;
-            input.readOnly = true;
+            input.value = targetPejabat.nama;
             info.style.display = 'block';
         } else {
-            input.placeholder = 'Data belum diset, ketik manual...';
+            input.placeholder = 'Nama pejabat otomatis dari pilihan...';
         }
     }
 
@@ -518,19 +581,28 @@
         const id = document.getElementById('export_not_id').value;
         const showTtd = document.getElementById('export_show_ttd').checked ? 1 : 0;
         const jabatan = document.getElementById('export_jabatan').value;
-        const nama = document.getElementById('export_nama').value;
+        const nama = document.getElementById('export_nama').value.trim();
+
+        if (showTtd && !jabatan) {
+            showToast('Pilih pihak yang mengetahui terlebih dahulu.', 'error');
+            return;
+        }
+
+        if (showTtd && jabatan === 'Lainnya' && !nama) {
+            showToast('Isi nama pejabat terlebih dahulu.', 'error');
+            return;
+        }
         
         closeExportModal();
         let url = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
         if (showTtd) {
             const params = new URLSearchParams();
-            let labelJabatan = jabatan;
-            if (jabatan === 'Universitas (BAAK)') labelJabatan = 'Kepala BAAK';
-            if (jabatan === 'Fakultas (Dekan)') labelJabatan = 'Dekan';
-            if (jabatan === 'Program Studi (Kaprodi)') labelJabatan = 'Ketua Program Studi';
-            
-            if (labelJabatan) params.append('jabatan_mengetahui', labelJabatan);
-            if (nama) params.append('nama_mengetahui', nama);
+            if (jabatan === 'Lainnya') {
+                params.append('jabatan_mengetahui', jabatan);
+                params.append('nama_mengetahui', nama);
+            } else {
+                params.append('penandatangan_mengetahui', jabatan);
+            }
             const query = params.toString();
             if (query) url += '&' + query;
         }

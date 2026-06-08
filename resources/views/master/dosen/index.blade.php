@@ -100,7 +100,7 @@
                         <th>Fakultas</th>
                         <th>Prodi</th>
                         <th>Status</th>
-                        <th>Nominal Tagihan/Bulan</th>
+                        <th>Nominal</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -120,12 +120,13 @@
                         <td>
                             <div class="nominal-wrap">
                                 <input type="number" class="nominal-input" id="nominal_input_{{ $dosen->id }}"
-                                    value="{{ $dosen->nominal_tagihan ?? 0 }}" min="0" placeholder="0">
-                                <button class="btn-save-nominal" id="nominal_btn_{{ $dosen->id }}"
+                                    value="{{ $dosen->nominal_tagihan ?? 0 }}" min="0" step="1" inputmode="numeric"
+                                    placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                <button type="button" class="btn-save-nominal" id="nominal_btn_{{ $dosen->id }}"
                                     onclick="saveNominal({{ $dosen->id }})">
                                     <i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan
                                 </button>
-                                <span class="saved-badge" id="nominal_saved_{{ $dosen->id }}">✓ Tersimpan</span>
+                                <span class="saved-badge" id="nominal_saved_{{ $dosen->id }}">Tersimpan</span>
                             </div>
                         </td>
                         <td>
@@ -203,10 +204,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Nominal Tagihan Bulanan (Rp)</label>
+                    <label>Nominal tagihan bulanan <span class="req">*</span></label>
                     <input type="number" id="nominal_tagihan" class="filter-control" placeholder="Contoh: 150000" min="0"
-                        oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="0">
-                    <div class="field-hint">Kosongkan atau isi 0 jika belum ditentukan.</div>
+                        step="1" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="0">
+                    <div class="field-hint">Isi 0 jika belum ada nominal khusus.</div>
                     <div class="field-error" id="err_nominal_tagihan"></div>
                 </div>
             </div>
@@ -279,6 +280,7 @@
             const fakultasId = document.getElementById('modal_fakultas_id').value;
             const prodiId = document.getElementById('prodi_id').value;
             const status = document.getElementById('status').value;
+            const nominalTagihan = document.getElementById('nominal_tagihan').value.trim();
 
             if (!nama) { markError('nama','err_nama','Nama lengkap wajib diisi.'); valid = false; }
             else if (nama.length < 3) { markError('nama','err_nama','Nama minimal 3 karakter.'); valid = false; }
@@ -289,6 +291,8 @@
             if (!fakultasId) { markError('modal_fakultas_id','err_fakultas','Pilih fakultas terlebih dahulu.'); valid = false; }
             if (!prodiId) { markError('prodi_id','err_prodi','Pilih program studi terlebih dahulu.'); valid = false; }
             if (!status) { markError('status','err_status','Pilih status dosen.'); valid = false; }
+            if (nominalTagihan === '') { markError('nominal_tagihan','err_nominal_tagihan','Nominal tagihan bulanan wajib diisi.'); valid = false; }
+            else if (!/^\d+$/.test(nominalTagihan) || parseInt(nominalTagihan, 10) < 0) { markError('nominal_tagihan','err_nominal_tagihan','Nominal harus berupa angka minimum 0.'); valid = false; }
 
             return valid;
         }

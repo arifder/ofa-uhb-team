@@ -18,6 +18,65 @@ class NotulensiController extends Controller
 {
     use AuthorizesRequests;
 
+    private const PENANDATANGAN_MENGETAHUI = [
+        'rektor' => [
+            'jabatan' => 'Rektor',
+            'nama' => 'Assoc. Prof. Dr. Yuris Tri Naili, S.H., K.N., M.H.',
+        ],
+        'dekan_fis' => [
+            'jabatan' => 'Dekan Fakultas Ilmu Sosial',
+            'nama' => 'Dr. Alfizi, S.E., M.M.',
+        ],
+        'dekan_fst' => [
+            'jabatan' => 'Dekan Fakultas Sains & Teknologi',
+            'nama' => 'Anggit Wirasto, S.Si., M.Eng.',
+        ],
+        'kaprodi_informatika' => [
+            'jabatan' => 'Kepala Program Studi S1 Informatika',
+            'nama' => 'Dr. Imam Ahmad Ashari, S.Kom., M.Kom',
+        ],
+        'kaprodi_sistem_informasi' => [
+            'jabatan' => 'Kepala Program Studi S1 Sistem Informasi',
+            'nama' => 'Retno Agus Setiawan, S.Kom., M.T.',
+        ],
+        'kaprodi_manajemen' => [
+            'jabatan' => 'Kepala Program Studi S1 Manajemen',
+            'nama' => 'Faizal Rizky Y., S.E., M.M.',
+        ],
+        'kaprodi_akuntansi' => [
+            'jabatan' => 'Kepala Program Studi S1 Akuntansi',
+            'nama' => 'Giovanny Bangun Kristianto, S.E., M.Ak., Ak., ACPA',
+        ],
+        'kaprodi_pbi' => [
+            'jabatan' => 'Kepala Program Studi S1 Pendidikan Bahasa Inggris',
+            'nama' => 'Tri Pujiani, S.Pd., M.Pd',
+        ],
+        'kaprodi_hukum' => [
+            'jabatan' => 'Kepala Program Studi S1 Hukum',
+            'nama' => 'Maya Ruhtiani, S.H, M.H, LLM',
+        ],
+        'kepala_lppm' => [
+            'jabatan' => 'Kepala Lembaga Penelitian dan Pengabdian kepada Masyarakat',
+            'nama' => 'Etika Dewi Cahyaningrum, SST, S.Kep, Ns., M.Kes',
+        ],
+        'kepala_baauk' => [
+            'jabatan' => 'Kepala Biro Administrasi Akademik Umum dan Keuangan',
+            'nama' => 'Hadi Jayusman, S.Kom, MT',
+        ],
+        'kepala_kemahasiswaan' => [
+            'jabatan' => 'Kepala Kemahasiswaan',
+            'nama' => 'Linda Yanti, S.ST., M.Keb',
+        ],
+        'kepala_bsdm_legal' => [
+            'jabatan' => 'Kepala Biro Sumber Daya Manusia dan Legal',
+            'nama' => 'Marlia Hafny Afrilies, S.H., M.H',
+        ],
+        'kepala_dtsi' => [
+            'jabatan' => 'Kepala Departemen Teknologi & Sistem Informasi',
+            'nama' => 'Anggit Wirasto, S.Si., M.Eng.',
+        ],
+    ];
+
     // ── INDEX ───────────────────────────────────────────
 
     public function index(Request $request)
@@ -303,8 +362,10 @@ class NotulensiController extends Controller
         ])->findOrFail($id);
 
         $showTtd = (bool) $request->get('show_ttd', false);
-        $jabatanMengetahui = $request->query('jabatan_mengetahui');
-        $namaMengetahui = $request->query('nama_mengetahui');
+        $penandatanganKey = $request->query('penandatangan_mengetahui');
+        $penandatanganMengetahui = self::PENANDATANGAN_MENGETAHUI[$penandatanganKey] ?? null;
+        $jabatanMengetahui = $penandatanganMengetahui['jabatan'] ?? $request->query('jabatan_mengetahui');
+        $namaMengetahui = $penandatanganMengetahui['nama'] ?? $request->query('nama_mengetahui');
 
         $pdf = Pdf::loadView('notulensi.bap', compact(
             'notulensi', 'showTtd', 'jabatanMengetahui', 'namaMengetahui'
