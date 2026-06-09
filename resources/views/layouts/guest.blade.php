@@ -8,6 +8,7 @@
         <meta name="theme-color" content="#0a0f1e">
 
         <title>{{ config('app.name', 'OFA-UHB') }} — {{ $title ?? 'Login' }}</title>
+        <link rel="icon" href="https://uhb.ac.id/wp-content/uploads/2024/03/logo_UHB_r-1.png">
 
         <!-- Fonts: Syne (display) + Plus Jakarta Sans (body) -->
         <link rel="preconnect" href="https://fonts.googleapis.com">

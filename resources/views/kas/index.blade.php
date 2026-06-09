@@ -185,7 +185,13 @@
 <div id="toast-container"></div>
 
 {{-- Filter & Search Row --}}
-<form method="GET" action="{{ route('kas.' . $jenis) }}" class="mb-4">
+<form method="GET" action="{{ route('kas.' . $jenis) }}" class="mb-4" id="filterForm" x-data="{
+    submitSPA() {
+        const formData = new FormData(document.getElementById('filterForm'));
+        const params = new URLSearchParams(formData);
+        Livewire.navigate(document.getElementById('filterForm').action + '?' + params.toString());
+    }
+}" @submit.prevent="submitSPA">
     @if(request('filter_tipe'))
         <input type="hidden" name="filter_tipe" value="{{ request('filter_tipe') }}">
     @endif
@@ -206,17 +212,14 @@
     @endif
 
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
-        <div style="display: flex; flex: 1; min-width: 260px; gap: 8px;">
-            <input type="text" name="search" class="filter-control" placeholder="Cari keterangan..." value="{{ request('search') }}" style="flex: 1; height: 38px;">
-            <button type="submit" class="btn-primary" style="background: #475569; height: 38px;">Cari</button>
-        </div>
+            <input type="text" name="search" class="filter-control" placeholder="Cari keterangan..." value="{{ request('search') }}" style="flex: 1; height: 38px;" @input.debounce.500ms="submitSPA">
         
         <button type="button" class="btn-outline" onclick="openFilterModal()" style="display: inline-flex; align-items: center; gap: 8px; height: 38px;">
             <i class="ti ti-adjustments-horizontal"></i> Filter Periode
         </button>
         
         @if(request('search') || request('fakultas_id') || request('filter_tipe'))
-            <a href="{{ route('kas.' . $jenis) }}" class="btn-outline" style="text-decoration: none; color: #ef4444; height: 38px; display: inline-flex; align-items: center;">Reset</a>
+            <a wire:navigate href="{{ route('kas.' . $jenis) }}" class="btn-outline" style="text-decoration: none; color: #ef4444; height: 38px; display: inline-flex; align-items: center;">Reset</a>
         @endif
     </div>
 
@@ -224,17 +227,17 @@
     @if(request('search') || request('fakultas_id') || request('filter_tipe'))
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         @if(request('search'))
-            <span class="filter-chip">Cari: "{{ request('search') }}" <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}">&times;</a></span>
+            <span class="filter-chip">Cari: "{{ request('search') }}" <a wire:navigate href="{{ request()->fullUrlWithQuery(['search' => null]) }}">&times;</a></span>
         @endif
         @if(request('fakultas_id') && isset($fakultasList))
             @php $selectedFak = $fakultasList->firstWhere('id', request('fakultas_id')); @endphp
             @if($selectedFak)
-                <span class="filter-chip">Fakultas: {{ $selectedFak->nama_fakultas }} <a href="{{ request()->fullUrlWithQuery(['fakultas_id' => null]) }}">&times;</a></span>
+                <span class="filter-chip">Fakultas: {{ $selectedFak->nama_fakultas }} <a wire:navigate href="{{ request()->fullUrlWithQuery(['fakultas_id' => null]) }}">&times;</a></span>
             @endif
         @endif
         @if(request('filter_tipe') == 'hari')
             @if(request('tanggal_awal') || request('tanggal_akhir'))
-                <span class="filter-chip">Tanggal: {{ request('tanggal_awal') ?? '...' }} s/d {{ request('tanggal_akhir') ?? '...' }} <a href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'tanggal_awal' => null, 'tanggal_akhir' => null]) }}">&times;</a></span>
+                <span class="filter-chip">Tanggal: {{ request('tanggal_awal') ?? '...' }} s/d {{ request('tanggal_akhir') ?? '...' }} <a wire:navigate href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'tanggal_awal' => null, 'tanggal_akhir' => null]) }}">&times;</a></span>
             @endif
         @elseif(request('filter_tipe') == 'bulan')
             @if(request('bulan') || request('tahun'))
@@ -242,11 +245,11 @@
                     $months = [1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun', 7=>'Jul', 8=>'Agu', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'];
                     $mLabel = request('bulan') ? ($months[request('bulan')] ?? '') : '';
                 @endphp
-                <span class="filter-chip">Bulan: {{ $mLabel }} {{ request('tahun') }} <a href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'bulan' => null, 'tahun' => null]) }}">&times;</a></span>
+                <span class="filter-chip">Bulan: {{ $mLabel }} {{ request('tahun') }} <a wire:navigate href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'bulan' => null, 'tahun' => null]) }}">&times;</a></span>
             @endif
         @elseif(request('filter_tipe') == 'tahun')
             @if(request('tahun'))
-                <span class="filter-chip">Tahun: {{ request('tahun') }} <a href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'tahun' => null]) }}">&times;</a></span>
+                <span class="filter-chip">Tahun: {{ request('tahun') }} <a wire:navigate href="{{ request()->fullUrlWithQuery(['filter_tipe' => null, 'tahun' => null]) }}">&times;</a></span>
             @endif
         @endif
     </div>
@@ -330,12 +333,17 @@
                             <i class="ti ti-eye"></i>
                         </button>
                         @if(in_array($authUser->role, ['super_admin', 'admin_fst', 'admin_fis']))
+                        @php
+                            $canEdit = $authUser->role === 'super_admin' || (int) $kas->fakultas_id === (int) $authUser->fakultas_id;
+                        @endphp
+                        @if($canEdit)
                         <button class="icon-btn" onclick="editKas({{ $kas->id }})" title="Edit">
                             <i class="ti ti-pencil"></i>
                         </button>
                         <button class="icon-btn delete" onclick="deleteKas({{ $kas->id }})" title="Hapus">
                             <i class="ti ti-trash"></i>
                         </button>
+                        @endif
                         @endif
                     </td>
                 </tr>
@@ -361,10 +369,10 @@
             @if($kasList->onFirstPage())
                 <span class="pag-btn disabled">← Previous</span>
             @else
-                <a href="{{ $kasList->previousPageUrl() }}" class="pag-btn">← Previous</a>
+                <a wire:navigate href="{{ $kasList->previousPageUrl() }}" class="pag-btn">← Previous</a>
             @endif
             @if($kasList->hasMorePages())
-                <a href="{{ $kasList->nextPageUrl() }}" class="pag-btn">Next →</a>
+                <a wire:navigate href="{{ $kasList->nextPageUrl() }}" class="pag-btn">Next →</a>
             @else
                 <span class="pag-btn disabled">Next →</span>
             @endif
@@ -488,10 +496,9 @@
                 </div>
 
 
-                @if($jenis === 'keluar')
                 <div class="form-group" style="margin-top:16px;">
                     <label style="font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:6px">
-                        Bukti Foto / Struk Pembelian <span style="color:#6b7280; font-weight:400">(opsional)</span>
+                        {{ $jenis === 'masuk' ? 'Bukti Pembayaran / Foto' : 'Bukti Foto / Struk Pembelian' }} <span style="color:#6b7280; font-weight:400">(opsional)</span>
                     </label>
 
                     <!-- Drop zone / input file -->
@@ -508,7 +515,6 @@
                     <!-- Preview foto yang dipilih -->
                     <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px"></div>
                 </div>
-                @endif
             </div>
             <div class="custom-modal-footer">
                 <button type="button" class="btn-outline" onclick="closeModal()">Batal</button>
@@ -540,7 +546,13 @@
             <span>Filter Periode Kas {{ $title }}</span>
             <button class="icon-btn" onclick="closeFilterModal()"><i class="ti ti-x"></i></button>
         </div>
-        <form method="GET" action="{{ route('kas.' . $jenis) }}">
+        <form method="GET" action="{{ route('kas.' . $jenis) }}" id="filterModalForm" x-data="{
+            submitModalSPA() {
+                const formData = new FormData(document.getElementById('filterModalForm'));
+                const params = new URLSearchParams(formData);
+                Livewire.navigate(document.getElementById('filterModalForm').action + '?' + params.toString());
+            }
+        }" @submit.prevent="submitModalSPA">
             @if(request('search'))
                 <input type="hidden" name="search" value="{{ request('search') }}">
             @endif
@@ -638,7 +650,7 @@
 
             </div>
             <div class="custom-modal-footer">
-                <a href="{{ route('kas.' . $jenis) }}" class="btn-outline" style="text-decoration: none; display: flex; align-items: center; justify-content: center; height: 38px;">Reset</a>
+                <a wire:navigate href="{{ route('kas.' . $jenis) }}" class="btn-outline" style="text-decoration: none; display: flex; align-items: center; justify-content: center; height: 38px;">Reset</a>
                 <button type="submit" class="btn-primary">Terapkan Filter</button>
             </div>
         </form>
@@ -649,7 +661,9 @@
 
 @push('scripts')
 <script>
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    }
     const jenis = "{{ $jenis }}";
 
     function searchSelect(config) {
@@ -784,7 +798,7 @@
         }
     }
 
-    function showToast(msg, type = 'success') {
+    window.showToast = function(msg, type = 'success') {
         const t = document.createElement('div');
         t.className = `custom-toast ${type === 'error' ? 'error' : ''}`;
         t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
@@ -794,7 +808,7 @@
 
 
 
-    function openModal() {
+    window.openModal = function() {
         document.getElementById('formKas').reset();
         document.getElementById('kas_id').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Kas {{ $title }}';
@@ -817,31 +831,31 @@
         document.getElementById('kasModal').classList.add('active');
     }
 
-    function closeModal() {
+    window.closeModal = function() {
         document.getElementById('kasModal').classList.remove('active');
     }
 
-    function closeDetail() {
+    window.closeDetail = function() {
         document.getElementById('detailModal').classList.remove('active');
     }
 
-    function openFilterModal() {
+    window.openFilterModal = function() {
         document.getElementById('filterModal').classList.add('active');
     }
 
-    function closeFilterModal() {
+    window.closeFilterModal = function() {
         document.getElementById('filterModal').classList.remove('active');
     }
 
     /* ── Foto Preview ──────────────────────────────── */
-    function previewFoto(input) {
+    window.previewFoto = function(input) {
         const container = document.getElementById('previewContainer');
         container.innerHTML = '';
         
         if (input.files && input.files[0]) {
             const file = input.files[0];
             if (file.size > 2 * 1024 * 1024) {
-                showToast(file.name + ' melebihi 2MB!', 'error');
+                window.showToast(file.name + ' melebihi 2MB!', 'error');
                 input.value = '';
                 return;
             }
@@ -852,7 +866,7 @@
                 div.style.cssText = 'position:relative;width:80px;height:80px';
                 div.innerHTML = `
                     <img src="${e.target.result}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
-                    <span onclick="hapusFoto()" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
+                    <span onclick="window.hapusFoto()" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
                     <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">${file.name}</p>`;
                 container.appendChild(div);
             };
@@ -860,17 +874,17 @@
         }
     }
 
-    function hapusFoto() {
+    window.hapusFoto = function() {
         const input = document.getElementById('kas_bukti_foto');
         if (input) input.value = '';
         const container = document.getElementById('previewContainer');
         if (container) container.innerHTML = '';
     }
 
-    async function viewDetail(id) {
+    window.viewDetail = async function(id) {
         try {
             const res = await fetch(`/kas/transaksi/${id}`, {
-                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() }
             });
             const data = await res.json();
 
@@ -911,9 +925,9 @@
 
 
 
-                ${data.jenis === 'keluar' && data.bukti_foto ? `
+                ${data.bukti_foto ? `
                 <div class="detail-section">
-                    <div class="detail-label">Bukti Foto / Struk</div>
+                    <div class="detail-label">${data.jenis === 'masuk' ? 'Bukti Pembayaran / Foto' : 'Bukti Foto / Struk'}</div>
                     <div class="detail-value" style="margin-top:6px; background:#f8fafc; padding:10px; border-radius:8px; text-align:center;">
                         <a href="/storage/${data.bukti_foto}" target="_blank">
                             <img src="/storage/${data.bukti_foto}" alt="Bukti Foto" style="max-width:100%; max-height:200px; border-radius:6px; border:1px solid #e2e8f0; object-fit:contain;">
@@ -934,10 +948,10 @@
         }
     }
 
-    async function editKas(id) {
+    window.editKas = async function(id) {
         try {
             const res = await fetch(`/kas/transaksi/${id}`, {
-                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() }
             });
             const data = await res.json();
 
@@ -964,7 +978,17 @@
             const fotoInput = document.getElementById('kas_bukti_foto');
             if (fotoInput) fotoInput.value = ''; // Clear previous file input
             const preview = document.getElementById('previewContainer');
-            if (preview) preview.innerHTML = ''; // Clear preview
+            if (preview) {
+                preview.innerHTML = ''; // Clear preview
+                if (data.bukti_foto) {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position:relative;width:80px;height:80px';
+                    div.innerHTML = `
+                        <img src="/storage/${data.bukti_foto}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
+                        <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">Foto saat ini</p>`;
+                    preview.appendChild(div);
+                }
+            }
 
             document.getElementById('modalTitle').textContent = 'Edit Kas {{ $title }}';
             document.getElementById('kasModal').classList.add('active');
@@ -980,7 +1004,7 @@
         }
     }
 
-    async function saveKas(e) {
+    window.saveKas = async function(e) {
         e.preventDefault();
 
         const id = document.getElementById('kas_id').value;
@@ -1011,24 +1035,24 @@
         try {
             const res = await fetch(url, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                headers: { 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
                 body: formData,
             });
             const data = await res.json();
 
             if (res.ok && data.success) {
-                showToast(data.message, 'success');
-                closeModal();
+                window.showToast(data.message, 'success');
+                window.closeModal();
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast(data.message || data.errors ? Object.values(data.errors || {}).flat().join(' ') : 'Terjadi kesalahan.', 'error');
+                window.showToast(data.message || data.errors ? Object.values(data.errors || {}).flat().join(' ') : 'Terjadi kesalahan.', 'error');
             }
         } catch {
-            showToast('Koneksi gagal.', 'error');
+            window.showToast('Koneksi gagal.', 'error');
         }
     }
 
-    function initKasForm() {
+    window.initKasForm = function() {
         return {
             jumlah: 0,
             tabungan: 0,
@@ -1043,23 +1067,23 @@
         }
     }
 
-    async function deleteKas(id) {
+    window.deleteKas = async function(id) {
         if (!confirm('Yakin ingin menghapus data kas ini?')) return;
         try {
             const res = await fetch(`/kas/transaksi/${id}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
                 body: JSON.stringify({ _method: 'DELETE' }),
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                showToast(data.message, 'success');
+                window.showToast(data.message, 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast(data.message || 'Gagal menghapus.', 'error');
+                window.showToast(data.message || 'Gagal menghapus.', 'error');
             }
         } catch {
-            showToast('Koneksi gagal.', 'error');
+            window.showToast('Koneksi gagal.', 'error');
         }
     }
 </script>

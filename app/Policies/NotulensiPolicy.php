@@ -61,10 +61,10 @@ class NotulensiPolicy
      */
     public function update(User $user, Notulensi $notulensi): bool
     {
-        return in_array($user->role, [
-            'admin_fst',
-            'admin_fis',
-        ]);
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
+            return (int) $notulensi->fakultas_id === (int) $user->fakultas_id;
+        }
+        return false;
     }
 
     /**
@@ -72,9 +72,9 @@ class NotulensiPolicy
      */
     public function delete(User $user, Notulensi $notulensi): bool
     {
-        return in_array($user->role, [
-            'admin_fst',
-            'admin_fis',
-        ]);
+        if (in_array($user->role, ['admin_fst', 'admin_fis'])) {
+            return (int) $notulensi->fakultas_id === (int) $user->fakultas_id;
+        }
+        return false;
     }
 }

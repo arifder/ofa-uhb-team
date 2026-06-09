@@ -62,101 +62,7 @@
 
     <div id="toast-container"></div>
 
-            <!-- Filter Bar -->
-            <form method="GET" action="{{ route('master.users.index') }}" class="master-card p-4 mb-6 flex gap-3">
-                <input type="text" name="search" class="filter-control flex-1" placeholder="Cari nama / username..." value="{{ request('search') }}">
-                <select name="role" class="filter-control w-48" onchange="this.form.submit()">
-                    <option value="">Semua Role</option>
-                    <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>Super Admin</option>
-                    <option value="admin_fst" {{ request('role') == 'admin_fst' ? 'selected' : '' }}>Admin FST</option>
-                    <option value="admin_fis" {{ request('role') == 'admin_fis' ? 'selected' : '' }}>Admin FIS</option>
-                    <option value="kepala_unit" {{ request('role') == 'kepala_unit' ? 'selected' : '' }}>Kepala Unit</option>
-                    <option value="dosen" {{ request('role') == 'dosen' ? 'selected' : '' }}>Dosen</option>
-                </select>
-                <button type="submit" class="btn-outline">Filter</button>
-                <a href="{{ route('master.users.index') }}" class="btn-outline text-center">Reset</a>
-            </form>
-
-            <div class="master-card">
-                <div class="table-responsive">
-                    <table class="master-table">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Nama</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Fakultas</th>
-                                <th>Prodi</th>
-                                <th>Jabatan</th>
-                                <th>Nominal</th>
-                                <th>Status</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($users as $index => $user)
-                            <tr>
-                                <td>{{ $users->firstItem() + $index }}</td>
-                                <td>{{ $user->name }}</td>
-                                <td>{{ $user->username }}</td>
-                                <td>{{ $user->email }}</td>
-                                <td>
-                                    <span style="
-                                      background:{{ $user->role_badge_color['bg'] }};
-                                      color:{{ $user->role_badge_color['text'] }};
-                                      padding:2px 10px;
-                                      border-radius:99px;
-                                      font-size:11px;
-                                      font-weight:600">
-                                      {{ $user->role_label }}
-                                    </span>
-                                </td>
-                                <td>{{ $user->fakultas ? $user->fakultas->nama_fakultas : '-' }}</td>
-                                <td>{{ $user->prodi ? $user->prodi->nama_prodi : '-' }}</td>
-                                <td>
-                                    @if($user->jabatan_struktural)
-                                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">{{ $user->jabatan_struktural }}</span>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($user->role === 'dosen' && $user->dosen)
-                                        <div class="nominal-wrap">
-                                            <input type="number" class="nominal-input" id="user_nominal_input_{{ $user->dosen->id }}"
-                                                value="{{ $user->dosen->nominal_tagihan ?? 0 }}" min="0" step="1" inputmode="numeric"
-                                                oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                                            <button type="button" class="btn-save-nominal" id="user_nominal_btn_{{ $user->dosen->id }}"
-                                                onclick="saveUserNominal({{ $user->dosen->id }})">
-                                                <i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan
-                                            </button>
-                                            <span class="saved-badge" id="user_nominal_saved_{{ $user->dosen->id }}">Tersimpan</span>
-                                        </div>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($user->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
-                                    @else <span class="master-badge badge-nonaktif">Arsip</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <button class="icon-btn edit-user-btn" data-user="{{ json_encode($user) }}" title="Edit User"><i class="ti ti-pencil"></i></button>
-                                    <button class="icon-btn" style="color:#d97706" onclick="toggleStatus({{ $user->id }})" title="Arsipkan User"><i class="ti ti-archive"></i></button>
-                                    <button class="icon-btn delete" onclick="deleteUser({{ $user->id }})" title="Hapus Permanen"><i class="ti ti-trash"></i></button>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-4 border-t border-gray-200 pagination-container">
-                    {{ $users->withQueryString()->links() }}
-                </div>
-            </div>
+            @livewire('users-crud')
 
     <style>
         /* Fix mobile view showing duplicate nav */
@@ -481,7 +387,9 @@
 
 @push('scripts')
     <script>
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        }
 
         document.querySelectorAll('.edit-user-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -490,7 +398,7 @@
             });
         });
 
-        function showToast(msg, type = 'success') {
+        window.showToast = function(msg, type = 'success') {
             const t = document.createElement('div');
             t.className = `custom-toast ${type}`;
             t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
@@ -498,14 +406,14 @@
             setTimeout(() => t.remove(), 3000);
         }
 
-        async function saveUserNominal(dosenId) {
+        window.saveUserNominal = async function(dosenId) {
             const input = document.getElementById('user_nominal_input_' + dosenId);
             const btn = document.getElementById('user_nominal_btn_' + dosenId);
             const badge = document.getElementById('user_nominal_saved_' + dosenId);
             const nominal = parseInt(input.value || '0', 10);
 
             if (isNaN(nominal) || nominal < 0) {
-                showToast('Nominal harus berupa angka minimum 0.', 'error');
+                window.showToast('Nominal harus berupa angka minimum 0.', 'error');
                 input.focus();
                 return;
             }
@@ -518,7 +426,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
+                        'X-CSRF-TOKEN': getCsrfToken(),
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ _method: 'PATCH', nominal_tagihan: nominal })
@@ -529,24 +437,24 @@
                     badge.style.display = 'inline';
                     setTimeout(() => badge.style.display = 'none', 2500);
                 } else {
-                    showToast(data.message || 'Gagal menyimpan nominal.', 'error');
+                    window.showToast(data.message || 'Gagal menyimpan nominal.', 'error');
                 }
             } catch (err) {
-                showToast('Koneksi gagal.', 'error');
+                window.showToast('Koneksi gagal.', 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan';
             }
         }
 
-        async function deleteUser(id) {
+        window.deleteUser = async function(id) {
             if (!confirm('Apakah Anda yakin ingin menghapus user ini secara permanen?')) return;
             try {
                 const res = await fetch(`/master/users/${id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
+                        'X-CSRF-TOKEN': getCsrfToken(),
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ _method: 'DELETE' })
@@ -554,37 +462,37 @@
 
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    showToast(data.message, 'success');
+                    window.showToast(data.message, 'success');
                     setTimeout(() => location.reload(), 1000);
                 } else {
-                    showToast(data.message || 'Terjadi kesalahan', 'error');
+                    window.showToast(data.message || 'Terjadi kesalahan', 'error');
                 }
             } catch (err) {
-                showToast('Koneksi gagal', 'error');
+                window.showToast('Koneksi gagal', 'error');
             }
         }
 
-        async function toggleStatus(id) {
+        window.toggleStatus = async function(id) {
             if (!confirm('Apakah Anda yakin ingin mengarsipkan user ini? User yang diarsipkan tidak bisa login.')) return;
             try {
                 const res = await fetch(`/master/users/${id}/toggle-status`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
+                        'X-CSRF-TOKEN': getCsrfToken(),
                         'Accept': 'application/json'
                     }
                 });
 
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    showToast(data.message, 'success');
+                    window.showToast(data.message, 'success');
                     setTimeout(() => location.reload(), 1000);
                 } else {
-                    showToast(data.message || 'Terjadi kesalahan', 'error');
+                    window.showToast(data.message || 'Terjadi kesalahan', 'error');
                 }
             } catch (err) {
-                showToast('Koneksi gagal', 'error');
+                window.showToast('Koneksi gagal', 'error');
             }
         }
     </script>

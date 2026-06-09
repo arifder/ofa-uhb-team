@@ -103,11 +103,17 @@
 <div id="toast-container"></div>
 
 {{-- Filter Bar --}}
-<form method="GET" action="{{ route('kas.tagihan') }}" class="master-card p-4 mb-4">
+<form method="GET" action="{{ route('kas.tagihan') }}" class="master-card p-4 mb-4" id="filterForm" x-data="{
+    submitSPA() {
+        const formData = new FormData(document.getElementById('filterForm'));
+        const params = new URLSearchParams(formData);
+        Livewire.navigate(document.getElementById('filterForm').action + '?' + params.toString());
+    }
+}" @submit.prevent="submitSPA">
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <input type="text" name="search" class="filter-control" placeholder="Cari nama dosen..." value="{{ request('search') }}" style="flex:1; min-width:200px;">
+        <input type="text" name="search" class="filter-control" placeholder="Cari nama dosen..." value="{{ request('search') }}" style="flex:1; min-width:200px;" @input.debounce.500ms="submitSPA">
         @if(in_array($authUser->role, ['super_admin', 'kepala_unit']))
-        <select name="fakultas_id" class="filter-control" style="width:180px;" onchange="this.form.submit()">
+        <select name="fakultas_id" class="filter-control" style="width:180px;" @change="submitSPA">
             <option value="">Semua Fakultas</option>
             @foreach($fakultasList as $fak)
                 <option value="{{ $fak->id }}" {{ request('fakultas_id') == $fak->id ? 'selected' : '' }}>
@@ -116,25 +122,24 @@
             @endforeach
         </select>
         @endif
-        <select name="status" class="filter-control" style="width:140px;" onchange="this.form.submit()">
+        <select name="status" class="filter-control" style="width:140px;" @change="submitSPA">
             <option value="">Semua Status</option>
             <option value="belum_lunas" {{ request('status') == 'belum_lunas' ? 'selected' : '' }}>Belum Lunas</option>
             <option value="lunas" {{ request('status') == 'lunas' ? 'selected' : '' }}>Lunas</option>
         </select>
-        <select name="bulan" class="filter-control" style="width:120px;" onchange="this.form.submit()">
+        <select name="bulan" class="filter-control" style="width:120px;" @change="submitSPA">
             <option value="">Bulan</option>
             @foreach(['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'] as $i => $nama)
                 <option value="{{ $i+1 }}" {{ request('bulan') == $i+1 ? 'selected' : '' }}>{{ $nama }}</option>
             @endforeach
         </select>
-        <select name="tahun" class="filter-control" style="width:110px;" onchange="this.form.submit()">
+        <select name="tahun" class="filter-control" style="width:110px;" @change="submitSPA">
             <option value="">Tahun</option>
             @foreach(range(now()->year, now()->year - 5) as $t)
                 <option value="{{ $t }}" {{ request('tahun') == $t ? 'selected' : '' }}>{{ $t }}</option>
             @endforeach
         </select>
-        <button type="submit" class="btn-outline">Filter</button>
-        <a href="{{ route('kas.tagihan') }}" class="btn-outline">Reset</a>
+        <a wire:navigate href="{{ route('kas.tagihan') }}" class="btn-outline">Reset</a>
     </div>
 </form>
 
@@ -199,15 +204,25 @@
                         </button>
                         @if($authUser->role !== 'kepala_unit')
                             @if($tagihan->status !== 'lunas')
+                            @php
+                                $canPayTag = $authUser->role === 'super_admin' || $authUser->role === 'dosen' || (int) $tagihan->fakultas_id === (int) $authUser->fakultas_id;
+                            @endphp
+                            @if($canPayTag)
                             <button class="icon-btn" onclick="openBayarModal({{ $tagihan->id }})" title="Bayar" style="color:#059669;">
                                 <i class="ti ti-cash"></i>
                             </button>
                             @endif
+                            @endif
                             
                             @if($authUser->role !== 'dosen')
+                            @php
+                                $canDeleteTag = $authUser->role === 'super_admin' || (int) $tagihan->fakultas_id === (int) $authUser->fakultas_id;
+                            @endphp
+                            @if($canDeleteTag)
                             <button class="icon-btn delete" onclick="deleteTagihan({{ $tagihan->id }})" title="Hapus">
                                 <i class="ti ti-trash"></i>
                             </button>
+                            @endif
                             @endif
                         @endif
                     </td>
@@ -234,10 +249,10 @@
             @if($tagihanList->onFirstPage())
                 <span class="pag-btn disabled">← Previous</span>
             @else
-                <a href="{{ $tagihanList->previousPageUrl() }}" class="pag-btn">← Previous</a>
+                <a wire:navigate href="{{ $tagihanList->previousPageUrl() }}" class="pag-btn">← Previous</a>
             @endif
             @if($tagihanList->hasMorePages())
-                <a href="{{ $tagihanList->nextPageUrl() }}" class="pag-btn">Next →</a>
+                <a wire:navigate href="{{ $tagihanList->nextPageUrl() }}" class="pag-btn">Next →</a>
             @else
                 <span class="pag-btn disabled">Next →</span>
             @endif
@@ -392,9 +407,11 @@
 
 @push('scripts')
 <script>
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    }
 
-    function showToast(msg, type = 'success') {
+    window.showToast = function(msg, type = 'success') {
         const t = document.createElement('div');
         t.className = `custom-toast ${type === 'error' ? 'error' : ''}`;
         t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
@@ -402,7 +419,7 @@
         setTimeout(() => t.remove(), 3500);
     }
 
-    function openModal() {
+    window.openModal = function() {
         document.getElementById('tagihanForm').reset();
         document.getElementById('tagihan_id').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Tagihan';
@@ -414,27 +431,27 @@
         document.getElementById('tagihanModal').classList.add('active');
     }
 
-    function closeModal() {
+    window.closeModal = function() {
         document.getElementById('tagihanModal').classList.remove('active');
     }
 
-    function closeBayarModal() {
+    window.closeBayarModal = function() {
         document.getElementById('bayarModal').classList.remove('active');
     }
 
-    function closeDetail() {
+    window.closeDetail = function() {
         document.getElementById('detailModal').classList.remove('active');
     }
 
     /* ── Foto Preview ──────────────────────────────── */
-    function previewFoto(input) {
+    window.previewFoto = function(input) {
         const container = document.getElementById('previewContainer');
         container.innerHTML = '';
         
         if (input.files && input.files[0]) {
             const file = input.files[0];
             if (file.size > 2 * 1024 * 1024) {
-                showToast(file.name + ' melebihi 2MB!', 'error');
+                window.showToast(file.name + ' melebihi 2MB!', 'error');
                 input.value = '';
                 return;
             }
@@ -445,7 +462,7 @@
                 div.style.cssText = 'position:relative;width:80px;height:80px';
                 div.innerHTML = `
                     <img src="${e.target.result}" style="width:80px;height:80px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0"/>
-                    <span onclick="hapusFoto()" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
+                    <span onclick="window.hapusFoto()" style="position:absolute; top:-6px;right:-6px; background:#ef4444; color:#fff; border-radius:50%; width:18px;height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer">×</span>
                     <p style="font-size:9px; color:#6b7280; text-align:center; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">${file.name}</p>`;
                 container.appendChild(div);
             };
@@ -453,24 +470,24 @@
         }
     }
 
-    function hapusFoto() {
+    window.hapusFoto = function() {
         const input = document.getElementById('bayar_bukti_foto');
         if (input) input.value = '';
         const container = document.getElementById('previewContainer');
         if (container) container.innerHTML = '';
     }
 
-    function filterDosen() {
+    window.filterDosen = function() {
         const q = document.getElementById('searchDosen').value.toLowerCase();
         document.querySelectorAll('#dosenList label').forEach(label => {
             label.style.display = label.dataset.nama.includes(q) ? 'flex' : 'none';
         });
     }
 
-    async function viewDetail(id) {
+    window.viewDetail = async function(id) {
         try {
             const res = await fetch(`/kas/tagihan/${id}`, {
-                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() }
             });
             const data = await res.json();
 
@@ -545,10 +562,10 @@
         }
     }
 
-    async function openBayarModal(id) {
+    window.openBayarModal = async function(id) {
         try {
             const res = await fetch(`/kas/tagihan/${id}`, {
-                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() }
             });
             const data = await res.json();
 
@@ -578,7 +595,7 @@
         }
     }
 
-    async function submitBayar(e) {
+    window.submitBayar = async function(e) {
         e.preventDefault();
 
         const id = document.getElementById('bayar_tagihan_id').value;
@@ -595,29 +612,29 @@
         try {
             const res = await fetch(`/kas/tagihan/${id}/bayar`, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                headers: { 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
                 body: formData,
             });
             const data = await res.json();
 
             if (res.ok && data.success) {
-                showToast(data.message, 'success');
-                closeBayarModal();
+                window.showToast(data.message, 'success');
+                window.closeBayarModal();
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast(data.message || 'Terjadi kesalahan.', 'error');
+                window.showToast(data.message || 'Terjadi kesalahan.', 'error');
             }
         } catch {
-            showToast('Koneksi gagal.', 'error');
+            window.showToast('Koneksi gagal.', 'error');
         }
     }
 
-    async function saveTagihan(e) {
+    window.saveTagihan = async function(e) {
         e.preventDefault();
 
         const checked = document.querySelector('input[name="dosen_id"]:checked');
         if (!checked) {
-            showToast('Pilih dosen terlebih dahulu.', 'error');
+            window.showToast('Pilih dosen terlebih dahulu.', 'error');
             return;
         }
 
@@ -632,44 +649,44 @@
         try {
             const res = await fetch('{{ route("kas.tagihan.store") }}', {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                headers: { 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
                 body: formData,
             });
             const data = await res.json();
 
             if (res.ok && data.success) {
-                showToast(data.message, 'success');
-                closeModal();
+                window.showToast(data.message, 'success');
+                window.closeModal();
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast(data.message || 'Terjadi kesalahan.', 'error');
+                window.showToast(data.message || 'Terjadi kesalahan.', 'error');
             }
         } catch {
-            showToast('Koneksi gagal.', 'error');
+            window.showToast('Koneksi gagal.', 'error');
         }
     }
 
-    async function deleteTagihan(id) {
+    window.deleteTagihan = async function(id) {
         if (!confirm('Yakin ingin menghapus tagihan ini?')) return;
         try {
             const res = await fetch(`/kas/tagihan/${id}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
                 body: JSON.stringify({ _method: 'DELETE' }),
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                showToast(data.message, 'success');
+                window.showToast(data.message, 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast(data.message || 'Gagal menghapus.', 'error');
+                window.showToast(data.message || 'Gagal menghapus.', 'error');
             }
         } catch {
-            showToast('Koneksi gagal.', 'error');
+            window.showToast('Koneksi gagal.', 'error');
         }
     }
 
-    async function generateOtomatis() {
+    window.generateOtomatis = async function() {
         const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
@@ -681,7 +698,7 @@
             const res = await fetch('{{ route("kas.tagihan.generateOtomatis") }}', {
                 method: 'POST',
                 headers: { 
-                    'X-CSRF-TOKEN': csrfToken, 
+                    'X-CSRF-TOKEN': getCsrfToken(), 
                     'Accept': 'application/json',
                     'Content-Type': 'application/json' 
                 },
@@ -692,17 +709,17 @@
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                showToast(data.message, 'success');
+                window.showToast(data.message, 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast(data.message || 'Terjadi kesalahan.', 'error');
+                window.showToast(data.message || 'Terjadi kesalahan.', 'error');
             }
         } catch {
-            showToast('Koneksi gagal.', 'error');
+            window.showToast('Koneksi gagal.', 'error');
         }
     }
 
-    function bayarForm() {
+    window.bayarForm = function() {
         return {
             jumlah: 0,
             tabungan: 0,

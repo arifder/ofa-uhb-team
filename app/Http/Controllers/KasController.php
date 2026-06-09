@@ -121,8 +121,8 @@ class KasController extends Controller
             'bukti_foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $fakultasId = ($user->role === 'super_admin' && $request->filled('fakultas_id'))
-            ? $request->fakultas_id
+        $fakultasId = $user->role === 'super_admin'
+            ? ($request->filled('fakultas_id') ? $request->fakultas_id : $user->fakultas_id)
             : $user->fakultas_id;
 
         $tabungan = 0;
@@ -210,8 +210,9 @@ class KasController extends Controller
         ]);
 
         $kas = KasTransaction::findOrFail($id);
-        $fakultasId = ($user->role === 'super_admin' && $request->filled('fakultas_id'))
-            ? $request->fakultas_id
+        $this->authorize('update', $kas);
+        $fakultasId = $user->role === 'super_admin'
+            ? ($request->filled('fakultas_id') ? $request->fakultas_id : $kas->fakultas_id)
             : $kas->fakultas_id;
 
         $tabungan = 0;
@@ -253,9 +254,7 @@ class KasController extends Controller
     public function destroy(string $id)
     {
         $kas = KasTransaction::findOrFail($id);
-        if (!in_array(auth()->user()->role, ['super_admin', 'admin_fst', 'admin_fis'])) {
-            abort(403, 'Unauthorized action.');
-        }
+        $this->authorize('delete', $kas);
         $kas->delete();
 
         return response()->json([

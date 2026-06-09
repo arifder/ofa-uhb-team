@@ -5,7 +5,7 @@
 @section('topbar_actions')
 @php $jumlahBaru = \App\Models\Notifikasi::where('user_id', auth()->id())->where('dibaca', false)->count(); @endphp
 @if($jumlahBaru > 0)
-    <form action="{{ route('notifikasi.readAll') }}" method="POST" style="margin:0;">
+    <form action="{{ route('notifikasi.readAll') }}" method="POST" style="margin:0;" onsubmit="markAllReadFromPage(event)">
         @csrf
         <button type="submit" class="btn-read-all" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
             <i class="ti ti-checks"></i> Tandai Semua Dibaca
@@ -598,7 +598,7 @@
   {{-- ── Pagination ── --}}
   @if($notifikasi->hasPages())
     <div class="pagination-wrap">
-      {{ $notifikasi->links() }}
+      {{ $notifikasi->links('vendor.pagination.custom-simple') }}
     </div>
   @endif
 
@@ -644,6 +644,40 @@ function markAsRead(id, btn) {
                     if (readAllBtn) readAllBtn.style.display = 'none';
                 }
             }
+
+            if (typeof fetchNotif === 'function') {
+                fetchNotif();
+            }
+        }
+    });
+}
+
+function markAllReadFromPage(event) {
+    event.preventDefault();
+
+    fetch('/notifikasi/read-all', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        }
+    }).then(r => r.json()).then(data => {
+        if (!data.success) return;
+
+        document.querySelectorAll('.notif-item.belum-dibaca').forEach(item => {
+            item.classList.remove('belum-dibaca');
+            const dot = item.querySelector('.notif-unread-dot');
+            if (dot) dot.remove();
+            const title = item.querySelector('.notif-judul');
+            if (title) title.classList.remove('bold');
+            item.querySelectorAll('button[title="Tandai sudah dibaca"]').forEach(button => button.remove());
+        });
+
+        document.querySelectorAll('.notif-count-badge').forEach(badge => badge.remove());
+        document.querySelectorAll('.btn-read-all').forEach(button => button.style.display = 'none');
+
+        if (typeof fetchNotif === 'function') {
+            fetchNotif();
         }
     });
 }

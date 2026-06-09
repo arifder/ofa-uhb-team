@@ -74,31 +74,34 @@
 </style>
 @endpush
 
-@section('content')
-
 @php $authUser = auth()->user(); @endphp
 
-{{-- Page Header --}}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2 style="font-size:18px; font-weight:600; color:#1e293b;">
-        Notulensi Rapat
-        <span style="font-size:13px; font-weight:400; color:#64748b; margin-left:8px;">Total: {{ $notulensiList->total() }}</span>
-    </h2>
+@section('title_addon', 'Total: ' . $notulensiList->total())
+
+@section('topbar_actions')
     @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
     <button class="btn-primary" onclick="openModal()">
         <i class="ti ti-plus"></i> Tambah Notulensi
     </button>
     @endif
-</div>
+@endsection
+
+@section('content')
 
 <div id="toast-container"></div>
 
 {{-- Filter Bar --}}
-<form method="GET" action="{{ route('notulensi.index') }}" class="master-card p-4 mb-4" style="padding:16px;">
+<form method="GET" action="{{ route('notulensi.index') }}" class="master-card p-4 mb-4" style="padding:16px;" id="filterForm" x-data="{
+    submitSPA() {
+        const formData = new FormData(document.getElementById('filterForm'));
+        const params = new URLSearchParams(formData);
+        Livewire.navigate(document.getElementById('filterForm').action + '?' + params.toString());
+    }
+}" @submit.prevent="submitSPA">
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input type="text" name="search" class="filter-control" placeholder="Cari judul notulensi..." value="{{ request('search') }}" style="flex:1; min-width:200px;">
+        <input type="text" name="search" class="filter-control" placeholder="Cari judul notulensi..." value="{{ request('search') }}" style="flex:1; min-width:200px;" @input.debounce.500ms="submitSPA">
         @if(in_array($authUser->role, ['super_admin', 'kepala_unit']))
-        <select name="fakultas_id" class="filter-control" style="width:200px;" onchange="this.form.submit()">
+        <select name="fakultas_id" class="filter-control" style="width:200px;" @change="submitSPA">
             <option value="">Semua Fakultas</option>
             @foreach($fakultasList as $fak)
                 <option value="{{ $fak->id }}" {{ request('fakultas_id') == $fak->id ? 'selected' : '' }}>
@@ -107,8 +110,7 @@
             @endforeach
         </select>
         @endif
-        <button type="submit" class="btn-outline">Filter</button>
-        <a href="{{ route('notulensi.index') }}" class="btn-outline">Reset</a>
+        <a wire:navigate href="{{ route('notulensi.index') }}" class="btn-outline">Reset</a>
     </div>
 </form>
 
@@ -125,9 +127,7 @@
                     <th>Fakultas</th>
                     <th>Peserta</th>
                     <th>Dibuat Oleh</th>
-                    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
                     <th>Aksi</th>
-                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -155,7 +155,6 @@
                         </span>
                     </td>
                     <td style="color:#64748b; font-size:12px;">{{ $not->user->name ?? '-' }}</td>
-                    @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
                     <td>
                         <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
                             <i class="ti ti-eye"></i>
@@ -166,26 +165,20 @@
                         <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
                             <i class="ti ti-file-type-pdf"></i>
                         </a>
+                        @if(!in_array($authUser->role, ['kepala_unit', 'dosen']))
+                        @php
+                            $canEditNot = $authUser->role === 'super_admin' || (int) $not->fakultas_id === (int) $authUser->fakultas_id;
+                        @endphp
+                        @if($canEditNot)
                         <button class="icon-btn" onclick="editNotulensi({{ $not->id }})" title="Edit">
                             <i class="ti ti-pencil"></i>
                         </button>
                         <button class="icon-btn delete" onclick="deleteNotulensi({{ $not->id }})" title="Hapus">
                             <i class="ti ti-trash"></i>
                         </button>
+                        @endif
+                        @endif
                     </td>
-                    @else
-                    <td>
-                        <button class="icon-btn" onclick="viewDetail({{ $not->id }})" title="Lihat Detail">
-                            <i class="ti ti-eye"></i>
-                        </button>
-                        <button class="icon-btn" onclick="openExportModal({{ $not->id }}, {{ $not->fakultas_id ?? 'null' }}, {{ $not->dosens->first()?->prodi_id ?? 'null' }})" style="color:#0f766e" title="Export BAP">
-                            <i class="ti ti-printer"></i>
-                        </button>
-                        <a href="{{ route('notulensi.exportPdf', $not->id) }}" class="icon-btn" style="color:#2563eb" title="Export Notulensi (PDF)">
-                            <i class="ti ti-file-type-pdf"></i>
-                        </a>
-                    </td>
-                    @endif
                 </tr>
                 @empty
                 <tr>
@@ -209,10 +202,10 @@
             @if($notulensiList->onFirstPage())
                 <span class="pag-btn disabled">← Previous</span>
             @else
-                <a href="{{ $notulensiList->previousPageUrl() }}" class="pag-btn">← Previous</a>
+                <a wire:navigate href="{{ $notulensiList->previousPageUrl() }}" class="pag-btn">← Previous</a>
             @endif
             @if($notulensiList->hasMorePages())
-                <a href="{{ $notulensiList->nextPageUrl() }}" class="pag-btn">Next →</a>
+                <a wire:navigate href="{{ $notulensiList->nextPageUrl() }}" class="pag-btn">Next →</a>
             @else
                 <span class="pag-btn disabled">Next →</span>
             @endif
@@ -411,10 +404,12 @@
 
 @push('scripts')
 <script>
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    }
 
     /* ── Toast ─────────────────────────────────────── */
-    function showToast(msg, type = 'success') {
+    window.showToast = function(msg, type = 'success') {
         const t = document.createElement('div');
         t.className = `custom-toast ${type === 'error' ? 'error' : ''}`;
         t.innerHTML = `<i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'}"></i> ${msg}`;
@@ -426,8 +421,26 @@
     let newFotoFiles = [];
     let deletedFotoIds = [];
 
+    window.refreshNotulensiPage = function(delay = 700) {
+        setTimeout(() => {
+            if (typeof fetchNotif === 'function') {
+                fetchNotif();
+            }
+
+            const target = window.location.pathname + window.location.search;
+            if (window.Livewire && typeof window.Livewire.navigate === 'function') {
+                window.Livewire.navigate(target);
+            } else {
+                window.location.href = target;
+            }
+        }, delay);
+    }
+
     /* ── Modal Open/Close ──────────────────────────── */
-    function openModal() {
+    window.openModal = function() {
+        if (typeof window.initTinyMCE === 'function') {
+            window.initTinyMCE();
+        }
         document.getElementById('notulensiForm').reset();
         document.getElementById('not_id').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Notulensi';
@@ -436,7 +449,7 @@
         document.getElementById('inputDokumentasi').value = '';
         document.getElementById('previewContainer').innerHTML = '';
         document.getElementById('existingPhotosContainer').innerHTML = '';
-        if (tinymce.get('not_agenda')) {
+        if (typeof tinymce !== 'undefined' && tinymce.get('not_agenda')) {
             tinymce.get('not_agenda').setContent('');
         }
         document.getElementById('not_agenda_rapat').value = '';
@@ -445,11 +458,11 @@
         document.getElementById('notulensiModal').classList.add('active');
     }
 
-    function closeModal() {
+    window.closeModal = function() {
         document.getElementById('notulensiModal').classList.remove('active');
     }
 
-    function closeDetail() {
+    window.closeDetail = function() {
         document.getElementById('detailModal').classList.remove('active');
     }
 
@@ -513,7 +526,7 @@
     };
 
     /* ── Export Modal ──────────────────────────────── */
-    function openExportModal(id, fakultasId = null, prodiId = null) {
+    window.openExportModal = function(id, fakultasId = null, prodiId = null) {
         document.getElementById('export_not_id').value = id;
         document.getElementById('export_fakultas_id').value = fakultasId;
         document.getElementById('export_prodi_id').value = prodiId;
@@ -522,11 +535,11 @@
         document.getElementById('export_jabatan').value = '';
         document.getElementById('export_nama').value = '';
         document.getElementById('export_nama').readOnly = true;
-        toggleExportNames(showTtdCheckbox);
+        window.toggleExportNames(showTtdCheckbox);
         document.getElementById('exportModal').classList.add('active');
     }
 
-    function toggleExportNames(el) {
+    window.toggleExportNames = function(el) {
         const nameDiv = document.getElementById('exportNames');
         if (el.checked) {
             nameDiv.style.display = 'flex';
@@ -539,7 +552,7 @@
         }
     }
 
-    function handleJabatanChange() {
+    window.handleJabatanChange = function() {
         const jabatan = document.getElementById('export_jabatan').value;
         const container = document.getElementById('export_nama_container');
         const input = document.getElementById('export_nama');
@@ -572,11 +585,11 @@
         }
     }
 
-    function closeExportModal() {
+    window.closeExportModal = function() {
         document.getElementById('exportModal').classList.remove('active');
     }
 
-    function submitExport(e) {
+    window.submitExport = function(e) {
         e.preventDefault();
         const id = document.getElementById('export_not_id').value;
         const showTtd = document.getElementById('export_show_ttd').checked ? 1 : 0;
@@ -584,16 +597,16 @@
         const nama = document.getElementById('export_nama').value.trim();
 
         if (showTtd && !jabatan) {
-            showToast('Pilih pihak yang mengetahui terlebih dahulu.', 'error');
+            window.showToast('Pilih pihak yang mengetahui terlebih dahulu.', 'error');
             return;
         }
 
         if (showTtd && jabatan === 'Lainnya' && !nama) {
-            showToast('Isi nama pejabat terlebih dahulu.', 'error');
+            window.showToast('Isi nama pejabat terlebih dahulu.', 'error');
             return;
         }
         
-        closeExportModal();
+        window.closeExportModal();
         let url = `/notulensi/${id}/export-bap?show_ttd=${showTtd}`;
         if (showTtd) {
             const params = new URLSearchParams();
@@ -610,7 +623,7 @@
     }
 
     /* ── Peserta Search ────────────────────────────── */
-    function filterPeserta() {
+    window.filterPeserta = function() {
         const q = document.getElementById('searchPeserta').value.toLowerCase();
         document.querySelectorAll('#pesertaList .peserta-item').forEach(item => {
             item.style.display = item.dataset.nama.includes(q) ? '' : 'none';
@@ -618,24 +631,24 @@
     }
 
     /* ── Foto Preview (accumulative) ──────────────── */
-    function tambahFoto(input) {
+    window.tambahFoto = function(input) {
         Array.from(input.files).forEach(file => {
             if (!file.type.match(/image\/(jpeg|png)/)) {
-                showToast(file.name + ' bukan file gambar yang valid!', 'error');
+                window.showToast(file.name + ' bukan file gambar yang valid!', 'error');
                 return;
             }
             if (file.size > 5 * 1024 * 1024) {
-                showToast(file.name + ' melebihi 5MB!', 'error');
+                window.showToast(file.name + ' melebihi 5MB!', 'error');
                 return;
             }
             newFotoFiles.push(file);
         });
         // Reset input agar bisa memilih file yang sama lagi
         input.value = '';
-        renderNewFotoPreview();
+        window.renderNewFotoPreview();
     }
 
-    function renderNewFotoPreview() {
+    window.renderNewFotoPreview = function() {
         const container = document.getElementById('previewContainer');
         container.innerHTML = '';
         newFotoFiles.forEach((file, i) => {
@@ -645,7 +658,7 @@
                 div.style.cssText = 'position:relative;width:80px;';
                 div.innerHTML = `
                     <img src="${e.target.result}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"/>
-                    <span onclick="hapusFotoBaru(${i})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1">×</span>
+                    <span onclick="window.hapusFotoBaru(${i})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1">×</span>
                     <p style="font-size:9px;color:#6b7280;text-align:center;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${file.name}</p>`;
                 container.appendChild(div);
             };
@@ -653,12 +666,12 @@
         });
     }
 
-    function hapusFotoBaru(index) {
+    window.hapusFotoBaru = function(index) {
         newFotoFiles.splice(index, 1);
-        renderNewFotoPreview();
+        window.renderNewFotoPreview();
     }
 
-    function renderExistingPhotos(photos) {
+    window.renderExistingPhotos = function(photos) {
         const container = document.getElementById('existingPhotosContainer');
         container.innerHTML = '';
         if (!photos || photos.length === 0) return;
@@ -674,13 +687,13 @@
             div.dataset.dokId = dok.id;
             div.innerHTML = `
                 <img src="/storage/dokumentasi-notulensi/${dok.nama_file}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"/>
-                <span onclick="hapusFotoExisting(this, ${dok.id})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1" title="Hapus foto ini">×</span>
+                <span onclick="window.hapusFotoExisting(this, ${dok.id})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1" title="Hapus foto ini">×</span>
                 <p style="font-size:9px;color:#6b7280;text-align:center;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${dok.nama_file}</p>`;
             container.appendChild(div);
         });
     }
 
-    function hapusFotoExisting(btn, dokId) {
+    window.hapusFotoExisting = function(btn, dokId) {
         deletedFotoIds.push(dokId);
         const div = btn.closest('div[data-dok-id]');
         if (div) div.remove();
@@ -691,127 +704,133 @@
     }
 
     /* ── View Detail ───────────────────────────────── */
-    async function viewDetail(id) {
-        const res = await fetch(`/notulensi/${id}`, {
-            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+    window.viewDetail = function(id) {
+        fetch(`/notulensi/${id}`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const pesertaChips = (data.dosens || []).map(d => {
+                const prodi = d.prodi ? d.prodi.nama_prodi : '-';
+                const fakultas = (d.prodi && d.prodi.fakultas) ? d.prodi.fakultas.nama_fakultas : '-';
+                return `<span class="peserta-chip" title="${prodi} - ${fakultas}">
+                    <i class="ti ti-user" style="font-size:11px;"></i>
+                    ${d.nama_lengkap}
+                    <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(${prodi})</span>
+                </span>`;
+            }).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
+
+            document.getElementById('detailTitle').textContent = data.judul;
+            document.getElementById('detailBody').innerHTML = `
+                <div class="detail-section">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div>
+                            <div class="detail-label">Tanggal</div>
+                            <div class="detail-value">${new Date(data.tanggal).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'})}</div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Tempat</div>
+                            <div class="detail-value">${data.tempat}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div>
+                            <div class="detail-label">Fakultas</div>
+                            <div class="detail-value">${data.fakultas?.nama_fakultas ?? '-'}</div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Dibuat Oleh</div>
+                            <div class="detail-value">${data.user?.name ?? '-'}</div>
+                        </div>
+                    </div>
+                </div>
+                ${data.agenda_rapat ? `
+                <div class="detail-section">
+                    <div class="detail-label">Agenda Rapat</div>
+                    <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px; white-space:pre-line;">${data.agenda_rapat}</div>
+                </div>` : ''}
+                <div class="detail-section">
+                    <div class="detail-label">Resume Rapat</div>
+                    <div class="detail-value tinymce-content" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
+                </div>
+                ${data.tindak_lanjut ? `
+                <div class="detail-section">
+                    <div class="detail-label">Tindak Lanjut</div>
+                    <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.tindak_lanjut}</div>
+                </div>` : ''}
+                <div class="detail-section">
+                    <div class="detail-label">Peserta Rapat (${(data.dosens||[]).length} dosen)</div>
+                    <div style="margin-top:8px;">${pesertaChips}</div>
+                </div>
+                ${data.dokumentasi_notulensi && data.dokumentasi_notulensi.length > 0 ? `
+                <div class="detail-section" style="border-bottom:none;">
+                    <div class="detail-label" style="margin-bottom:8px">Dokumentasi Foto</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px">
+                        ${data.dokumentasi_notulensi.map(dok => `
+                            <a href="/storage/dokumentasi-notulensi/${dok.nama_file}" target="_blank">
+                                <img src="/storage/dokumentasi-notulensi/${dok.nama_file}" style="width:100px;height:100px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0; cursor:pointer"/>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            document.getElementById('detailModal').classList.add('active');
         });
-        const data = await res.json();
-
-        const pesertaChips = (data.dosens || []).map(d => {
-            const prodi = d.prodi ? d.prodi.nama_prodi : '-';
-            const fakultas = (d.prodi && d.prodi.fakultas) ? d.prodi.fakultas.nama_fakultas : '-';
-            return `<span class="peserta-chip" title="${prodi} - ${fakultas}">
-                <i class="ti ti-user" style="font-size:11px;"></i> 
-                ${d.nama_lengkap} 
-                <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(${prodi})</span>
-            </span>`;
-        }).join('') || '<span style="color:#94a3b8;">Belum ada peserta</span>';
-
-        document.getElementById('detailTitle').textContent = data.judul;
-        document.getElementById('detailBody').innerHTML = `
-            <div class="detail-section">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                    <div>
-                        <div class="detail-label">Tanggal</div>
-                        <div class="detail-value">${new Date(data.tanggal).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'})}</div>
-                    </div>
-                    <div>
-                        <div class="detail-label">Tempat</div>
-                        <div class="detail-value">${data.tempat}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="detail-section">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                    <div>
-                        <div class="detail-label">Fakultas</div>
-                        <div class="detail-value">${data.fakultas?.nama_fakultas ?? '-'}</div>
-                    </div>
-                    <div>
-                        <div class="detail-label">Dibuat Oleh</div>
-                        <div class="detail-value">${data.user?.name ?? '-'}</div>
-                    </div>
-                </div>
-            </div>
-            ${data.agenda_rapat ? `
-            <div class="detail-section">
-                <div class="detail-label">Agenda Rapat</div>
-                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px; white-space:pre-line;">${data.agenda_rapat}</div>
-            </div>` : ''}
-            <div class="detail-section">
-                <div class="detail-label">Resume Rapat</div>
-                <div class="detail-value tinymce-content" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.agenda}</div>
-            </div>
-            ${data.tindak_lanjut ? `
-            <div class="detail-section">
-                <div class="detail-label">Tindak Lanjut</div>
-                <div class="detail-value" style="background:#f8fafc; padding:10px 14px; border-radius:8px; margin-top:6px;">${data.tindak_lanjut}</div>
-            </div>` : ''}
-            <div class="detail-section">
-                <div class="detail-label">Peserta Rapat (${(data.dosens||[]).length} dosen)</div>
-                <div style="margin-top:8px;">${pesertaChips}</div>
-            </div>
-            ${data.dokumentasi_notulensi && data.dokumentasi_notulensi.length > 0 ? `
-            <div class="detail-section" style="border-bottom:none;">
-                <div class="detail-label" style="margin-bottom:8px">Dokumentasi Foto</div>
-                <div style="display:flex; flex-wrap:wrap; gap:8px">
-                    ${data.dokumentasi_notulensi.map(dok => `
-                        <a href="/storage/dokumentasi-notulensi/${dok.nama_file}" target="_blank">
-                            <img src="/storage/dokumentasi-notulensi/${dok.nama_file}" style="width:100px;height:100px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0; cursor:pointer"/>
-                        </a>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-        `;
-        document.getElementById('detailModal').classList.add('active');
     }
 
     /* ── Edit ──────────────────────────────────────── */
-    async function editNotulensi(id) {
-        const res = await fetch(`/notulensi/${id}`, {
-            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
-        });
-        const data = await res.json();
-
-        // Reset state foto
-        newFotoFiles = [];
-        deletedFotoIds = [];
-        document.getElementById('previewContainer').innerHTML = '';
-        document.getElementById('inputDokumentasi').value = '';
-
-        document.getElementById('modalTitle').textContent = 'Edit Notulensi';
-        document.getElementById('not_id').value = data.id;
-        document.getElementById('not_judul').value = data.judul;
-        document.getElementById('not_tanggal').value = data.tanggal;
-        document.getElementById('not_tempat').value = data.tempat;
-        if (tinymce.get('not_agenda')) {
-            tinymce.get('not_agenda').setContent(data.agenda || '');
-        } else {
-            document.getElementById('not_agenda').value = data.agenda || '';
+    window.editNotulensi = function(id) {
+        if (typeof window.initTinyMCE === 'function') {
+            window.initTinyMCE();
         }
-        document.getElementById('not_tindak_lanjut').value = data.tindak_lanjut ?? '';
-        document.getElementById('not_agenda_rapat').value = data.agenda_rapat ?? '';
 
-        // Set fakultas if super_admin field exists
-        const fakSel = document.getElementById('not_fakultas_id');
-        if (fakSel) fakSel.value = data.fakultas_id;
+        fetch(`/notulensi/${id}`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() }
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Reset state foto
+            newFotoFiles = [];
+            deletedFotoIds = [];
+            document.getElementById('previewContainer').innerHTML = '';
+            document.getElementById('inputDokumentasi').value = '';
 
-        // Tick peserta checkboxes
-        const pesertaIds = (data.dosens || []).map(d => String(d.id));
-        document.querySelectorAll('.peserta-check').forEach(c => {
-            c.checked = pesertaIds.includes(c.value);
+            document.getElementById('modalTitle').textContent = 'Edit Notulensi';
+            document.getElementById('not_id').value = data.id;
+            document.getElementById('not_judul').value = data.judul;
+            document.getElementById('not_tanggal').value = data.tanggal;
+            document.getElementById('not_tempat').value = data.tempat;
+            if (typeof tinymce !== 'undefined' && tinymce.get('not_agenda')) {
+                tinymce.get('not_agenda').setContent(data.agenda || '');
+            } else {
+                document.getElementById('not_agenda').value = data.agenda || '';
+            }
+            document.getElementById('not_tindak_lanjut').value = data.tindak_lanjut ?? '';
+            document.getElementById('not_agenda_rapat').value = data.agenda_rapat ?? '';
+
+            // Set fakultas if super_admin field exists
+            const fakSel = document.getElementById('not_fakultas_id');
+            if (fakSel) fakSel.value = data.fakultas_id;
+
+            // Tick peserta checkboxes
+            const pesertaIds = (data.dosens || []).map(d => String(d.id));
+            document.querySelectorAll('.peserta-check').forEach(c => {
+                c.checked = pesertaIds.includes(c.value);
+            });
+
+            // Tampilkan foto existing
+            window.renderExistingPhotos(data.dokumentasi_notulensi || []);
+
+            document.getElementById('pesertaError').style.display = 'none';
+            document.getElementById('notulensiModal').classList.add('active');
         });
-
-        // Tampilkan foto existing
-        renderExistingPhotos(data.dokumentasi_notulensi || []);
-
-        document.getElementById('pesertaError').style.display = 'none';
-        document.getElementById('notulensiModal').classList.add('active');
     }
 
     /* ── Save (Store/Update) ───────────────────────── */
-    async function saveNotulensi(e) {
+    window.saveNotulensi = function(e) {
         e.preventDefault();
 
         const checked = [...document.querySelectorAll('.peserta-check:checked')].map(c => c.value);
@@ -831,7 +850,7 @@
         formData.append('tempat', document.getElementById('not_tempat').value);
         
         let agendaContent = '';
-        if (tinymce.get('not_agenda')) {
+        if (typeof tinymce !== 'undefined' && tinymce.get('not_agenda')) {
             agendaContent = tinymce.get('not_agenda').getContent();
         } else {
             agendaContent = document.getElementById('not_agenda').value;
@@ -855,61 +874,98 @@
             formData.append('deleted_dokumentasi[]', dokId);
         });
 
-        try {
-            const res = await fetch(url, {
-                method:  'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body:    formData,
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
-                showToast(data.message, 'success');
-                closeModal();
-                setTimeout(() => location.reload(), 1000);
+        fetch(url, {
+            method:  'POST',
+            headers: { 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
+            body:    formData,
+        })
+        .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+        .then(({ status, ok, data }) => {
+            if (ok && data.success) {
+                window.showToast(data.message, 'success');
+                window.closeModal();
+                window.refreshNotulensiPage();
             } else {
                 const errors = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Terjadi kesalahan.');
-                showToast(errors, 'error');
+                window.showToast(errors, 'error');
             }
-        } catch {
-            showToast('Koneksi gagal.', 'error');
-        }
+        })
+        .catch(() => {
+            window.showToast('Koneksi gagal.', 'error');
+        });
     }
 
     /* ── Delete ────────────────────────────────────── */
-    async function deleteNotulensi(id) {
+    window.deleteNotulensi = function(id) {
         if (!confirm('Yakin ingin menghapus notulensi ini? Peserta rapat juga akan terhapus.')) return;
-        try {
-            const res = await fetch(`/notulensi/${id}`, {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body:    JSON.stringify({ _method: 'DELETE' }),
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
-                showToast(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
+        fetch(`/notulensi/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
+            body: JSON.stringify({ _method: 'DELETE' }),
+        })
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+            if (ok && data.success) {
+                window.showToast(data.message, 'success');
+                window.refreshNotulensiPage();
             } else {
-                showToast(data.message || 'Gagal menghapus.', 'error');
+                window.showToast(data.message || 'Gagal menghapus.', 'error');
             }
-        } catch {
-            showToast('Koneksi gagal.', 'error');
-        }
+        })
+        .catch(() => {
+            window.showToast('Koneksi gagal.', 'error');
+        });
     }
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
 <script>
-    tinymce.init({
-        selector: '#not_agenda',
-        menubar: 'file edit view insert format tools table',
-        promotion: false,
-        toolbar_mode: 'wrap',
-        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
-        toolbar: 'undo redo | blocks | ' +
-                 'bold italic backcolor | alignleft aligncenter ' +
-                 'alignright alignjustify | bullist numlist outdent indent | ' +
-                 'removeformat | help',
-        content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 13px; }'
-    });
+    window.loadTinyMCE = function(callback) {
+        if (!document.getElementById('not_agenda')) return;
+
+        if (typeof tinymce !== 'undefined') {
+            callback();
+            return;
+        }
+
+        let script = document.getElementById('tinymce-script');
+        if (!script) {
+            script = document.createElement('script');
+            script.id = 'tinymce-script';
+            script.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+            script.referrerPolicy = 'origin';
+            script.onload = callback;
+            document.head.appendChild(script);
+            return;
+        }
+
+        script.addEventListener('load', callback, { once: true });
+    }
+
+    window.initTinyMCE = function() {
+        window.loadTinyMCE(() => {
+            if (!document.getElementById('not_agenda')) return;
+
+            tinymce.remove('#not_agenda');
+            tinymce.init({
+                selector: '#not_agenda',
+                height: 280,
+                menubar: 'file edit view insert format tools table',
+                promotion: false,
+                toolbar_mode: 'wrap',
+                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+                toolbar: 'undo redo | blocks | ' +
+                         'bold italic backcolor | alignleft aligncenter ' +
+                         'alignright alignjustify | bullist numlist outdent indent | ' +
+                         'removeformat | help',
+                content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 13px; }',
+                setup(editor) {
+                    editor.on('change keyup undo redo', () => editor.save());
+                }
+            });
+        });
+    }
+
+    document.addEventListener('livewire:navigated', window.initTinyMCE);
+    document.addEventListener('DOMContentLoaded', window.initTinyMCE);
 </script>
 @endpush

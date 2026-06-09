@@ -5,7 +5,7 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
+                    <a href="{{ route('dashboard') }}" wire:navigate.hover>
                         <x-application-mark class="block h-9 w-auto" />
                     </a>
                 </div>
@@ -77,12 +77,12 @@
                                     </div>
 
                                     <!-- Team Settings -->
-                                    <x-dropdown-link href="{{ route('teams.show', Auth::user()->currentTeam->id) }}">
+                                    <x-dropdown-link href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" wire:navigate>
                                         {{ __('Team Settings') }}
                                     </x-dropdown-link>
 
                                     @can('create', Laravel\Jetstream\Jetstream::newTeamModel())
-                                        <x-dropdown-link href="{{ route('teams.create') }}">
+                                        <x-dropdown-link href="{{ route('teams.create') }}" wire:navigate>
                                             {{ __('Create New Team') }}
                                         </x-dropdown-link>
                                     @endcan
@@ -137,12 +137,12 @@
                                 {{ __('Manage Account') }}
                             </div>
 
-                            <x-dropdown-link href="{{ route('profile.show') }}">
+                            <x-dropdown-link href="{{ route('profile.show') }}" wire:navigate>
                                 {{ __('Profile') }}
                             </x-dropdown-link>
 
                             @if (Laravel\Jetstream\Jetstream::hasApiFeatures())
-                                <x-dropdown-link href="{{ route('api-tokens.index') }}">
+                                <x-dropdown-link href="{{ route('api-tokens.index') }}" wire:navigate>
                                     {{ __('API Tokens') }}
                                 </x-dropdown-link>
                             @endif

@@ -70,85 +70,7 @@
 
     <div id="toast-container"></div>
 
-    {{-- FILTER --}}
-    <form method="GET" action="{{ route('master.dosen.index') }}" class="master-card p-4 mb-6 flex gap-3" style="padding:16px;">
-        <input type="text" name="search" class="filter-control flex-1" placeholder="Cari nama / NIDN..." value="{{ request('search') }}">
-
-        <select name="fakultas_id" class="filter-control" style="width:200px;" id="filter_fakultas" onchange="loadFilterProdi()">
-            <option value="">Semua Fakultas</option>
-            @foreach($fakultasList as $fak)
-                <option value="{{ $fak->id }}" {{ request('fakultas_id') == $fak->id ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
-            @endforeach
-        </select>
-
-        <select name="prodi_id" class="filter-control" style="width:200px;" id="filter_prodi" data-selected="{{ request('prodi_id') }}">
-            <option value="">Semua Prodi</option>
-        </select>
-
-        <button type="submit" class="btn-outline">Filter</button>
-        <a href="{{ route('master.dosen.index') }}" class="btn-outline text-center">Reset</a>
-    </form>
-
-    <div class="master-card">
-        <div class="table-responsive">
-            <table class="master-table">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Nama Dosen</th>
-                        <th>NIDN</th>
-                        <th>Fakultas</th>
-                        <th>Prodi</th>
-                        <th>Status</th>
-                        <th>Nominal</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($dosens as $index => $dosen)
-                    <tr>
-                        <td>{{ $dosens->firstItem() + $index }}</td>
-                        <td>{{ $dosen->nama_lengkap }}</td>
-                        <td><span style="font-family: monospace; font-size:12px; background:#f1f5f9; padding:2px 6px; border-radius:4px;">{{ $dosen->nidn }}</span></td>
-                        <td>{{ $dosen->fakultas ? $dosen->fakultas->nama_fakultas : '-' }}</td>
-                        <td>{{ $dosen->prodi ? $dosen->prodi->nama_prodi : '-' }}</td>
-                        <td>
-                            @if($dosen->status == 'aktif') <span class="master-badge badge-aktif">Aktif</span>
-                            @else <span class="master-badge badge-nonaktif">Nonaktif</span>
-                            @endif
-                        </td>
-                        <td>
-                            <div class="nominal-wrap">
-                                <input type="number" class="nominal-input" id="nominal_input_{{ $dosen->id }}"
-                                    value="{{ $dosen->nominal_tagihan ?? 0 }}" min="0" step="1" inputmode="numeric"
-                                    placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-                                <button type="button" class="btn-save-nominal" id="nominal_btn_{{ $dosen->id }}"
-                                    onclick="saveNominal({{ $dosen->id }})">
-                                    <i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan
-                                </button>
-                                <span class="saved-badge" id="nominal_saved_{{ $dosen->id }}">Tersimpan</span>
-                            </div>
-                        </td>
-                        <td>
-                            <button class="icon-btn" title="Edit" onclick='editDosen(@json($dosen))'><i class="ti ti-pencil"></i></button>
-                            <button class="icon-btn delete" title="Hapus" onclick="confirmDelete({{ $dosen->id }}, '{{ addslashes($dosen->nama_lengkap) }}')"><i class="ti ti-trash"></i></button>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="9" style="text-align:center; padding: 32px; color:#94a3b8;">
-                            <i class="ti ti-user-off" style="font-size:32px; display:block; margin-bottom:8px;"></i>
-                            Tidak ada data dosen.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="p-4 border-t border-gray-200">
-            {{ $dosens->withQueryString()->links() }}
-        </div>
-    </div>
+    @livewire('dosen-crud')
 
 {{-- MODAL TAMBAH / EDIT DOSEN --}}
 <div class="custom-modal" id="dosenModal">
@@ -299,8 +221,10 @@
 
         /* ===== PRODI DYNAMIC ===== */
         async function loadFilterProdi() {
-            const fakId = document.getElementById('filter_fakultas').value;
             const select = document.getElementById('filter_prodi');
+            const fakultasFilter = document.getElementById('filter_fakultas');
+            if (!select || !fakultasFilter) return;
+            const fakId = fakultasFilter.value;
             const selected = select.dataset.selected;
             select.innerHTML = '<option value="">Semua Prodi</option>';
             if (!fakId) return;

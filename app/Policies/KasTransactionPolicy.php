@@ -32,7 +32,7 @@ class KasTransactionPolicy
     public function update(User $user, KasTransaction $kas): bool
     {
         if ($user->hasRole(['admin_fst', 'admin_fis'])) {
-            return $kas->fakultas_id == $user->fakultas_id;
+            return (int) $kas->fakultas_id === (int) $user->fakultas_id;
         }
         return false;
     }
@@ -40,7 +40,7 @@ class KasTransactionPolicy
     public function delete(User $user, KasTransaction $kas): bool
     {
         if ($user->hasRole(['admin_fst', 'admin_fis'])) {
-            return $kas->fakultas_id == $user->fakultas_id;
+            return (int) $kas->fakultas_id === (int) $user->fakultas_id;
         }
         return false;
     }

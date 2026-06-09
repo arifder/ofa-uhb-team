@@ -5,14 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>@yield('title', 'Dashboard') - OFA-UHB</title>
+  <link rel="icon" href="https://uhb.ac.id/wp-content/uploads/2024/03/logo_UHB_r-1.png">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <!-- Tabler Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 
-  <!-- Alpine.js -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Alpine.js (Bawaan Livewire 3) -->
   <style>[x-cloak] { display: none !important; }</style>
+  @livewireStyles
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -553,7 +554,24 @@
 
 <body>
 
-  <div class="wrap" x-data="{ activeModule: localStorage.getItem('activeModule') || 'kas' }">
+  @php
+    $routeModule = request()->routeIs('notulensi.*') ? 'notulensi' : (request()->routeIs('kas.*') ? 'kas' : '');
+  @endphp
+
+  <div class="wrap"
+       x-data="{
+          activeModule: '{{ $routeModule }}' || localStorage.getItem('activeModule') || 'kas',
+          syncActiveModule() {
+            const path = window.location.pathname;
+            if (path.startsWith('/notulensi')) {
+              this.activeModule = 'notulensi';
+            } else if (path.startsWith('/kas')) {
+              this.activeModule = 'kas';
+            }
+            localStorage.setItem('activeModule', this.activeModule);
+          }
+       }"
+       x-init="syncActiveModule(); document.addEventListener('livewire:navigated', () => syncActiveModule())">
     <div class="sidebar">
       <div class="sidebar-logo">
         <div style="width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.05); flex-shrink:0;">
@@ -562,7 +580,7 @@
         <div class="logo-text" style="font-family:'Syne', sans-serif; font-weight:700; letter-spacing:0.02em; margin-left:4px;">OFA-UHB</div>
       </div>
       <div class="nav-section">Platform</div>
-      <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" style="text-decoration:none;">
+      <a wire:navigate href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" style="text-decoration:none;">
           <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard
       </a>
 
@@ -573,17 +591,16 @@
       @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit']))
       <div x-show="activeModule === 'kas'" x-cloak>
         <div class="nav-section">Manajemen Kas</div>
-        <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}"><i class="ti ti-cash" aria-hidden="true"></i>Kas Masuk</a>
-        <a href="{{ route('kas.keluar') }}" class="nav-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
-        <a href="{{ route('kas.tagihan') }}" class="nav-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
-        <a href="{{ route('kas.laporan') }}" class="nav-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
+        <a wire:navigate href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.masuk') ? 'active' : '' }}"><i class="ti ti-cash" aria-hidden="true"></i>Kas Masuk</a>
+        <a wire:navigate href="{{ route('kas.keluar') }}" class="nav-item {{ request()->routeIs('kas.keluar') ? 'active' : '' }}"><i class="ti ti-cash-off" aria-hidden="true"></i>Kas Keluar</a>
+        <a wire:navigate href="{{ route('kas.tagihan') }}" class="nav-item {{ request()->routeIs('kas.tagihan') ? 'active' : '' }}"><i class="ti ti-file-invoice" aria-hidden="true"></i>Tagihan Dosen</a>
+        <a wire:navigate href="{{ route('kas.laporan') }}" class="nav-item {{ request()->routeIs('kas.laporan') ? 'active' : '' }}"><i class="ti ti-report-analytics" aria-hidden="true"></i>Laporan Kas</a>
       </div>
 
       <div x-show="activeModule === 'notulensi'" x-cloak>
         <div class="nav-section">Notulensi Rapat</div>
-        <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
+        <a wire:navigate href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
           <i class="ti ti-notes" aria-hidden="true"></i>Data Notulensi
-          <span class="badge" style="margin-left:auto;">{{ \App\Models\Notulensi::count() }}</span>
         </a>
       </div>
       @endif
@@ -591,8 +608,8 @@
       {{-- MENU DOSEN --}}
       @if($sidebarUser->role === 'dosen')
       <div class="nav-section">Modul Dosen</div>
-      <a href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.*') ? 'active' : '' }}"><i class="ti ti-history" aria-hidden="true"></i>Riwayat Kas Saya</a>
-      <a href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
+      <a wire:navigate href="{{ route('kas.masuk') }}" class="nav-item {{ request()->routeIs('kas.*') ? 'active' : '' }}"><i class="ti ti-history" aria-hidden="true"></i>Riwayat Kas Saya</a>
+      <a wire:navigate href="{{ route('notulensi.index') }}" class="nav-item {{ request()->routeIs('notulensi.*') ? 'active' : '' }}">
         <i class="ti ti-notes" aria-hidden="true"></i>Manajemen Rapat
       </a>
       @endif
@@ -600,18 +617,16 @@
       {{-- MENU MASTER DATA: hanya super_admin --}}
       @if($sidebarUser->role === 'super_admin')
       <div class="nav-section">Master Data</div>
-      <a href="{{ route('master.users.index') }}" class="nav-item {{ request()->routeIs('master.users.index') ? 'active' : '' }}">
+      <a wire:navigate href="{{ route('master.users.index') }}" class="nav-item {{ request()->routeIs('master.users.index') ? 'active' : '' }}">
         <i class="ti ti-user-cog" aria-hidden="true"></i>Manajemen User
-        <span class="badge">{{ \App\Models\User::where('status', 'aktif')->count() }}</span>
       </a>
-      <a href="{{ route('master.users.arsip') }}" class="nav-item {{ request()->routeIs('master.users.arsip') ? 'active' : '' }}">
+      <a wire:navigate href="{{ route('master.users.arsip') }}" class="nav-item {{ request()->routeIs('master.users.arsip') ? 'active' : '' }}">
         <i class="ti ti-archive" aria-hidden="true"></i>Arsip User
-        <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ \App\Models\User::where('status', 'arsip')->count() }}</span>
       </a>
-      <a href="{{ route('master.fakultas.index') }}" class="nav-item {{ request()->routeIs('master.fakultas.*') ? 'active' : '' }}">
+      <a wire:navigate href="{{ route('master.fakultas.index') }}" class="nav-item {{ request()->routeIs('master.fakultas.*') ? 'active' : '' }}">
         <i class="ti ti-school" aria-hidden="true"></i>Fakultas & Prodi
       </a>
-      <a href="{{ route('master.dosen.index') }}" class="nav-item {{ request()->routeIs('master.dosen.*') ? 'active' : '' }}">
+      <a wire:navigate href="{{ route('master.dosen.index') }}" class="nav-item {{ request()->routeIs('master.dosen.*') ? 'active' : '' }}">
         <i class="ti ti-chalkboard-teacher" aria-hidden="true"></i>Data Dosen
       </a>
       @endif
@@ -626,13 +641,13 @@
            
            @if(in_array($sidebarUser->role, ['super_admin', 'admin_fst', 'admin_fis', 'kepala_unit']))
            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; padding:4px 8px; margin-bottom:4px;">Ganti Modul</div>
-           <a href="#" @click.prevent="activeModule = 'kas'; localStorage.setItem('activeModule', 'kas'); openProfileMenu = false" 
+           <a wire:navigate href="{{ route('kas.masuk') }}" @click="activeModule = 'kas'; localStorage.setItem('activeModule', 'kas'); openProfileMenu = false"
               style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;"
               onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
               <i class="ti ti-cash-register"></i> Manajemen Kas
               <i class="ti ti-check" style="margin-left:auto; font-size:14px;" x-show="activeModule === 'kas'"></i>
            </a>
-           <a href="#" @click.prevent="activeModule = 'notulensi'; localStorage.setItem('activeModule', 'notulensi'); openProfileMenu = false"
+           <a wire:navigate href="{{ route('notulensi.index') }}" @click="activeModule = 'notulensi'; localStorage.setItem('activeModule', 'notulensi'); openProfileMenu = false"
               style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px; margin-bottom:8px;"
               onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
               <i class="ti ti-clipboard-list"></i> Notulensi Rapat
@@ -641,7 +656,7 @@
            <div style="height:1px; background:#475569; margin:4px 0 8px 0;"></div>
            @endif
 
-           <a href="{{ route('pengaturan.profil') }}" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
+           <a wire:navigate href="{{ route('pengaturan.profil') }}" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#f8fafc; text-decoration:none; font-size:13px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
              <i class="ti ti-user-circle"></i> Profile
            </a>
            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; color:#fca5a5; text-decoration:none; font-size:13px;" onmouseover="this.style.background='#3f4a6b'" onmouseout="this.style.background='transparent'">
@@ -700,7 +715,7 @@
               <div id="notif-list" style="max-height:360px;overflow-y:auto;"></div>
 
               <div style="padding:10px 16px;border-top:1px solid #f1f5f9;text-align:center;">
-                <a href="{{ route('notifikasi.index') }}"
+                <a wire:navigate href="{{ route('notifikasi.index') }}"
                    style="font-size:12px;color:#1d4ed8;font-weight:500;">
                   Lihat semua notifikasi →
                 </a>
@@ -709,7 +724,7 @@
           </div>
 
           {{-- Settings --}}
-          <a href="{{ route('pengaturan.profil') }}" class="icon-btn" title="Pengaturan Profil">
+          <a wire:navigate href="{{ route('pengaturan.profil') }}" class="icon-btn" title="Pengaturan Profil">
             <i class="ti ti-settings" aria-hidden="true"></i>
           </a>
         </div>
@@ -743,6 +758,7 @@
       </div>
     </div>
   </div>
+  @livewireScripts
   @stack('scripts')
 
   <script>
@@ -762,13 +778,6 @@
               badge.style.display = 'none';
             }
           }
-          // Sidebar badge update
-          const sidebarBadge = document.getElementById('sidebar-notif-badge');
-          if (sidebarBadge) {
-            sidebarBadge.textContent = data.count;
-            sidebarBadge.style.display = data.count > 0 ? 'inline' : 'none';
-          }
-
           const list = document.getElementById('notif-list');
           if (!list) return;
 
@@ -834,7 +843,11 @@
         headers: { 'X-CSRF-TOKEN': _csrfToken }
       }).then(() => {
         if (url && url !== 'null' && url.trim() !== '') {
-          window.location.href = url;
+          if (window.Livewire && typeof window.Livewire.navigate === 'function') {
+            window.Livewire.navigate(url);
+          } else {
+            window.location.href = url;
+          }
         } else {
           fetchNotif();
         }
@@ -848,10 +861,17 @@
       }).then(() => fetchNotif());
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    let notifIntervalId = null;
+
+    function initNotifPolling() {
       fetchNotif();
-      setInterval(fetchNotif, 30000); // auto-refresh tiap 30 detik
-    });
+      if (!notifIntervalId) {
+        notifIntervalId = setInterval(fetchNotif, 30000);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initNotifPolling);
+    document.addEventListener('livewire:navigated', initNotifPolling);
   </script>
 </body>
 
