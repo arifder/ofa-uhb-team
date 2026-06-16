@@ -657,9 +657,6 @@
     </div>
 </div>
 
-@endsection
-
-@push('scripts')
 <script>
     function getCsrfToken() {
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1087,4 +1084,5 @@
         }
     }
 </script>
-@endpush
+
+@endsection

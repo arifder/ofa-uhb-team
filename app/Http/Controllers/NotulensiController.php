@@ -124,11 +124,7 @@ class NotulensiController extends Controller
 
         $fakultasList = Fakultas::all();
 
-        $pejabatList = \App\Models\User::whereNotNull('jabatan_struktural')
-                            ->where('status', 'aktif')
-                            ->get(['id', 'name', 'jabatan_struktural', 'fakultas_id', 'prodi_id']);
-
-        return view('notulensi.index', compact('notulensiList', 'dosenList', 'fakultasList', 'pejabatList'));
+        return view('notulensi.index', compact('notulensiList', 'dosenList', 'fakultasList'));
     }
 
     // ── STORE ───────────────────────────────────────────

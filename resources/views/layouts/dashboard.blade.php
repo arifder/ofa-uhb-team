@@ -548,6 +548,59 @@
     .master-table td {
       text-align: center !important;
     }
+
+    /* Fix table action icon buttons during Livewire wire:navigate */
+    .master-table .icon-btn,
+    .master-table button.icon-btn,
+    .master-table a.icon-btn {
+      background: none !important;
+      border: none !important;
+      cursor: pointer !important;
+      color: #64748b !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 6px !important;
+      box-shadow: none !important;
+    }
+    .master-table .icon-btn:hover,
+    .master-table button.icon-btn:hover,
+    .master-table a.icon-btn:hover {
+      background: #f1f5f9 !important;
+      color: #2563eb !important;
+    }
+    .master-table .icon-btn.delete:hover,
+    .master-table button.icon-btn.delete:hover,
+    .master-table a.icon-btn.delete:hover {
+      color: #ef4444 !important;
+    }
+
+    /* Fix modal close buttons during Livewire wire:navigate */
+    .custom-modal-header .icon-btn,
+    .detail-modal-content .icon-btn,
+    .custom-modal-header button.icon-btn,
+    .detail-modal-content button.icon-btn {
+      background: none !important;
+      border: none !important;
+      cursor: pointer !important;
+      color: #64748b !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 6px !important;
+      box-shadow: none !important;
+    }
+    .custom-modal-header .icon-btn:hover,
+    .detail-modal-content .icon-btn:hover,
+    .custom-modal-header button.icon-btn:hover,
+    .detail-modal-content button.icon-btn:hover {
+      background: #f1f5f9 !important;
+      color: #2563eb !important;
+    }
   </style>
   @stack('styles')
 </head>

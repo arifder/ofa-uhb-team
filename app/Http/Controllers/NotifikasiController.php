@@ -77,6 +77,10 @@ class NotifikasiController extends Controller
      */
     public function getUnread()
     {
+        $totalUnread = Notifikasi::where('user_id', auth()->id())
+            ->where('dibaca', false)
+            ->count();
+
         $notif = Notifikasi::where('user_id', auth()->id())
             ->where('dibaca', false)
             ->latest()
@@ -84,7 +88,7 @@ class NotifikasiController extends Controller
             ->get();
 
         return response()->json([
-            'count' => $notif->count(),
+            'count' => $totalUnread,
             'data'  => $notif,
         ]);
     }

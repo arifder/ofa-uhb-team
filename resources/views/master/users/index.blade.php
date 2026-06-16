@@ -153,7 +153,6 @@
         password: '',
         role: 'dosen',
         status: 'aktif',
-        jabatanStruktural: '',
         fakultasId: '',
         prodiId: '',
         nominalTagihan: 0,
@@ -214,7 +213,6 @@
                     this.password = '';
                     this.role = user.role;
                     this.status = user.status;
-                    this.jabatanStruktural = user.jabatan_struktural || '';
                     this.fakultasId = user.fakultas_id || '';
                     this.prodiId = user.prodi_id || '';
                     this.nominalTagihan = user.dosen && user.dosen.nominal_tagihan !== null ? user.dosen.nominal_tagihan : 0;
@@ -230,7 +228,6 @@
                     this.password = '';
                     this.role = 'dosen';
                     this.status = 'aktif';
-                    this.jabatanStruktural = '';
                     this.fakultasId = '';
                     this.prodiId = '';
                     this.nominalTagihan = 0;
@@ -253,7 +250,6 @@
                 password: this.password,
                 role: this.role,
                 status: this.status,
-                jabatan_struktural: this.jabatanStruktural,
             };
 
             if (this.userId) {
@@ -327,22 +323,7 @@
                             <option value="dosen">Dosen</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Jabatan Struktural <span style="color:#94a3b8; font-weight:400;">(opsional)</span></label>
-                        <select class="filter-control" x-model="jabatanStruktural">
-                            <option value="">-- Tidak Ada --</option>
-                            <option value="Super Admin">Super Admin</option>
-                            <option value="Dekan">Dekan</option>
-                            <option value="Kaprodi">Kaprodi</option>
-                            <option value="BAAK">BAAK</option>
-                            <option value="Kemahasiswaan">Kemahasiswaan</option>
-                            <option value="LPPM">LPPM</option>
-                            <option value="Dosen">Dosen</option>
-                            <option value="Kepala Unit">Kepala Unit</option>
-                            <option value="Lainnya">Lainnya</option>
-                        </select>
-                        <div class="text-xs text-gray-500 mt-1" style="font-size: 11px; margin-top: 4px;">Digunakan untuk fitur penandatangan BAP Notulensi.</div>
-                    </div>
+
                     <div class="form-group" x-show="showFakultas" x-cloak>
                         <label>Fakultas</label>
                         <select class="filter-control" x-model="fakultasId">

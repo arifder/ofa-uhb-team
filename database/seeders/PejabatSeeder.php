@@ -54,10 +54,7 @@ class PejabatSeeder extends Seeder
         $fakultas = \App\Models\Fakultas::all();
         foreach ($fakultas as $fak) {
             $jabatan = 'Dekan';
-            // Cek apakah sudah ada user dengan jabatan Dekan di fakultas ini
-            $exists = \App\Models\User::where('fakultas_id', $fak->id)
-                ->where('jabatan_struktural', 'Dekan')
-                ->exists();
+            $exists = \App\Models\User::where('username', 'dekan_fakultas_' . $fak->id)->exists();
 
             if (!$exists) {
                 // Auto-generate nama dekan untuk tabel fakultas
@@ -74,7 +71,6 @@ class PejabatSeeder extends Seeder
                         'role' => 'dosen',
                         'fakultas_id' => $fak->id,
                         'prodi_id' => null,
-                        'jabatan_struktural' => $jabatan,
                         'status' => 'aktif',
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -91,9 +87,7 @@ class PejabatSeeder extends Seeder
         // 5. Kaprodi — one per prodi
         $prodis = \App\Models\Prodi::all();
         foreach ($prodis as $prodi) {
-            $exists = \App\Models\User::where('prodi_id', $prodi->id)
-                ->where('jabatan_struktural', 'Kaprodi')
-                ->exists();
+            $exists = \App\Models\User::where('username', 'kaprodi_prodi_' . $prodi->id)->exists();
 
             if (!$exists) {
                 $namaKaprodi = 'Dr. ' . str_replace(' ', '', ucwords(str_replace('-', ' ', strtolower($prodi->nama_prodi)))) . ', M.T.';
@@ -109,7 +103,6 @@ class PejabatSeeder extends Seeder
                         'role' => 'dosen',
                         'fakultas_id' => $prodi->fakultas_id,
                         'prodi_id' => $prodi->id,
-                        'jabatan_struktural' => 'Kaprodi',
                         'status' => 'aktif',
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -146,11 +139,10 @@ class PejabatSeeder extends Seeder
             'role'               => $role,
             'fakultas_id'        => null,
             'prodi_id'           => null,
-            'jabatan_struktural' => $jabatan,
             'status'             => 'aktif',
         ]);
 
-        $this->command->info("User '{$username}' created with jabatan_struktural = '{$jabatan}'.");
+        $this->command->info("User '{$username}' created.");
     }
 }
 

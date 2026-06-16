@@ -432,5 +432,8 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadFilterProdi();
         });
+        document.addEventListener('livewire:navigated', () => {
+            loadFilterProdi();
+        });
     </script>
 @endpush

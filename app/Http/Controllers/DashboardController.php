@@ -20,7 +20,7 @@ class DashboardController extends Controller
         if ($user->role === 'super_admin') {
             $data['totalDosen']     = Dosen::count();
             $data['totalProdi']     = \App\Models\Prodi::count();
-            $data['totalUsers']     = User::count();
+            $data['totalUsers']     = User::where('status', 'aktif')->count();
             $data['totalFakultas']  = Fakultas::count();
             
             $kasMasuk = \App\Models\KasTransaction::where('jenis', 'masuk')->sum('jumlah');

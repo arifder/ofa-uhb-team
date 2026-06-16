@@ -400,9 +400,6 @@
     </div>
 </div>
 
-@endsection
-
-@push('scripts')
 <script>
     function getCsrfToken() {
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -968,4 +965,5 @@
     document.addEventListener('livewire:navigated', window.initTinyMCE);
     document.addEventListener('DOMContentLoaded', window.initTinyMCE);
 </script>
-@endpush
+
+@endsection

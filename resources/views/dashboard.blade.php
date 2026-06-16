@@ -431,8 +431,6 @@
 
 @endif
 
-@endsection
-
 @push('scripts')
 <script>
   const csrfToken = '{{ csrf_token() }}';
@@ -554,3 +552,5 @@
   @endif
 </script>
 @endpush
+
+@endsection
